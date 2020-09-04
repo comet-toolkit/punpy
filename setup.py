@@ -17,7 +17,7 @@ def read(filename):
 setup(
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    name="punpy-npl",
+    name="punpy",
     url="https://gitlab.npl.co.uk/eco/eo/punpy",
     license="None",
     author="Pieter De Vis",

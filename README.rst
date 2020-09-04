@@ -1,7 +1,7 @@
-punpy-npl
+punpy
 =========
+Punpy stands for "Propagating UNcertainties with PYthon". This is a **preliminary** tool to propagate random, structured and systematic uncertainties and calculate covariance/correlation matrices through a given measurement function. It is under development by the ECO group of the UK National Physical Labaratory. It currently uses a Monte Carlo approach, with other methods to follow.
 
-Propagating UNcertainties in PYthon
 
 Usage
 =====
