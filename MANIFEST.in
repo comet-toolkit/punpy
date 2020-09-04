@@ -1,2 +1,2 @@
 include versioneer.py
-include punpy-npl/_version.py
+include punpy/_version.py

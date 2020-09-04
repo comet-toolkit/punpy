@@ -1,4 +1,4 @@
-Welcome to punpy-npl's documentation!
+Welcome to punpy's documentation!
 =========================================================
 
 .. toctree::
