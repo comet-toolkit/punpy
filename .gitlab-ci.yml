@@ -57,7 +57,7 @@ black:
     entrypoint: [""]
   stage: Static Analysis
   script:
-    - black --check punpy-npl
+    - black --check punpy
   allow_failure: true
   needs: []
 
@@ -68,7 +68,7 @@ mypy:
     entrypoint: [""]
   stage: Static Analysis
   script:
-    - mypy punpy-npl
+    - mypy punpy
   allow_failure: true
   needs: []
 
@@ -164,13 +164,13 @@ pdf_compile:
   image:  charlesbaynham/ctanfull
   artifacts:
     paths:
-    - punpy-npl.pdf
+    - punpy.pdf
     expose_as: "Manual"
     name: ${CI_COMMIT_REF_SLUG}_manual.pdf
   script:
     - cd latex
     - make
-    - cp punpy-npl.pdf ../punpy-npl.pdf
+    - cp punpy.pdf ../punpy.pdf
 
 # Copied contents of Gitlab's Code-Quality.gitlab-ci.yml so I can edit the rules
 
