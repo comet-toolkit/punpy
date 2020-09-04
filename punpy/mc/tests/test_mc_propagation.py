@@ -5,13 +5,13 @@ Tests for mc propagation class
 import unittest
 import numpy as np
 import numpy.testing as npt
-from punpy.version import __version__
+import punpy
 from punpy.mc.mc_propagation import MCPropagation
 
 '''___Authorship___'''
 __author__ = "Pieter De Vis"
 __created__ = "14/4/2020"
-__version__ = __version__
+__version__ = punpy.__version__
 __maintainer__ = "Pieter De Vis"
 __email__ = "pieter.de.vis@npl.co.uk"
 __status__ = "Development"

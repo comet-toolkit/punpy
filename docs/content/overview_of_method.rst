@@ -229,17 +229,3 @@ Monte Carlo Apprach
 in progress
 
 
-
-
-
-
-
-
-
-
-.. |image0| image:: ../../images/image1.png
-   :width: 3.97506in
-   :height: 2.46154in
-.. |image1| image:: ../../images/image2.png
-   :width: 4.61478in
-   :height: 2.66265in
