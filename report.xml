@@ -1,83 +1,85 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite errors="0" failures="1" hostname="antliae" name="pytest" skipped="0" tests="5" time="130.103" timestamp="2020-09-11T17:26:29.602291"><testcase classname="punpy.mc.tests.test_mc_propagation.TestMCPropagation" file="punpy\mc\tests\test_mc_propagation.py" line="187" name="test_propagate_both" time="13.293"></testcase><testcase classname="punpy.mc.tests.test_mc_propagation.TestMCPropagation" file="punpy\mc\tests\test_mc_propagation.py" line="273" name="test_propagate_cov" time="9.628"></testcase><testcase classname="punpy.mc.tests.test_mc_propagation.TestMCPropagation" file="punpy\mc\tests\test_mc_propagation.py" line="84" name="test_propagate_random" time="39.308"><failure message="AssertionError: 
-Not equal to tolerance rtol=1e-07, atol=0.05
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite errors="0" failures="2" hostname="antliae" name="pytest" skipped="0" tests="5" time="135.698" timestamp="2020-09-11T17:36:05.381692"><testcase classname="punpy.mc.tests.test_mc_propagation.TestMCPropagation" file="punpy\mc\tests\test_mc_propagation.py" line="187" name="test_propagate_both" time="5.844"><failure message="AssertionError: 
+Not equal to tolerance rtol=0.05, atol=0
 
-Mismatched elements: 1 / 480 (0.208%)
-Max absolute difference: 0.05380814
-Max relative difference: 0.01345203
- x: array([[[[8.788430e-05, 8.739791e-05, 8.761474e-05, 8.796424e-05],
-         [8.705867e-05, 8.761455e-05, 8.802909e-05, 8.751263e-05],
-         [8.729236e-05, 8.788807e-05, 8.765515e-05, 8.809022e-05]],...
- y: array([[[[0., 0., 0., 0.],
-         [0., 0., 0., 0.],
-         [0., 0., 0., 0.]],...">self = &lt;punpy.mc.tests.test_mc_propagation.TestMCPropagation testMethod=test_propagate_random&gt;
+Mismatched elements: 1 / 200 (0.5%)
+Max absolute difference: 0.07412939
+Max relative difference: 0.05241739
+ x: array([1.408249, 1.39903 , 1.417137, 1.41521 , 1.43019 , 1.400802,
+       1.389176, 1.417421, 1.406728, 1.404134, 1.444892, 1.423764,
+       1.387636, 1.374612, 1.42657 , 1.437922, 1.410342, 1.428257,...
+ y: array([1.414214, 1.414214, 1.414214, 1.414214, 1.414214, 1.414214,
+       1.414214, 1.414214, 1.414214, 1.414214, 1.414214, 1.414214,
+       1.414214, 1.414214, 1.414214, 1.414214, 1.414214, 1.414214,...">self = &lt;punpy.mc.tests.test_mc_propagation.TestMCPropagation testMethod=test_propagate_both&gt;
 
-    def test_propagate_random(self):
-        prop = MCPropagation(40000)
+    def test_propagate_both(self):
+        prop = MCPropagation(20000,parallel_cores=1)
     
-        uf,ucorr = prop.propagate_random(function,xs,xerrs,return_corr=True)
+        uf,ucorr = prop.propagate_both(function,xs,xerrs,
+                                       [np.zeros_like(x1err),np.zeros_like(x2err)],return_corr=True)
         npt.assert_allclose(ucorr,np.eye(len(ucorr)),atol=0.05)
         npt.assert_allclose(uf,yerr_uncorr,rtol=0.05)
-        ucov= prop.convert_corr_to_cov(ucorr,uf)
-        ucorr2= prop.convert_cov_to_corr(ucov,uf)
-        npt.assert_allclose(ucorr,ucorr2,atol=0.01)
     
-        uf = prop.propagate_random(function,xs,xerrs,corr_between=np.ones((2,2)))
-        npt.assert_allclose(uf,yerr_corr,rtol=0.05)
-    
-        uf,ucorr,yvalues,xvalues = prop.propagate_random(function,xs,xerrs,return_corr=True,return_samples=True)
+        uf,ucorr = prop.propagate_both(function,xs,[np.zeros_like(x1err),np.zeros_like(x2err)],
+                                       xerrs,return_corr=True)
+        npt.assert_allclose(ucorr,np.ones_like(ucorr),atol=0.05)
         npt.assert_allclose(uf,yerr_uncorr,rtol=0.05)
     
-        uf,yvalues,xvalues = prop.propagate_random(function,xs,xerrs,corr_between=np.ones((2,2)),return_samples=True)
-        npt.assert_allclose(uf,yerr_corr,rtol=0.05)
-    
-        #b
-        ufb,ucorrb = prop.propagate_random(functionb,xsb,xerrsb,return_corr=True)
-        npt.assert_allclose(ucorrb,np.eye(len(ucorrb)),atol=0.05)
-        npt.assert_allclose(ufb,yerr_uncorrb,rtol=0.05)
-    
-        ufb = prop.propagate_random(functionb,xsb,xerrsb,corr_between=np.ones((2,2)))
-        npt.assert_allclose(ufb,yerr_corrb,atol=0.03)
-    
-        ufb,yvaluesb,xvaluesb = prop.propagate_random(functionb,xsb,xerrsb,corr_between=np.ones((2,2)),
-                                                   return_samples=True)
-        npt.assert_allclose(ufb,yerr_corrb,atol=0.03)
-    
-        #c
-        ufc,ucorrc = prop.propagate_random(functionc,xsc,xerrsc,return_corr=True)
-        npt.assert_allclose(ucorrc,np.eye(len(ucorrc)),atol=0.05)
-        npt.assert_allclose(ufc,yerr_uncorrc,rtol=0.05)
-    
-        ufc = prop.propagate_random(functionc,xsc,xerrsc,corr_between=corr_c)
-        npt.assert_allclose(ufc,yerr_corrc,rtol=0.05)
-    
-        ufc,yvaluesc,xvaluesc = prop.propagate_random(functionc,xsc,xerrsc,corr_between=corr_c,return_samples=True)
-        npt.assert_allclose(ufc,yerr_corrc,rtol=0.05)
-    
-        #d
-        ufd,ucorrd,corr_out = prop.propagate_random(functiond,xsd,xerrsd,return_corr=True,output_vars=2)
-        npt.assert_allclose(ucorrd[0],np.eye(len(ucorrd[0])),atol=0.05)
-        npt.assert_allclose(ufd,yerr_uncorrd,rtol=0.05)
-    
-        ufd,ucorrd,corr_out,yvalues,xvalues = prop.propagate_random(functiond,xsd,xerrsd,return_corr=True,output_vars=2,return_samples=True)
-        npt.assert_allclose(ucorrd[1],np.eye(len(ucorrd[1])),atol=0.05)
-    
-        ufd = prop.propagate_random(functiond,xsd,xerrsd,corr_between=corr_d,output_vars=2)
-        npt.assert_allclose(ufd[0],yerr_corrd[0],atol=0.05)
-        npt.assert_allclose(ufd[1],yerr_corrd[1],rtol=0.05)
-    
-        ufd,yvaluesd,xvaluesd = prop.propagate_random(functiond,xsd,xerrsd,corr_between=corr_d,return_samples=True,output_vars=2)
-&gt;       npt.assert_allclose(ufd,yerr_corrd,atol=0.05)
+        uf = prop.propagate_both(function,xs,xerrs,[np.zeros_like(x1err),np.zeros_like(x2err)],
+                                 return_corr=False,corr_between=np.ones((2,2)))
+&gt;       npt.assert_allclose(uf,yerr_corr,rtol=0.05)
 E       AssertionError: 
-E       Not equal to tolerance rtol=1e-07, atol=0.05
+E       Not equal to tolerance rtol=0.05, atol=0
 E       
-E       Mismatched elements: 1 / 480 (0.208%)
-E       Max absolute difference: 0.05380814
-E       Max relative difference: 0.01345203
-E        x: array([[[[8.788430e-05, 8.739791e-05, 8.761474e-05, 8.796424e-05],
-E                [8.705867e-05, 8.761455e-05, 8.802909e-05, 8.751263e-05],
-E                [8.729236e-05, 8.788807e-05, 8.765515e-05, 8.809022e-05]],...
-E        y: array([[[[0., 0., 0., 0.],
-E                [0., 0., 0., 0.],
-E                [0., 0., 0., 0.]],...
+E       Mismatched elements: 1 / 200 (0.5%)
+E       Max absolute difference: 0.07412939
+E       Max relative difference: 0.05241739
+E        x: array([1.408249, 1.39903 , 1.417137, 1.41521 , 1.43019 , 1.400802,
+E              1.389176, 1.417421, 1.406728, 1.404134, 1.444892, 1.423764,
+E              1.387636, 1.374612, 1.42657 , 1.437922, 1.410342, 1.428257,...
+E        y: array([1.414214, 1.414214, 1.414214, 1.414214, 1.414214, 1.414214,
+E              1.414214, 1.414214, 1.414214, 1.414214, 1.414214, 1.414214,
+E              1.414214, 1.414214, 1.414214, 1.414214, 1.414214, 1.414214,...
 
-punpy\mc\tests\test_mc_propagation.py:140: AssertionError</failure></testcase><testcase classname="punpy.mc.tests.test_mc_propagation.TestMCPropagation" file="punpy\mc\tests\test_mc_propagation.py" line="141" name="test_propagate_systematic" time="57.310"></testcase><testcase classname="punpy.mc.tests.test_mc_propagation.TestMCPropagation" file="punpy\mc\tests\test_mc_propagation.py" line="233" name="test_propagate_type" time="8.670"></testcase></testsuite></testsuites>
+punpy\mc\tests\test_mc_propagation.py:203: AssertionError</failure></testcase><testcase classname="punpy.mc.tests.test_mc_propagation.TestMCPropagation" file="punpy\mc\tests\test_mc_propagation.py" line="273" name="test_propagate_cov" time="4.993"><failure message="AssertionError: 
+Not equal to tolerance rtol=0.05, atol=0
+
+Mismatched elements: 1 / 200 (0.5%)
+Max absolute difference: 0.07169608
+Max relative difference: 0.05069678
+ x: array([1.412058, 1.38355 , 1.429025, 1.431795, 1.417831, 1.418519,
+       1.410903, 1.404095, 1.404578, 1.412671, 1.381714, 1.412012,
+       1.435759, 1.417464, 1.406086, 1.437106, 1.48591 , 1.449483,...
+ y: array([1.414214, 1.414214, 1.414214, 1.414214, 1.414214, 1.414214,
+       1.414214, 1.414214, 1.414214, 1.414214, 1.414214, 1.414214,
+       1.414214, 1.414214, 1.414214, 1.414214, 1.414214, 1.414214,...">self = &lt;punpy.mc.tests.test_mc_propagation.TestMCPropagation testMethod=test_propagate_cov&gt;
+
+    def test_propagate_cov(self):
+        prop = MCPropagation(20000)
+    
+        cov = [MCPropagation.convert_corr_to_cov(np.eye(len(xerr.flatten())),xerr) for xerr in xerrs]
+        uf,ucorr = prop.propagate_cov(function,xs,cov,return_corr=True)
+        npt.assert_allclose(ucorr,np.eye(len(ucorr)),atol=0.05)
+        npt.assert_allclose(uf,yerr_uncorr,rtol=0.05)
+    
+        cov = [MCPropagation.convert_corr_to_cov(np.ones((len(xerr.flatten()),len(xerr.flatten())))+np.eye(len(xerr)),xerr) for xerr in xerrs]
+        uf,ucorr = prop.propagate_cov(function,xs,cov,return_corr=True)
+        npt.assert_allclose(uf,yerr_uncorr*2**0.5,rtol=0.05)
+    
+        cov = [MCPropagation.convert_corr_to_cov(np.eye(len(xerr.flatten())),xerr) for xerr in xerrs]
+        uf,ucorr = prop.propagate_cov(function,xs,cov,return_corr=True,corr_between=np.ones((2,2)))
+        npt.assert_allclose(ucorr,np.eye(len(ucorr)),atol=0.05)
+&gt;       npt.assert_allclose(uf,yerr_corr,rtol=0.05)
+E       AssertionError: 
+E       Not equal to tolerance rtol=0.05, atol=0
+E       
+E       Mismatched elements: 1 / 200 (0.5%)
+E       Max absolute difference: 0.07169608
+E       Max relative difference: 0.05069678
+E        x: array([1.412058, 1.38355 , 1.429025, 1.431795, 1.417831, 1.418519,
+E              1.410903, 1.404095, 1.404578, 1.412671, 1.381714, 1.412012,
+E              1.435759, 1.417464, 1.406086, 1.437106, 1.48591 , 1.449483,...
+E        y: array([1.414214, 1.414214, 1.414214, 1.414214, 1.414214, 1.414214,
+E              1.414214, 1.414214, 1.414214, 1.414214, 1.414214, 1.414214,
+E              1.414214, 1.414214, 1.414214, 1.414214, 1.414214, 1.414214,...
+
+punpy\mc\tests\test_mc_propagation.py:289: AssertionError</failure></testcase><testcase classname="punpy.mc.tests.test_mc_propagation.TestMCPropagation" file="punpy\mc\tests\test_mc_propagation.py" line="84" name="test_propagate_random" time="45.655"></testcase><testcase classname="punpy.mc.tests.test_mc_propagation.TestMCPropagation" file="punpy\mc\tests\test_mc_propagation.py" line="141" name="test_propagate_systematic" time="68.152"></testcase><testcase classname="punpy.mc.tests.test_mc_propagation.TestMCPropagation" file="punpy\mc\tests\test_mc_propagation.py" line="233" name="test_propagate_type" time="8.803"></testcase></testsuite></testsuites>
