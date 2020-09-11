@@ -78,7 +78,7 @@ mypy:
 pytest:
   stage: "Test"
   script:
-    - py.test --junitxml=report.xml
+    - python -m pytest --junitxml=report.xml
   artifacts:
     when: always
     reports:
