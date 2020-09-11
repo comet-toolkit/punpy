@@ -48,7 +48,6 @@ cache:
     - virtualenv venv
     - source venv/bin/activate
     - pip install .[dev]
-    - pip install pytest
 
 ### Linting ###
 
@@ -75,36 +74,31 @@ mypy:
 
 
 ### Tests ###
-pytest:
-  stage: "Test"
+.tox:
+  extends: .py_venv
   script:
-    - python -m pytest --junitxml=report.xml
+    - pwd
+    - ls -l
+    - export PYTHONPATH="$PYTHONPATH:."
+    - python -c "import sys;print(sys.path)"
+    - pip install tox
+    - tox
+  coverage: '/^TOTAL.+?(\d+\%)$/'
+  needs: []
   artifacts:
     when: always
     reports:
       junit: report.xml
-
-# .tox:
-#   extends: .py_venv
-#   script:
-#     - pwd
-#     - ls -l
-#     - export PYTHONPATH="$PYTHONPATH:."
-#     - python -c "import sys;print(sys.path)"
-#     - pip install tox
-#     - tox
-#   coverage: '/^TOTAL.+?(\d+\%)$/'
-#   needs: []
 
 # tox-3.6:
 #     extends: ".tox"
 #     stage: "Test"
 #     image: "python:3.6"
 
-# tox-3.7:
-#     extends: ".tox"
-#     stage: "Test"
-#     image: "python:3.7"
+tox-3.7:
+    extends: ".tox"
+    stage: "Test"
+    image: "python:3.7"
 
 # tox-3.8:
 #     extends: ".tox"
