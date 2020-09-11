@@ -75,14 +75,14 @@ mypy:
 
 ### Tests ###
 pytest:
-  stage: test
+  stage: "Test"
   script:
     - pytest --junitxml=report.xml
   artifacts:
     when: always
     reports:
       junit: report.xml
-      
+
 .tox:
   extends: .py_venv
   script:
