@@ -87,9 +87,12 @@ mypy:
   needs: []
   artifacts:
     when: always
+    paths:
+      - report.xml
+      - cov_report.xml
     reports:
-      junit: report.xml
-      junit: cov_report.xml
+      report.xml
+      cov_report.xml
 
 # tox-3.6:
 #     extends: ".tox"
