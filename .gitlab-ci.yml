@@ -89,6 +89,7 @@ mypy:
     when: always
     reports:
       junit: report.xml
+      junit: cov_report.xml
 
 # tox-3.6:
 #     extends: ".tox"
