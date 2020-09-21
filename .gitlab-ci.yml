@@ -7,6 +7,7 @@ stages:
   - Static Analysis
   - Test
   - Full test
+  - Publish test report
   - Publish Pages
 
 ### Setup cache ###
@@ -159,15 +160,24 @@ pdf_make:
   needs: []
   script:
     - sphinx-build docs latex -b latex
-    - wkhtmltopdf --enable-local-file-access test_report/cov_report/index.html test_report.pdf
-    - wkhtmltopdf --enable-local-file-access test_report/cov_report/index.html test_coverage_report.pdf
-
-  
   artifacts:
     paths:
     - latex
     expire_in: 1 hour
     
+linux-alpine:3.9:
+    stage: Publish test reports
+    image: alpine:3.9
+    before_script:
+        - apk update
+        - apk add --update libressl libressl-dev libressl2.7-libssl libressl2.7-libcrypto libssl1.1 libcrypto1.1
+        - apk add --update ca-certificates libgcc libstdc++ glib libxrender libxext ttf-freefont
+    script:
+        - binaries/linux-alpine/wkhtmltopdf --enable-local-file-access test_report/report.html test_report.pdf
+        - binaries/linux-alpine/wkhtmltopdf --enable-local-file-access test_report/cov_report/index.html test_coverage_report.pdf
+
+
+
 pdf_compile:
   needs: ["pdf_make"]
   stage: Publish Documentation
