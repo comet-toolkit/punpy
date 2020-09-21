@@ -143,9 +143,7 @@ test_report:
      name: madnight/wkhtmltopdf
      entrypoint: [""]
   script:
-      - wkhtmltopdf google.com - > test_report  .pdf
-
-      #- docker run --rm -v $(pwd):/test_report madnight/docker-alpine-wkhtmltopdf test_report/report.html - > test_report.pdf
+      - wkhtmltopdf google.com - > test_report.pdf
   artifacts:
     paths:
     - test_report.pdf
