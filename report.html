@@ -243,7 +243,7 @@ function filter_table(elem) {
 }
 </script>
     <h1>report.html</h1>
-    <p>Report generated on 21-Sep-2020 at 16:43:50 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v2.1.1</p>
+    <p>Report generated on 21-Sep-2020 at 16:47:17 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v2.1.1</p>
     <h2>Environment</h2>
     <table id="environment">
       <tr>
@@ -251,19 +251,19 @@ function filter_table(elem) {
         <td>C:\Program Files\Java\jdk1.8.0_231</td></tr>
       <tr>
         <td>Packages</td>
-        <td>{"pluggy": "0.12.0", "py": "1.8.0", "pytest": "5.0.1"}</td></tr>
+        <td>{"pluggy": "0.13.1", "py": "1.9.0", "pytest": "6.0.2"}</td></tr>
       <tr>
         <td>Platform</td>
         <td>Windows-10-10.0.17134-SP0</td></tr>
       <tr>
         <td>Plugins</td>
-        <td>{"arraydiff": "0.3", "cov": "2.10.1", "doctestplus": "0.3.0", "html": "2.1.1", "metadata": "1.10.0", "openfiles": "0.3.2", "remotedata": "0.3.1"}</td></tr>
+        <td>{"cov": "2.10.1", "html": "2.1.1", "metadata": "1.10.0"}</td></tr>
       <tr>
         <td>Python</td>
         <td>3.7.3</td></tr></table>
     <h2>Summary</h2>
-    <p>0 tests ran in 0.34 seconds. </p>
-    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="passed">0 passed</span>, <input checked="true" class="filter" data-test-result="skipped" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="skipped">0 skipped</span>, <input checked="true" class="filter" data-test-result="failed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="failed">0 failed</span>, <input checked="true" class="filter" data-test-result="error" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="error">1 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <p>5 tests ran in 117.91 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="passed">5 passed</span>, <input checked="true" class="filter" data-test-result="skipped" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="skipped">0 skipped</span>, <input checked="true" class="filter" data-test-result="failed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="failed">0 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
     <h2>Results</h2>
     <table id="results-table">
       <thead id="results-table-head">
@@ -274,12 +274,62 @@ function filter_table(elem) {
           <th>Links</th></tr>
         <tr hidden="true" id="not-found-message">
           <th colspan="4">No results found. Try to check the filters</th></tr></thead>
-      <tbody class="error results-table-row">
+      <tbody class="passed results-table-row">
         <tr>
-          <td class="col-result">Error</td>
-          <td class="col-name">::collect</td>
-          <td class="col-duration">0.00</td>
+          <td class="col-result">Passed</td>
+          <td class="col-name">punpy/mc/tests/test_mc_propagation.py::TestMCPropagation::test_propagate_both</td>
+          <td class="col-duration">11.59</td>
           <td class="col-links"></td></tr>
         <tr>
           <td class="extra" colspan="4">
-            <div class="log">C:\tools\Anaconda3\lib\site-packages\py\_path\common.py:377: in visit<br/>    for x in Visitor(fil, rec, ignore, bf, sort).gen(self):<br/>C:\tools\Anaconda3\lib\site-packages\py\_path\common.py:429: in gen<br/>    for p in self.gen(subdir):<br/>C:\tools\Anaconda3\lib\site-packages\py\_path\common.py:418: in gen<br/>    dirs = self.optsort([p for p in entries<br/>C:\tools\Anaconda3\lib\site-packages\py\_path\common.py:419: in &lt;listcomp&gt;<br/>    if p.check(dir=1) and (rec is None or rec(p))])<br/>C:\tools\Anaconda3\lib\site-packages\_pytest\main.py:622: in _recurse<br/>    ihook = self.gethookproxy(dirpath)<br/>C:\tools\Anaconda3\lib\site-packages\_pytest\main.py:446: in gethookproxy<br/>    my_conftestmodules = pm._getconftestmodules(fspath)<br/>C:\tools\Anaconda3\lib\site-packages\_pytest\config\__init__.py:394: in _getconftestmodules<br/>    conftestpath = parent.join(&quot;conftest.py&quot;)<br/><span class="error">E   KeyboardInterrupt</span><br/></div></td></tr></tbody></table></body></html>
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>One of the provided covariance matrix is not positive definite. It has been slightly changed (less than 0.01% in any element) to accomodate our method.
+One of the provided covariance matrix is not positive definite. It has been slightly changed (less than 0.01% in any element) to accomodate our method.
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">punpy/mc/tests/test_mc_propagation.py::TestMCPropagation::test_propagate_cov</td>
+          <td class="col-duration">9.61</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>One of the provided covariance matrix is not positive definite. It has been slightly changed (less than 0.01% in any element) to accomodate our method.
+One of the provided covariance matrix is not positive definite. It has been slightly changed (less than 0.01% in any element) to accomodate our method.
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">punpy/mc/tests/test_mc_propagation.py::TestMCPropagation::test_propagate_random</td>
+          <td class="col-duration">39.79</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>One of the provided covariance matrix is not positive definite. It has been slightly changed (less than 0.01% in any element) to accomodate our method.
+One of the provided covariance matrix is not positive definite. It has been slightly changed (less than 0.01% in any element) to accomodate our method.
+One of the provided covariance matrix is not positive definite. It has been slightly changed (less than 0.01% in any element) to accomodate our method.
+One of the provided covariance matrix is not positive definite. It has been slightly changed (less than 0.01% in any element) to accomodate our method.
+One of the provided covariance matrix is not positive definite. It has been slightly changed (less than 0.01% in any element) to accomodate our method.
+One of the provided covariance matrix is not positive definite. It has been slightly changed (less than 0.01% in any element) to accomodate our method.
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">punpy/mc/tests/test_mc_propagation.py::TestMCPropagation::test_propagate_systematic</td>
+          <td class="col-duration">46.90</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>One of the provided covariance matrix is not positive definite. It has been slightly changed (less than 0.01% in any element) to accomodate our method.
+One of the provided covariance matrix is not positive definite. It has been slightly changed (less than 0.01% in any element) to accomodate our method.
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">punpy/mc/tests/test_mc_propagation.py::TestMCPropagation::test_propagate_type</td>
+          <td class="col-duration">5.88</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>One of the provided covariance matrix is not positive definite. It has been slightly changed (less than 0.01% in any element) to accomodate our method.
+One of the provided covariance matrix is not positive definite. It has been slightly changed (less than 0.01% in any element) to accomodate our method.
+<br/></div></td></tr></tbody></table></body></html>
