@@ -166,15 +166,15 @@ pdf_make:
     expire_in: 1 hour
     
 test_report:
-    stage: Publish test reports
-    image: icalialabs/wkhtmltopdf
-    script:
-        - docker run --rm -v $(pwd):/root icalialabs/wkhtmltopdf --enable-local-file-access test_report/report.html test_report.pdf
-        - docker run --rm -v $(pwd):/root icalialabs/wkhtmltopdf --enable-local-file-access test_report/cov_report/index.html test_coverage_report.pdf
-    artifacts:
+  stage: Publish test reports
+  image: icalialabs/wkhtmltopdf
+  script:
+      - docker run --rm -v $(pwd):/root icalialabs/wkhtmltopdf --enable-local-file-access test_report/report.html test_report.pdf
+      - docker run --rm -v $(pwd):/root icalialabs/wkhtmltopdf --enable-local-file-access test_report/cov_report/index.html test_coverage_report.pdf
+  artifacts:
     paths:
-      - test_report.pdf
-      - test_coverage_report.pdf
+    - test_report.pdf
+    - test_coverage_report.pdf
 
 
 pdf_compile:
