@@ -139,7 +139,9 @@ stages:
 test_report:
   #needs: ["tox-3.7"]
   stage: Publish test report
-  image: madnight/wkhtmltopdf
+  image: 
+     name: madnight/wkhtmltopdf
+     entrypoint: [""]
   script:
       - wkhtmltopdf google.com - > test_report  .pdf
 
