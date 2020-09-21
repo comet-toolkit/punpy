@@ -141,7 +141,7 @@ test_report:
   stage: Publish test report
   image: madnight/wkhtmltopdf
   script:
-      - docker run madnight/docker-alpine-wkhtmltopdf google.com - > test_report  .pdf
+      - wkhtmltopdf google.com - > test_report  .pdf
 
       #- docker run --rm -v $(pwd):/test_report madnight/docker-alpine-wkhtmltopdf test_report/report.html - > test_report.pdf
   artifacts:
