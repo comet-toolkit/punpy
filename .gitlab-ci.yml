@@ -165,17 +165,16 @@ pdf_make:
     - latex
     expire_in: 1 hour
     
-linux-alpine:3.9:
+test_report:
     stage: Publish test reports
-    image: alpine:3.9
-    before_script:
-        - apk update
-        - apk add --update libressl libressl-dev libressl2.7-libssl libressl2.7-libcrypto libssl1.1 libcrypto1.1
-        - apk add --update ca-certificates libgcc libstdc++ glib libxrender libxext ttf-freefont
+    image: icalialabs/wkhtmltopdf
     script:
-        - binaries/linux-alpine/wkhtmltopdf --enable-local-file-access test_report/report.html test_report.pdf
-        - binaries/linux-alpine/wkhtmltopdf --enable-local-file-access test_report/cov_report/index.html test_coverage_report.pdf
-
+        - docker run --rm -v $(pwd):/root icalialabs/wkhtmltopdf --enable-local-file-access test_report/report.html test_report.pdf
+        - docker run --rm -v $(pwd):/root icalialabs/wkhtmltopdf --enable-local-file-access test_report/cov_report/index.html test_coverage_report.pdf
+    artifacts:
+    paths:
+      - test_report.pdf
+      - test_coverage_report.pdf
 
 
 pdf_compile:
