@@ -143,7 +143,7 @@ test_report:
      name: madnight/wkhtmltopdf
      entrypoint: [""]
   script:
-      - wkhtmltopdf test_report/report.html - > test_report/test_report.pdf
+      - wkhtmltopdf --enable-local-file-access ./test_report/report.html - > test_report/test_report.pdf
   artifacts:
     paths:
     - test_report/test_report.pdf
