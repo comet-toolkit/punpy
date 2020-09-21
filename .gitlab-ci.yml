@@ -168,14 +168,12 @@ pdf_make:
 test_report:
   needs: ["tox-3.7"]
   stage: Publish test report
-  image: icalialabs/wkhtmltopdf
+  image: madnight/wkhtmltopdf
   script:
-      - docker run icalialabs/wkhtmltopdf test_report/report.html test_report.pdf
-      - docker run icalialabs/wkhtmltopdf test_report/cov_report/index.html test_coverage_report.pdf
+      - docker run --rm -v $(pwd):/test_report madnight/docker-alpine-wkhtmltopdf test_report/report.html - > test_report.pdf
   artifacts:
     paths:
     - test_report.pdf
-    - test_coverage_report.pdf
 
 
 pdf_compile:
