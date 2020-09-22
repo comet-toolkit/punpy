@@ -146,6 +146,7 @@ test_report:
       - pwd
       - ls
       - cd test_report
+      - ls
       - cp report.html ../report.html
       - cd ..
       - wkhtmltopdf --enable-local-file-access file:./test_report/report.html test_report/test_report.pdf
@@ -193,6 +194,7 @@ pdf_compile:
     expose_as: "Manual"
     name: ${CI_COMMIT_REF_SLUG}_manual.pdf
   script:
+    - ls
     - cd latex
     - make
     - cp punpy.pdf ../punpy.pdf
