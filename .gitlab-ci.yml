@@ -143,7 +143,8 @@ test_report:
      name: oberonamsterdam/wkhtmltopdf
      entrypoint: [""]
   script:
-      - wkhtmltopdf --enable-local-file-access file:///test_report/report.html test_report/test_report.pdf
+      - cp test_report/report.html ./report.html
+      - wkhtmltopdf --enable-local-file-access file:test_report/report.html test_report/test_report.pdf
   artifacts:
     paths:
     - test_report/test_report.pdf
