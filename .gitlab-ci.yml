@@ -94,7 +94,6 @@ mypy:
       - test_report/cov_report
     reports:
       junit: cov_report.xml
-      - test_report/report.html
 
 # tox-3.6:
 #     extends: ".tox"
