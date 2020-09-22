@@ -90,10 +90,11 @@ mypy:
   artifacts:
     when: always
     paths:
-      - test_report/report.html
+      - test_report/
       - test_report/cov_report
     reports:
       junit: cov_report.xml
+      - test_report/report.html
 
 # tox-3.6:
 #     extends: ".tox"
@@ -145,11 +146,10 @@ test_report:
   script:
       - pwd
       - ls
-      - cd test_report
+      - cd test_report/cov_report
       - ls
-      - cp report.html ../report.html
-      - cd ..
-      - wkhtmltopdf --enable-local-file-access file:./test_report/report.html test_report/test_report.pdf
+      - cd ../..
+      - wkhtmltopdf --enable-local-file-access file:////builds/eco/eo/punpy/test_report/report.html test_report/test_report.pdf
   artifacts:
     paths:
     - test_report/test_report.pdf
