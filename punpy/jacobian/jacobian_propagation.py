@@ -2,6 +2,7 @@
 
 import numpy as np
 from multiprocessing import Pool
+import numdifftools as nd
 
 '''___Authorship___'''
 __author__ = "Pieter De Vis"
@@ -10,8 +11,8 @@ __maintainer__ = "Pieter De Vis"
 __email__ = "pieter.de.vis@npl.co.uk"
 __status__ = "Development"
 
-class MCPropagation:
-    def __init__(self,steps,parallel_cores=0):
+class JacobianPropagation:
+    def __init__(self,parallel_cores=0):
         """
         Initialise MC Propagator
 
@@ -19,7 +20,6 @@ class MCPropagation:
         :type steps: int
         """
 
-        self.MCsteps = steps
         self.parallel_cores = parallel_cores
 
     def propagate_random(self,func,x,u_x,corr_between=None,return_corr=False,return_samples=False,corr_axis=-99,output_vars=1):
@@ -46,18 +46,53 @@ class MCPropagation:
         :return: uncertainties on measurand
         :rtype: array
         """
-        MC_data = np.empty(len(x),dtype=np.ndarray)
-        for i in range(len(x)):
-            if u_x[i] is None:
-                u_x[i]=np.zeros_like(x[i])
-            print(x[i].shape,u_x[i].shape)
-            MC_data[i] = self.generate_samples_random(x[i],u_x[i])
-            print(MC_data[i].nbytes)
+        yshape=np.shape(func(*x))
+        if output_vars==1:
+            fun = lambda c: func(*c.reshape(len(x),-1))
+        else:
+            fun = lambda c: np.concatenate(func(*c.reshape(len(x),-1)))
+        Jfun = nd.Jacobian(fun)
+        Jx=Jfun(x.flatten())
+        if corr_between is None:
+            corr_x = np.eye(len(x.flatten()))
+        else:
+            corrs=[np.eye(len(xi.flatten())) for xi in x]
+            corr_x=self.calculate_flattened_corr(corrs,corr_between)
+        cov_x=self.convert_corr_to_cov(corr_x,u_x)
+        return self.process_jacobian(Jx,cov_x,yshape,return_corr,corr_axis,output_vars)
 
-        if corr_between is not None:
-            MC_data = self.correlate_samples_corr(MC_data,corr_between)
+    def calculate_flattened_corr(self,corrs,corr_between):
+        totcorrlen=0
+        for i in range(len(corrs)):
+            totcorrlen += len(corrs[i])
+        totcorr=np.eye(totcorrlen)
+        for i in range(len(corrs)):
+            for j in range(len(corrs)):
+                totcorr[i*len(corrs[i]):(i+1)*len(corrs[i]),j*len(corrs[j]):(j+1)*len(corrs[j])]=corr_between[i,j]*corrs[i]**0.5*corrs[j]**0.5
+        return totcorr
 
-        return self.process_samples(func,MC_data,return_corr,return_samples,corr_axis,output_vars)
+    def process_jacobian(self,J,covx,shape_y,return_corr,corr_axis=-99,output_vars=1):
+        covy=np.dot(np.dot(J,covx),J.T)
+        u_func=np.diag(covy)**0.5
+        corr_y=self.convert_cov_to_corr(covy,u_func)
+        if not return_corr:
+            return u_func.reshape(shape_y)
+        else:
+            if output_vars==1:
+                return u_func.reshape(shape_y),corr_y
+            else:
+                #create an empty arrays and then populate it with the correlation matrix for each output parameter individually
+                corr_ys=np.empty(output_vars,dtype=object)
+                for i in range(output_vars):
+                    corr_ys[i] = corr_y[int(i*len(corr_y)/output_vars):
+                                        int((i+1)*len(corr_y)/output_vars),
+                                        int(i*len(corr_y)/output_vars):
+                                        int((i+1)*len(corr_y)/output_vars)]
+
+                # #calculate correlation matrix between the different outputs produced by the measurement function.
+                # corr_out=np.corrcoef(MC_y.reshape((output_vars,-1)))
+
+                return u_func.reshape(shape_y),corr_ys#,corr_out
 
     def propagate_systematic(self,func,x,u_x,corr_between=None,return_corr=False,return_samples=False,corr_axis=-99,output_vars=1):
         """
@@ -424,125 +459,6 @@ class MCPropagation:
             print("parameter shape not supported")
             exit()
 
-    def generate_samples_cov(self,param,cov_param):
-        """
-        Generate correlated MC samples of input quantity with a given covariance matrix.
-        Samples are generated independent and then correlated using Cholesky decomposition.
-
-        :param param: values of input quantity (mean of distribution)
-        :type param: array
-        :param cov_param: covariance matrix for input quantity
-        :type cov_param: array
-        :return: generated samples
-        :rtype: array
-        """
-        try:
-            L = np.linalg.cholesky(cov_param)
-        except:
-            L = self.nearestPD_cholesky(cov_param)
-
-        return np.dot(L,np.random.normal(size=(len(param),self.MCsteps)))+param[:,None]
-
-    def correlate_samples_corr(self,samples,corr):
-        """
-        Method to correlate independent samples of input quantities using correlation matrix and Cholesky decomposition.
-
-        :param samples: independent samples of input quantities
-        :type samples: array[array]
-        :param corr: correlation matrix between input quantities
-        :type corr: array
-        :return: correlated samples of input quantities
-        :rtype: array[array]
-        """
-        if np.max(corr) > 1 or len(corr) != len(samples):
-            raise ValueError("The correlation matrix between variables is not the right shape or has elements >1.")
-        else:
-            try:
-                L = np.array(np.linalg.cholesky(corr))
-            except:
-                L = self.nearestPD_cholesky(corr)
-
-            #Cholesky needs to be applied to Gaussian distributions with mean=0 and std=1,
-            #We first calculate the mean and std for each input quantity
-            means = np.array([np.mean(samples[i]) for i in range(len(samples))])
-            stds = np.array([np.std(samples[i]) for i in range(len(samples))])
-
-            #We normalise the samples with the mean and std, then apply Cholesky, and finally reapply the mean and std.
-            if all(stds!=0):
-                return np.dot(L,(samples-means)/stds)*stds+means
-
-            #If any of the variables has no uncertainty, the normalisation will fail. Instead we leave the parameters without uncertainty unchanged.
-            else:
-                samples_out=samples[:]
-                id_nonzero=np.where(stds!=0)
-                samples_out[id_nonzero]=np.dot(L[id_nonzero][:,id_nonzero],(samples[id_nonzero]-means[id_nonzero])/stds[id_nonzero])[:,0]*stds[id_nonzero]+means[id_nonzero]
-                return samples_out
-
-    @staticmethod
-    def nearestPD_cholesky(A):
-        """
-        Find the nearest positive-definite matrix
-
-        :param A: correlation matrix or covariance matrix
-        :type A: array
-        :return: nearest positive-definite matrix
-        :rtype: array
-
-        Copied and adapted from [1] under BSD license.
-        A Python/Numpy port of John D'Errico's `nearestSPD` MATLAB code [2], which
-        credits [3].
-        [1] https://gist.github.com/fasiha/fdb5cec2054e6f1c6ae35476045a0bbd
-        [2] https://www.mathworks.com/matlabcentral/fileexchange/42885-nearestspd
-        [3] N.J. Higham, "Computing a nearest symmetric positive semidefinite
-        matrix" (1988): https://doi.org/10.1016/0024-3795(88)90223-6
-        """
-
-        B = (A+A.T)/2
-        _,s,V = np.linalg.svd(B)
-
-        H = np.dot(V.T,np.dot(np.diag(s),V))
-
-        A2 = (B+H)/2
-
-        A3 = (A2+A2.T)/2
-
-        try:
-            return np.linalg.cholesky(A3)
-        except:
-
-            spacing = np.spacing(np.linalg.norm(A))
-
-            I = np.eye(A.shape[0])
-            k = 1
-            while not MCPropagation.isPD(A3):
-                mineig = np.min(np.real(np.linalg.eigvals(A3)))
-                A3 += I*(-mineig*k**2+spacing)
-                k += 1
-
-            if np.any(abs(A-A3)/(A+0.0001) > 0.0001):
-                raise ValueError(
-                    "One of the provided covariance matrix is not postive definite. Covariance matrices need to be at least positive semi-definite. Please check your covariance matrix.")
-            else:
-                print(
-                    "One of the provided covariance matrix is not positive definite. It has been slightly changed (less than 0.01% in any element) to accomodate our method.")
-                return np.linalg.cholesky(A3)
-
-    @staticmethod
-    def isPD(B):
-        """
-        Returns true when input is positive-definite, via Cholesky
-
-        :param B: matrix
-        :type B: array
-        :return: true when input is positive-definite
-        :rtype: bool
-        """
-        try:
-            _ = np.linalg.cholesky(B)
-            return True
-        except np.linalg.LinAlgError:
-            return False
-
     @staticmethod
     def convert_corr_to_cov(corr,u):
         """
@@ -555,7 +471,7 @@ class MCPropagation:
         :return: covariance matrix
         :rtype: array
         """
-        return u.flatten()*corr*u.flatten().T
+        return u.reshape((-1,1))*corr*(u.reshape((1,-1)))
 
     @staticmethod
     def convert_cov_to_corr(cov,u):
@@ -569,4 +485,4 @@ class MCPropagation:
         :return: correlation matrix
         :rtype: array
         """
-        return 1/u.flatten()*cov/u.flatten().T
+        return 1/u.reshape((-1,1))*cov/(u.reshape((1,-1)))

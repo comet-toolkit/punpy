@@ -25,7 +25,7 @@ setup(
     description="Propagating UNcertainties in PYthon",
     long_description=read("README.rst"),
     packages=find_packages(exclude=("tests",)),
-    install_requires=["numpy", "matplotlib", "emcee"],
+    install_requires=["numpy", "matplotlib", "emcee", "numdifftools"],
     extras_require={"dev": ["pre-commit", "tox", "sphinx", "sphinx_rtd_theme"]},
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
