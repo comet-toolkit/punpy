@@ -37,7 +37,7 @@ class MCMCRetrieval:
         self.uplims = np.array(uplims)
         self.downlims = np.array(downlims)
 
-    def run_retrieval(self,theta_0,nwalkers,steps):
+    def run_retrieval(self,theta_0,nwalkers,steps,burn_in,return_samples=True):
         # if self.syst_uncertainty is not None:
         #     theta_0=np.append([0.],theta_0)
         ndimw = len(theta_0)
@@ -48,7 +48,16 @@ class MCMCRetrieval:
             sampler = emcee.EnsembleSampler(nwalkers,ndimw,self.lnprob,pool=pool)
             sampler.run_mcmc(pos,steps,progress=True)
 
-        return sampler.chain[:,:,:].reshape((-1,ndimw))
+        samples = sampler.chain[:,:,:].reshape((-1,ndimw))[burn_in::]
+        medians = np.median(samples,axis=0)
+        unc_up = (np.percentile(samples,84,axis=0)-medians)
+        unc_down = -(np.percentile(samples,16,axis=0)-medians)
+        unc_avg= (unc_up+unc_down)/2.
+
+        if return_samples:
+            return medians, unc_avg, samples
+        else:
+            return medians, unc_avg
 
     def find_chisum(self,theta):
         model=self.measurement_function(theta)

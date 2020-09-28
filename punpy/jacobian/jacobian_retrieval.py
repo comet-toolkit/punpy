@@ -7,7 +7,9 @@ import numpy as np
 import emcee
 from multiprocessing import Pool
 import time
+import punpy.utilities.utilities as util
 import os
+from scipy.optimize import minimize
 
 os.environ["OMP_NUM_THREADS"] = "1"
 
@@ -24,7 +26,7 @@ inds_cache = {}
 
 
 # lock = threading.Lock()
-class MCMCRetrieval:
+class JacobianRetrieval:
     def __init__(self,measurement_function,observed,syst_uncertainty=None,rand_uncertainty=None,cov=None,uplims=+np.inf,downlims=-np.inf):
         self.measurement_function=measurement_function
         self.observed = observed
@@ -37,21 +39,39 @@ class MCMCRetrieval:
         self.uplims = np.array(uplims)
         self.downlims = np.array(downlims)
 
-    def run_retrieval(self,theta_0,nwalkers,steps):
-        # if self.syst_uncertainty is not None:
-        #     theta_0=np.append([0.],theta_0)
-        ndimw = len(theta_0)
-        pos = [theta_0*np.random.normal(1.0,0.1,len(theta_0))+np.random.normal(0.0,0.001,len(theta_0)) for i in
-               range(nwalkers)]
-        #print(self.measurement_function(theta_0))
-        with Pool(processes=1) as pool:
-            sampler = emcee.EnsembleSampler(nwalkers,ndimw,self.lnprob,pool=pool)
-            sampler.run_mcmc(pos,steps,progress=True)
+    def run_retrieval(self,theta_0,):
+        res = minimize(self.find_chisum,theta_0)
+        Jx=util.calculate_Jacobian(self.measurement_function,res.x)
 
-        return sampler.chain[:,:,:].reshape((-1,ndimw))
+        return res.x, self.process_inverse_jacobian(Jx)
+
+    def process_inverse_jacobian(self,J,return_corr=False):
+        covx = np.linalg.inv(np.dot(np.dot(J.T,self.invcov),J))
+        u_func = np.diag(covx)**0.5
+        corr_x = util.convert_cov_to_corr(covx,u_func)
+        return u_func
+        # if not return_corr:
+        #     return u_func.reshape(shape_y)
+        # else:
+        #     if output_vars == 1:
+        #         return u_func.reshape(shape_y),corr_y
+        #     else:
+        #         #create an empty arrays and then populate it with the correlation matrix for each output parameter individually
+        #         corr_ys = np.empty(output_vars,dtype=object)
+        #         for i in range(output_vars):
+        #             corr_ys[i] = corr_y[int(i*len(corr_y)/output_vars):
+        #                                 int((i+1)*len(corr_y)/output_vars),
+        #                          int(i*len(corr_y)/output_vars):
+        #                          int((i+1)*len(corr_y)/output_vars)]
+        #
+        #         # #calculate correlation matrix between the different outputs produced by the measurement function.
+        #         # corr_out=np.corrcoef(MC_y.reshape((output_vars,-1)))
+        #
+        #         return u_func.reshape(shape_y),corr_ys  #,corr_out
+
 
     def find_chisum(self,theta):
-        model=self.measurement_function(theta)
+        model = self.measurement_function(theta)
         diff = model-self.observed-theta[0]
         if np.isfinite(np.sum(diff)):
             if self.invcov is None:
@@ -61,44 +81,3 @@ class MCMCRetrieval:
                 return np.dot(np.dot(diff.T,self.invcov),diff)
         else:
             return np.inf
-
-    # def upper_triangular_to_symmetric(self,ut):
-    #     n = ut.shape[0]
-    #     try:
-    #         inds = inds_cache[n]
-    #     except KeyError:
-    #         inds = np.tri(n, k=-1, dtype=np.bool)
-    #         inds_cache[n] = inds
-    #     ut[inds] = ut.T[inds]
-
-    # def fast_positive_definite_inverse(self,m):
-    #     cholesky, info = lapack.dpotrf(m)
-    #     if info != 0:
-    #         raise ValueError('dpotrf failed on input {}'.format(m))
-    #     inv, info = lapack.dpotri(cholesky)
-    #     if info != 0:
-    #         raise ValueError('dpotri failed on input {}'.format(cholesky))
-    #     self.upper_triangular_to_symmetric(inv)
-    #     return inv
-
-    def lnlike(self,theta):
-        #print(theta,self.find_chisum(theta))
-        return -0.5*(self.find_chisum(theta))
-
-    def lnprior(self,theta):
-        if all(self.downlims < theta[1::]) and all(self.uplims > theta[1::]):
-            #if self.syst_uncertainty[0] is None:
-                return 0
-            # else:
-            #     return -0.5*(theta[0]**2/self.syst_uncertainty**2)
-        else:
-            return -np.inf
-
-    def lnprob(self,theta):
-        lp_prior = self.lnprior(theta)
-        if not np.isfinite(lp_prior):
-            return -np.inf
-        lp = self.lnlike(theta)
-        # if lp < -99999999999:
-        #     return -np.inf
-        return lp_prior+lp

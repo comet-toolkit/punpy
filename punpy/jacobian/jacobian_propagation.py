@@ -3,6 +3,7 @@
 import numpy as np
 from multiprocessing import Pool
 import numdifftools as nd
+import punpy.utilities.utilities as util
 
 '''___Authorship___'''
 __author__ = "Pieter De Vis"
@@ -51,14 +52,13 @@ class JacobianPropagation:
             fun = lambda c: func(*c.reshape(len(x),-1))
         else:
             fun = lambda c: np.concatenate(func(*c.reshape(len(x),-1)))
-        Jfun = nd.Jacobian(fun)
-        Jx=Jfun(x.flatten())
+        Jx=util.calculate_Jacobian(fun,x)
         if corr_between is None:
             corr_x = np.eye(len(x.flatten()))
         else:
             corrs=[np.eye(len(xi.flatten())) for xi in x]
             corr_x=self.calculate_flattened_corr(corrs,corr_between)
-        cov_x=self.convert_corr_to_cov(corr_x,u_x)
+        cov_x=util.convert_corr_to_cov(corr_x,u_x)
         return self.process_jacobian(Jx,cov_x,yshape,return_corr,corr_axis,output_vars)
 
     def calculate_flattened_corr(self,corrs,corr_between):
@@ -74,7 +74,7 @@ class JacobianPropagation:
     def process_jacobian(self,J,covx,shape_y,return_corr,corr_axis=-99,output_vars=1):
         covy=np.dot(np.dot(J,covx),J.T)
         u_func=np.diag(covy)**0.5
-        corr_y=self.convert_cov_to_corr(covy,u_func)
+        corr_y=util.convert_cov_to_corr(covy,u_func)
         if not return_corr:
             return u_func.reshape(shape_y)
         else:
@@ -459,30 +459,3 @@ class JacobianPropagation:
             print("parameter shape not supported")
             exit()
 
-    @staticmethod
-    def convert_corr_to_cov(corr,u):
-        """
-        Convert correlation matrix to covariance matrix
-
-        :param corr: correlation matrix
-        :type corr: array
-        :param u: uncertainties
-        :type u: array
-        :return: covariance matrix
-        :rtype: array
-        """
-        return u.reshape((-1,1))*corr*(u.reshape((1,-1)))
-
-    @staticmethod
-    def convert_cov_to_corr(cov,u):
-        """
-        Convert covariance matrix to correlation matrix
-
-        :param corr: covariance matrix
-        :type corr: array
-        :param u: uncertainties
-        :type u: array
-        :return: correlation matrix
-        :rtype: array
-        """
-        return 1/u.reshape((-1,1))*cov/(u.reshape((1,-1)))

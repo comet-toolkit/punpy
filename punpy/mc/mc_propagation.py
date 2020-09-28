@@ -542,31 +542,3 @@ class MCPropagation:
             return True
         except np.linalg.LinAlgError:
             return False
-
-    @staticmethod
-    def convert_corr_to_cov(corr,u):
-        """
-        Convert correlation matrix to covariance matrix
-
-        :param corr: correlation matrix
-        :type corr: array
-        :param u: uncertainties
-        :type u: array
-        :return: covariance matrix
-        :rtype: array
-        """
-        return u.flatten()*corr*u.flatten().T
-
-    @staticmethod
-    def convert_cov_to_corr(cov,u):
-        """
-        Convert covariance matrix to correlation matrix
-
-        :param corr: covariance matrix
-        :type corr: array
-        :param u: uncertainties
-        :type u: array
-        :return: correlation matrix
-        :rtype: array
-        """
-        return 1/u.flatten()*cov/u.flatten().T
