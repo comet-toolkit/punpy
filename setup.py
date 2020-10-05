@@ -15,8 +15,7 @@ def read(filename):
 
 
 setup(
-    version=versioneer.get_version(),
-    cmdclass=versioneer.get_cmdclass(),
+    version='0.4.0',
     name="punpy",
     url="https://gitlab.npl.co.uk/eco/eo/punpy",
     license="None",
@@ -25,7 +24,7 @@ setup(
     description="Propagating UNcertainties in PYthon",
     long_description=read("README.rst"),
     packages=find_packages(exclude=("tests",)),
-    install_requires=["numpy", "matplotlib", "emcee", "numdifftools"],
+    install_requires=["numpy", "matplotlib", "emcee", "numdifftools", "scipy"],
     extras_require={"dev": ["pre-commit", "tox", "sphinx", "sphinx_rtd_theme"]},
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
