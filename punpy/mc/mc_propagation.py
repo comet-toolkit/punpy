@@ -55,13 +55,15 @@ class MCPropagation:
         :return: uncertainties on measurand
         :rtype: array
         """
-        yshape,repeat_axis,repeat_dims,corr_axis=self.perform_checks(func,x,repeat_dims,corr_axis,output_vars)
-
+        yshape,u_x,repeat_axis,repeat_dims,corr_axis = self.perform_checks(func,x,u_x,
+                                                                           repeat_dims,
+                                                                           corr_axis,
+                                                                           output_vars)
         if repeat_axis >= 0:
-            n_repeats=x[0].shape[repeat_axis]
+            n_repeats=yshape[repeat_axis]
             outs = np.empty(n_repeats,dtype=object)
             for i in range(n_repeats):
-                xb, u_xb = self.select_repeated_x(x,u_x,i,repeat_axis)
+                xb, u_xb = self.select_repeated_x(x,u_x,i,repeat_axis,n_repeats)
                 outs[i] = self.propagate_random(func,xb,u_xb,cov_x,corr_between,return_corr,
                                                 return_samples,repeat_dims,corr_axis=corr_axis,output_vars=output_vars)
             return self.combine_repeated_outs(outs,yshape,n_repeats,len(x),repeat_axis,return_corr,return_samples,output_vars)
@@ -69,8 +71,6 @@ class MCPropagation:
         else:
             MC_data = np.empty(len(x),dtype=np.ndarray)
             for i in range(len(x)):
-                if u_x[i] is None:
-                    u_x[i]=np.zeros_like(x[i])
                 if cov_x is None or cov_x[i]=="rand":
                     MC_data[i] = self.generate_samples_random(x[i],u_x[i])
                 elif cov_x[i]=="syst":
@@ -113,16 +113,16 @@ class MCPropagation:
         :return: uncertainties on measurand
         :rtype: array
         """
-        yshape,repeat_axis,repeat_dims,corr_axis = self.perform_checks(func,x,
+        yshape,u_x,repeat_axis,repeat_dims,corr_axis = self.perform_checks(func,x,u_x,
                                                                        repeat_dims,
                                                                        corr_axis,
                                                                        output_vars)
 
         if repeat_axis >= 0:
-            n_repeats = x[0].shape[repeat_axis]
+            n_repeats=yshape[repeat_axis]
             outs = np.empty(n_repeats,dtype=object)
             for i in range(n_repeats):
-                xb,u_xb = self.select_repeated_x(x,u_x,i,repeat_axis)
+                xb,u_xb = self.select_repeated_x(x,u_x,i,repeat_axis,n_repeats)
                 outs[i] = self.propagate_systematic(func,xb,u_xb,cov_x,corr_between,
                                                 return_corr,return_samples,repeat_dims,
                                                 corr_axis=corr_axis,
@@ -177,16 +177,16 @@ class MCPropagation:
         :return: uncertainties on measurand
         :rtype: array
         """
-        yshape,repeat_axis,repeat_dims,corr_axis = self.perform_checks(func,x,
-                                                                       repeat_dims,
-                                                                       corr_axis,
-                                                                       output_vars)
+        yshape,u_x,repeat_axis,repeat_dims,corr_axis = self.perform_checks(func,x,cov_x,
+                                                                           repeat_dims,
+                                                                           corr_axis,
+                                                                           output_vars)
 
         if repeat_axis >= 0:
-            n_repeats = x[0].shape[repeat_axis]
+            n_repeats=yshape[repeat_axis]
             outs = np.empty(n_repeats,dtype=object)
             for i in range(n_repeats):
-                xb,_ = self.select_repeated_x(x,x,i,repeat_axis)
+                xb,_ = self.select_repeated_x(x,x,i,repeat_axis,n_repeats)
                 outs[i] = self.propagate_cov(func,xb,cov_x,corr_between,
                                                 return_corr,return_samples,repeat_dims,
                                                 corr_axis=corr_axis,
@@ -207,11 +207,11 @@ class MCPropagation:
 
         return self.process_samples(func,MC_data,return_corr,return_samples,corr_axis,output_vars)
 
-    def perform_checks(self,func,x,repeat_dims,corr_axis,output_vars):
+    def perform_checks(self,func,x,u_x,repeat_dims,corr_axis,output_vars):
         if output_vars == 1:
-            yshape = func(*x).shape
+            yshape = np.array(func(*x)).shape
         else:
-            yshape = func(*x)[0].shape
+            yshape = np.array(func(*x)[0]).shape
 
         if x[0].shape != yshape and self.parallel_cores == 0:
             print(
@@ -219,6 +219,10 @@ class MCPropagation:
                 "This is not a problem, but means you cannot use array operations in your measurement function."
                 "You will need to set parallel_cores to 1 or higher when creating your MCPropagation object.")
             exit()
+
+        for i in range(len(x)):
+            if u_x[i] is None:
+                u_x[i] = np.zeros(x[i].shape)
 
         if isinstance(repeat_dims,int):
             repeat_axis = repeat_dims
@@ -236,62 +240,104 @@ class MCPropagation:
                 print("corr_axis and repeat_axis keywords should not be the same.")
                 exit()
 
-        return yshape,repeat_axis,repeat_dims,corr_axis
+        return yshape,u_x,repeat_axis,repeat_dims,corr_axis
 
-    def select_repeated_x(self,x,u_x,i,repeat_axis):
-        if repeat_axis == 0:
-            xb = [x[j][i] for j in range(len(x))]
-            u_xb = [u_x[j][i] for j in range(len(x))]
-        elif repeat_axis == 1:
-            xb = [x[j][:,i] for j in range(len(x))]
-            u_xb = [u_x[j][:,i] for j in range(len(x))]
-        elif repeat_axis == 2:
-            xb = [x[j][:,:,i] for j in range(len(x))]
-            u_xb = [u_x[j][:,:,i] for j in range(len(x))]
-        else:
-            warnings.warn("The repeat axis is too large to be dealt with by the current"
-                          "version of punpy.")
+    def select_repeated_x(self,x,u_x,i,repeat_axis,n_repeats):
+        xb=np.zeros(len(x),dtype=object)
+        u_xb=np.zeros(len(u_x),dtype=object)
+        for j in range(len(x)):
+            if len(x[j].shape) > repeat_axis:
+                if (x[j].shape[repeat_axis]!=n_repeats):
+                    xb[j] = x[j]
+                    u_xb[j] = u_x[j]
+                elif repeat_axis == 0 :
+                    xb[j]=x[j][i]
+                    u_xb[j] = u_x[j][i]
+                elif repeat_axis == 1:
+                    xb[j] = x[j][:,i]
+                    u_xb[j] = u_x[j][:,i]
+                elif repeat_axis == 2:
+                    xb[j] = x[j][:,:,i]
+                    u_xb[j] = u_x[j][:,:,i]
+                else:
+                    warnings.warn("The repeat axis is too large to be dealt with by the"
+                                  "current version of punpy.")
+            else:
+                if (len(x[j])==n_repeats):
+                    xb[j] = x[j][i]
+                    u_xb[j] = u_x[j][i]
+                else:
+                    xb[j] = x[j]
+                    u_xb[j] = u_x[j]
         return xb, u_xb
 
     def combine_repeated_outs(self,outs,yshape,n_repeats,lenx,repeat_axis,return_corr,return_samples,output_vars):
-        returns=np.empty(len(outs[0]),dtype=object)
-        if output_vars==1:
-            u_func = np.zeros(yshape)
-            if repeat_axis == 0:
-                for i in range(len(outs)):
-                    u_func[i] = outs[i][0]
-            elif repeat_axis == 1:
-                for i in range(len(outs)):
-                    u_func[:,i] = outs[i][0]
-            elif repeat_axis == 2:
-                for i in range(len(outs)):
-                    u_func[:,:,i] = outs[i][0]
+
+        if not return_corr and not return_samples and output_vars==1:
+            if output_vars == 1:
+                u_func = np.zeros(yshape)
+                if repeat_axis == 0:
+                    for i in range(len(outs)):
+                        u_func[i] = outs[i]
+                elif repeat_axis == 1:
+                    for i in range(len(outs)):
+                        u_func[:,i] = outs[i]
+                elif repeat_axis == 2:
+                    for i in range(len(outs)):
+                        u_func[:,:,i] = outs[i]
+            else:
+                u_func = np.zeros((output_vars,)+yshape)
+                if repeat_axis == 0:
+                    for i in range(len(outs)):
+                        u_func[:,i] = outs[i]
+                elif repeat_axis == 1:
+                    for i in range(len(outs)):
+                        u_func[:,:,i] = outs[i]
+                elif repeat_axis == 2:
+                    for i in range(len(outs)):
+                        u_func[:,:,:,i] = outs[i]
+            return u_func
+
         else:
-            u_func=np.zeros((output_vars,)+yshape)
-            if repeat_axis == 0:
-                for i in range(len(outs)):
-                    u_func[:,i] = outs[i][0]
-            elif repeat_axis == 1:
-                for i in range(len(outs)):
-                    u_func[:,:,i] = outs[i][0]
-            elif repeat_axis == 2:
-                for i in range(len(outs)):
-                    u_func[:,:,:,i] = outs[i][0]
-        returns[0]=u_func
-        extra_index=0
-        if return_corr:
-            returns[1]=np.mean([outs[i][1] for i in range(n_repeats)],axis=0)
-            extra_index+=1
+            if output_vars == 1:
+                u_func = np.zeros(yshape)
+                if repeat_axis == 0:
+                    for i in range(len(outs)):
+                        u_func[i] = outs[i][0]
+                elif repeat_axis == 1:
+                    for i in range(len(outs)):
+                        u_func[:,i] = outs[i][0]
+                elif repeat_axis == 2:
+                    for i in range(len(outs)):
+                        u_func[:,:,i] = outs[i][0]
+            else:
+                u_func = np.zeros((output_vars,)+yshape)
+                if repeat_axis == 0:
+                    for i in range(len(outs)):
+                        u_func[:,i] = outs[i][0]
+                elif repeat_axis == 1:
+                    for i in range(len(outs)):
+                        u_func[:,:,i] = outs[i][0]
+                elif repeat_axis == 2:
+                    for i in range(len(outs)):
+                        u_func[:,:,:,i] = outs[i][0]
 
-        if output_vars>1:
-            returns[1+extra_index]=np.mean([outs[i][1+extra_index] for i in range(n_repeats)],axis=0)
-            extra_index+=1
+            returns = np.empty(len(outs[0]),dtype=object)
+            returns[0]=u_func
+            extra_index=0
+            if return_corr:
+                returns[1]=np.mean([outs[i][1] for i in range(n_repeats)],axis=0)
+                extra_index+=1
 
-        if return_samples:
-            returns[1+extra_index] = [np.vstack([outs[i][1+extra_index][k] for i in range(n_repeats)]) for k in range(lenx)]
-            returns[2+extra_index] = [np.vstack([outs[i][2+extra_index][k] for i in range(n_repeats)]) for k in range(lenx)]
+            if output_vars>1:
+                returns[1+extra_index]=np.mean([outs[i][1+extra_index] for i in range(n_repeats)],axis=0)
+                extra_index+=1
 
-        return returns
+            if return_samples:
+                returns[1+extra_index] = [np.vstack([outs[i][1+extra_index][k] for i in range(n_repeats)]) for k in range(lenx)]
+                returns[2+extra_index] = [np.vstack([outs[i][2+extra_index][k] for i in range(n_repeats)]) for k in range(lenx)]
+
+            return returns
 
     def process_samples(self,func,data,return_corr,return_samples,corr_axis=-99,output_vars=1):
         """
@@ -315,7 +361,6 @@ class MCPropagation:
         """
         if self.parallel_cores==0:
             MC_y = np.array(func(*data))
-
         elif self.parallel_cores==1:
             # In order to Process the MC iterations separately, the array with the input quantities has to be reordered
             # so that it has the same length (i.e. the first dimension) as the number of MCsteps.
