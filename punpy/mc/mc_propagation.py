@@ -66,6 +66,7 @@ class MCPropagation:
                 xb, u_xb = self.select_repeated_x(x,u_x,i,repeat_axis,n_repeats)
                 outs[i] = self.propagate_random(func,xb,u_xb,cov_x,corr_between,return_corr,
                                                 return_samples,repeat_dims,corr_axis=corr_axis,output_vars=output_vars)
+                print(np.array(outs[i]).shape)
             return self.combine_repeated_outs(outs,yshape,n_repeats,len(x),repeat_axis,return_corr,return_samples,output_vars)
 
         else:
@@ -273,7 +274,7 @@ class MCPropagation:
 
     def combine_repeated_outs(self,outs,yshape,n_repeats,lenx,repeat_axis,return_corr,return_samples,output_vars):
 
-        if not return_corr and not return_samples and output_vars==1:
+        if not return_corr and not return_samples:
             if output_vars == 1:
                 u_func = np.zeros(yshape)
                 if repeat_axis == 0:
@@ -292,7 +293,7 @@ class MCPropagation:
                         u_func[:,i] = outs[i]
                 elif repeat_axis == 1:
                     for i in range(len(outs)):
-                        u_func[:,:,i] = outs[i]
+                        u_func[:,:,i] = np.array(outs[i])
                 elif repeat_axis == 2:
                     for i in range(len(outs)):
                         u_func[:,:,:,i] = outs[i]
