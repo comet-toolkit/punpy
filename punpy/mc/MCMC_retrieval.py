@@ -25,7 +25,7 @@ inds_cache = {}
 
 # lock = threading.Lock()
 class MCMCRetrieval:
-    def __init__(self,measurement_function,observed,syst_uncertainty=None,rand_uncertainty=None,cov=None,uplims=+np.inf,downlims=-np.inf):
+    def __init__(self,measurement_function,observed,syst_uncertainty=None,rand_uncertainty=None,cov=None,parallel_cores=4,uplims=+np.inf,downlims=-np.inf):
         self.measurement_function=measurement_function
         self.observed = observed
         self.rand_uncertainty = np.array([rand_uncertainty])
@@ -36,28 +36,38 @@ class MCMCRetrieval:
             self.invcov = np.linalg.inv(np.ascontiguousarray(cov))
         self.uplims = np.array(uplims)
         self.downlims = np.array(downlims)
+        self.parallel_cores=parallel_cores
 
-    def run_retrieval(self,theta_0,nwalkers,steps,burn_in,return_samples=True):
+    def run_retrieval(self,theta_0,nwalkers,steps,burn_in,return_samples=True,return_corr=False):
         # if self.syst_uncertainty is not None:
         #     theta_0=np.append([0.],theta_0)
         ndimw = len(theta_0)
-        pos = [theta_0*np.random.normal(1.0,0.1,len(theta_0))+np.random.normal(0.0,0.001,len(theta_0)) for i in
+        pos = [theta_0*np.random.normal(1.0,0.1,theta_0.shape)+np.random.normal(0.0,0.001,theta_0.shape) for i in
                range(nwalkers)]
         #print(self.measurement_function(theta_0))
-        with Pool(processes=1) as pool:
-            sampler = emcee.EnsembleSampler(nwalkers,ndimw,self.lnprob,pool=pool)
-            sampler.run_mcmc(pos,steps,progress=True)
+        p = Pool(self.parallel_cores)
+        sampler = emcee.EnsembleSampler(nwalkers,ndimw,self.lnprob,pool=p)
+        sampler.run_mcmc(pos,steps,progress=False)
 
         samples = sampler.chain[:,:,:].reshape((-1,ndimw))[burn_in::]
         medians = np.median(samples,axis=0)
         unc_up = (np.percentile(samples,84,axis=0)-medians)
         unc_down = -(np.percentile(samples,16,axis=0)-medians)
         unc_avg= (unc_up+unc_down)/2.
+        corr=(np.corrcoef(samples.T))
+
 
         if return_samples:
-            return medians, unc_avg, samples
+            if return_corr:
+                return medians, unc_avg, corr, samples
+            else:
+                return medians,unc_avg,samples
+
         else:
-            return medians, unc_avg
+            if return_corr:
+                return medians, unc_avg, corr
+            else:
+                return medians,unc_avg
 
     def find_chisum(self,theta):
         model=self.measurement_function(theta)

@@ -36,20 +36,25 @@ class JacobianRetrieval:
             self.invcov = cov
         else:
             self.invcov = np.linalg.inv(np.ascontiguousarray(cov))
+            #print(observed,cov,self.invcov)
+
         self.uplims = np.array(uplims)
         self.downlims = np.array(downlims)
 
-    def run_retrieval(self,theta_0,):
+    def run_retrieval(self,theta_0,return_corr=True):
         res = minimize(self.find_chisum,theta_0)
         Jx=util.calculate_Jacobian(self.measurement_function,res.x)
 
-        return res.x, self.process_inverse_jacobian(Jx)
+        return res.x, self.process_inverse_jacobian(Jx,return_corr)
 
-    def process_inverse_jacobian(self,J,return_corr=False):
+    def process_inverse_jacobian(self,J,return_corr=True):
         covx = np.linalg.inv(np.dot(np.dot(J.T,self.invcov),J))
         u_func = np.diag(covx)**0.5
         corr_x = util.convert_cov_to_corr(covx,u_func)
-        return u_func
+        if return_corr:
+            return u_func,corr_x
+        else:
+            return u_func
         # if not return_corr:
         #     return u_func.reshape(shape_y)
         # else:

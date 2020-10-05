@@ -2,6 +2,7 @@
 
 import numpy as np
 import numdifftools as nd
+import warnings
 
 """___Authorship___"""
 __author__ = "Pieter De Vis"
@@ -25,7 +26,7 @@ def calculate_Jacobian(fun,x):
     Jfun = nd.Jacobian(fun)
     Jx = Jfun(x.flatten())
     if len(Jx)!=len(fun(x).flatten()):
-        print("Dimensions of the Jacobian were flipped because its shape didn't match "
+        warnings.warn("Dimensions of the Jacobian were flipped because its shape didn't match "
               "the shape of the output of the function. (probably because there was "
               "only 1 input qty)")
         Jx=Jx.T

@@ -2,6 +2,7 @@
 
 import numpy as np
 from multiprocessing import Pool
+import warnings
 
 '''___Authorship___'''
 __author__ = "Pieter De Vis"
@@ -21,11 +22,15 @@ class MCPropagation:
 
         self.MCsteps = steps
         self.parallel_cores = parallel_cores
+        if parallel_cores>1:
+            self.pool=Pool(parallel_cores)
 
-    def propagate_random(self,func,x,u_x,corr_between=None,return_corr=False,return_samples=False,corr_axis=-99,output_vars=1):
+    def propagate_random(self,func,x,u_x,cov_x=None,corr_between=None,return_corr=False,return_samples=False,repeat_dims=-99,corr_axis=-99,output_vars=1):
         """
         Propagate random uncertainties through measurement function with n input quantities.
-        Input quantities can be floats, vectors or images.
+        Input quantities can be floats, vectors (1d-array) or images (2d-array).
+        Random uncertainties arise when there is no correlation between repeated measurements.
+        It is possible (though rare) that there is a correlation in one of the dimensions that is not one of the repeat_dims.
 
         :param func: measurement function
         :type func: function
@@ -33,12 +38,16 @@ class MCPropagation:
         :type x: list[array]
         :param u_x: list of random uncertainties on input quantities (usually numpy arrays)
         :type u_x: list[array]
+        :param cov_x: list of covariance matrices (n,n) along non-repeating axis, defaults to None
+        :type cov_x: list[array], optional
         :param corr_between: covariance matrix (n,n) between input quantities, defaults to None
         :type corr_between: array, optional
         :param return_corr: set to True to return correlation matrix of measurand, defaults to False
         :type return_corr: bool, optional
         :param return_samples: set to True to return generated samples, defaults to False
         :type return_samples: bool, optional
+        :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
+        :type repeat_dims: integer or list of 2 integers, optional
         :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
         :type corr_axis: integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
@@ -46,23 +55,40 @@ class MCPropagation:
         :return: uncertainties on measurand
         :rtype: array
         """
-        MC_data = np.empty(len(x),dtype=np.ndarray)
-        for i in range(len(x)):
-            if u_x[i] is None:
-                u_x[i]=np.zeros_like(x[i])
-            print(x[i].shape,u_x[i].shape)
-            MC_data[i] = self.generate_samples_random(x[i],u_x[i])
-            print(MC_data[i].nbytes)
+        yshape,repeat_axis,repeat_dims,corr_axis=self.perform_checks(func,x,repeat_dims,corr_axis,output_vars)
 
-        if corr_between is not None:
-            MC_data = self.correlate_samples_corr(MC_data,corr_between)
+        if repeat_axis >= 0:
+            n_repeats=x[0].shape[repeat_axis]
+            outs = np.empty(n_repeats,dtype=object)
+            for i in range(n_repeats):
+                xb, u_xb = self.select_repeated_x(x,u_x,i,repeat_axis)
+                outs[i] = self.propagate_random(func,xb,u_xb,cov_x,corr_between,return_corr,
+                                                return_samples,repeat_dims,corr_axis=corr_axis,output_vars=output_vars)
+            return self.combine_repeated_outs(outs,yshape,n_repeats,len(x),repeat_axis,return_corr,return_samples,output_vars)
 
-        return self.process_samples(func,MC_data,return_corr,return_samples,corr_axis,output_vars)
+        else:
+            MC_data = np.empty(len(x),dtype=np.ndarray)
+            for i in range(len(x)):
+                if u_x[i] is None:
+                    u_x[i]=np.zeros_like(x[i])
+                if cov_x is None or cov_x[i]=="rand":
+                    MC_data[i] = self.generate_samples_random(x[i],u_x[i])
+                elif cov_x[i]=="syst":
+                    MC_data[i] = self.generate_samples_systematic(x[i],u_x[i])
+                else:
+                    MC_data[i] = self.generate_samples_cov(x[i].flatten(),cov_x[i]).reshape(x[i].shape+(self.MCsteps,))
 
-    def propagate_systematic(self,func,x,u_x,corr_between=None,return_corr=False,return_samples=False,corr_axis=-99,output_vars=1):
+                #print(MC_data[i].nbytes)
+            if corr_between is not None:
+                MC_data = self.correlate_samples_corr(MC_data,corr_between)
+            return self.process_samples(func,MC_data,return_corr,return_samples,corr_axis,output_vars)
+
+    def propagate_systematic(self,func,x,u_x,cov_x=None,corr_between=None,return_corr=False,return_samples=False,repeat_dims=-99,corr_axis=-99,output_vars=1):
         """
         Propagate systematic uncertainties through measurement function with n input quantities.
-        Input quantities can be floats, vectors or images.
+        Input quantities can be floats, vectors (1d-array) or images (2d-array).
+        Systematic uncertainties arise when there is full correlation between repeated measurements.
+        There is a often also a correlation between measurements along the dimensions that is not one of the repeat_dims.
 
         :param func: measurement function
         :type func: function
@@ -70,12 +96,16 @@ class MCPropagation:
         :type x: list[array]
         :param u_x: list of systematic uncertainties on input quantities (usually numpy arrays)
         :type u_x: list[array]
+        :param cov_x: list of covariance matrices (n,n) along non-repeating axis, defaults to None
+        :type cov_x: list[array], optional
         :param corr_between: covariance matrix (n,n) between input quantities, defaults to None
         :type corr_between: array, optional
         :param return_corr: set to True to return correlation matrix of measurand, defaults to False
         :type return_corr: bool, optional
         :param return_samples: set to True to return generated samples, defaults to False
         :type return_samples: bool, optional
+        :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
+        :type repeat_dims: integer or list of 2 integers, optional
         :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
         :type corr_axis: integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
@@ -83,105 +113,48 @@ class MCPropagation:
         :return: uncertainties on measurand
         :rtype: array
         """
-        MC_data = np.empty(len(x),dtype=np.ndarray)
-        for i in range(len(x)):
-            if u_x[i] is None:
-                u_x[i] = np.zeros_like(x[i])
+        yshape,repeat_axis,repeat_dims,corr_axis = self.perform_checks(func,x,
+                                                                       repeat_dims,
+                                                                       corr_axis,
+                                                                       output_vars)
 
-            MC_data[i] = self.generate_samples_systematic(x[i],u_x[i])
+        if repeat_axis >= 0:
+            n_repeats = x[0].shape[repeat_axis]
+            outs = np.empty(n_repeats,dtype=object)
+            for i in range(n_repeats):
+                xb,u_xb = self.select_repeated_x(x,u_x,i,repeat_axis)
+                outs[i] = self.propagate_systematic(func,xb,u_xb,cov_x,corr_between,
+                                                return_corr,return_samples,repeat_dims,
+                                                corr_axis=corr_axis,
+                                                output_vars=output_vars)
+            return self.combine_repeated_outs(outs,yshape,n_repeats,len(x),repeat_axis,
+                                              return_corr,return_samples,output_vars)
 
-        if corr_between is not None:
-            MC_data = self.correlate_samples_corr(MC_data,corr_between)
+        else:
+            MC_data = np.empty(len(x),dtype=np.ndarray)
+            for i in range(len(x)):
+                if u_x[i] is None:
+                    u_x[i] = np.zeros_like(x[i])
 
-        return self.process_samples(func,MC_data,return_corr,return_samples,corr_axis,output_vars)
+                if cov_x is None or cov_x[i] == "syst":
+                    MC_data[i] = self.generate_samples_systematic(x[i],u_x[i])
+                elif cov_x[i] == "rand":
+                    MC_data[i] = self.generate_samples_random(x[i],u_x[i])
+                else:
+                    MC_data[i] = self.generate_samples_cov(x[i].flatten(),cov_x[i]).reshape(x[i].shape+(self.MCsteps,))
 
-    def propagate_both(self,func,x,u_x_rand,u_x_syst,corr_between=None,return_corr=True,return_samples=False,corr_axis=-99,output_vars=1):
-        """
-        Propagate random and systematic uncertainties through measurement function with n input quantities.
-        Input quantities can be floats, vectors or images.
+            if corr_between is not None:
+                MC_data = self.correlate_samples_corr(MC_data,corr_between)
 
-        :param func: measurement function
-        :type func: function
-        :param x: list of input quantities (usually numpy arrays)
-        :type x: list[array]
-        :param u_x_rand: list of random uncertainties on input quantities (usually numpy arrays)
-        :type u_x_rand: list[array]
-        :param u_x_syst: list of systematic uncertainties on input quantities (usually numpy arrays)
-        :type u_x_syst: list[array]
-        :param corr_between: covariance matrix (n,n) between input quantities, defaults to None
-        :type corr_between: array, optional
-        :param return_corr: set to True to return correlation matrix of measurand, defaults to True
-        :type return_corr: bool, optional
-        :param return_samples: set to True to return generated samples, defaults to False
-        :type return_samples: bool, optional
-        :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
-        :type corr_axis: integer, optional
-        :param output_vars: number of output parameters in the measurement function. Defaults to 1.
-        :type output_vars: integer, optional
-        :return: uncertainties on measurand
-        :rtype: array
-        """
-        MC_data = np.empty(len(x),dtype=np.ndarray)
-        for i in range(len(x)):
-            if u_x_rand[i] is None:
-                u_x_rand[i] = np.zeros_like(x[i])
-            if u_x_syst[i] is None:
-                u_x_syst[i] = np.zeros_like(x[i])
+            return self.process_samples(func,MC_data,return_corr,return_samples,corr_axis,output_vars)
 
-            MC_data[i] = self.generate_samples_both(x[i],u_x_rand[i],u_x_syst[i])
-
-        if corr_between is not None:
-            MC_data = self.correlate_samples_corr(MC_data,corr_between)
-
-        return self.process_samples(func,MC_data,return_corr,return_samples,corr_axis,output_vars)
-
-    def propagate_type(self,func,x,u_x,u_type,corr_between=None,return_corr=True,return_samples=False,corr_axis=-99,output_vars=1):
-        """
-        Propagate random or systematic uncertainties through measurement function with n input quantities.
-        Input quantities can be floats, vectors or images.
-
-        :param func: measurement function
-        :type func: function
-        :param x: list of input quantities (usually numpy arrays)
-        :type x: list[array]
-        :param u_x: list of uncertainties on input quantities (usually numpy arrays)
-        :type u_x: list[array]
-        :param u_type: sting identifiers whether uncertainties are random or systematic
-        :type u_type: list[str]
-        :param corr_between: covariance matrix (n,n) between input quantities, defaults to None
-        :type corr_between: array, optional
-        :param return_corr: set to True to return correlation matrix of measurand, defaults to True
-        :type return_corr: bool, optional
-        :param return_samples: set to True to return generated samples, defaults to False
-        :type return_samples: bool, optional
-        :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
-        :type corr_axis: integer, optional
-        :param output_vars: number of output parameters in the measurement function. Defaults to 1.
-        :type output_vars: integer, optional
-        :return: uncertainties on measurand
-        :rtype: array
-        """
-        MC_data = np.empty(len(x),dtype=np.ndarray)
-        for i in range(len(x)):
-            if u_x[i] is None:
-                u_x[i] = np.zeros_like(x[i])
-            if u_type[i].lower() == 'rand' or u_type[i].lower() == 'random' or u_type[i].lower() == 'r':
-                MC_data[i] = self.generate_samples_random(x[i],u_x[i])
-            elif u_type[i].lower() == 'syst' or u_type[i].lower() == 'systematic' or u_type[i].lower() == 's':
-                MC_data[i] = self.generate_samples_systematic(x[i],u_x[i])
-            else:
-                raise ValueError(
-                    'Uncertainty type not understood. Use random ("random", "rand" or "r") or systematic ("systematic", "syst" or "s").')
-
-        if corr_between is not None:
-            MC_data = self.correlate_samples_corr(MC_data,corr_between)
-
-        return self.process_samples(func,MC_data,return_corr,return_samples,corr_axis,output_vars)
-
-    def propagate_cov(self,func,x,cov_x,corr_between=None,return_corr=True,return_samples=False,corr_axis=-99,output_vars=1):
+    def propagate_cov(self,func,x,cov_x,corr_between=None,return_corr=True,return_samples=False,repeat_dims=-99,corr_axis=-99,output_vars=1):
         """
         Propagate uncertainties with given covariance matrix through measurement function with n input quantities.
-        Input quantities can be floats, vectors or images.
+        Input quantities can be floats, vectors (1d-array) or images (2d-array).
+        The covariance matrix can represent the full covariance matrix between all measurements in all dimensions.
+        Alternatively if there are repeated measurements specified in repeat_dims, the covariance matrix is given
+        for the covariance along the dimension that is not one of the repeat_dims.
 
         :param func: measurement function
         :type func: function
@@ -195,6 +168,8 @@ class MCPropagation:
         :type return_corr: bool, optional
         :param return_samples: set to True to return generated samples, defaults to False
         :type return_samples: bool, optional
+        :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
+        :type repeat_dims: integer or list of 2 integers, optional
         :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
         :type corr_axis: integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
@@ -202,18 +177,121 @@ class MCPropagation:
         :return: uncertainties on measurand
         :rtype: array
         """
-        MC_data = np.empty(len(x),dtype=np.ndarray)
-        for i in range(len(x)):
-            if not hasattr(x[i],"__len__"):
-                MC_data[i] = self.generate_samples_systematic(x[i],cov_x[i])
-            elif (all((cov_x[i]==0).flatten())): #This is the case if one of the variables has no uncertainty
-                MC_data[i] = np.tile(x[i].flatten(),(self.MCsteps,1)).T
-            else:
-                MC_data[i] = self.generate_samples_cov(x[i].flatten(),cov_x[i]).reshape(x[i].shape+(self.MCsteps,))
-        if corr_between is not None:
-            MC_data = self.correlate_samples_corr(MC_data,corr_between)
+        yshape,repeat_axis,repeat_dims,corr_axis = self.perform_checks(func,x,
+                                                                       repeat_dims,
+                                                                       corr_axis,
+                                                                       output_vars)
+
+        if repeat_axis >= 0:
+            n_repeats = x[0].shape[repeat_axis]
+            outs = np.empty(n_repeats,dtype=object)
+            for i in range(n_repeats):
+                xb,_ = self.select_repeated_x(x,x,i,repeat_axis)
+                outs[i] = self.propagate_cov(func,xb,cov_x,corr_between,
+                                                return_corr,return_samples,repeat_dims,
+                                                corr_axis=corr_axis,
+                                                output_vars=output_vars)
+            return self.combine_repeated_outs(outs,yshape,n_repeats,len(x),repeat_axis,
+                                              return_corr,return_samples,output_vars)
+        else:
+            MC_data = np.empty(len(x),dtype=np.ndarray)
+            for i in range(len(x)):
+                if not hasattr(x[i],"__len__"):
+                    MC_data[i] = self.generate_samples_systematic(x[i],cov_x[i])
+                elif (all((cov_x[i]==0).flatten())): #This is the case if one of the variables has no uncertainty
+                    MC_data[i] = np.tile(x[i].flatten(),(self.MCsteps,1)).T
+                else:
+                    MC_data[i] = self.generate_samples_cov(x[i].flatten(),cov_x[i]).reshape(x[i].shape+(self.MCsteps,))
+            if corr_between is not None:
+                MC_data = self.correlate_samples_corr(MC_data,corr_between)
 
         return self.process_samples(func,MC_data,return_corr,return_samples,corr_axis,output_vars)
+
+    def perform_checks(self,func,x,repeat_dims,corr_axis,output_vars):
+        if output_vars == 1:
+            yshape = func(*x).shape
+        else:
+            yshape = func(*x)[0].shape
+
+        if x[0].shape != yshape and self.parallel_cores == 0:
+            print(
+                "It looks like one of your input quantities is not the same shape as the measurand."
+                "This is not a problem, but means you cannot use array operations in your measurement function."
+                "You will need to set parallel_cores to 1 or higher when creating your MCPropagation object.")
+            exit()
+
+        if isinstance(repeat_dims,int):
+            repeat_axis = repeat_dims
+            repeat_dims = -99
+        else:
+            repeat_axis = repeat_dims[0]
+            repeat_dims = repeat_dims[1]
+            if repeat_axis<repeat_dims:
+                repeat_dims -= 1
+
+        if repeat_axis >= 0:
+            if corr_axis > repeat_axis:
+                corr_axis -= 1
+            elif corr_axis == repeat_axis:
+                print("corr_axis and repeat_axis keywords should not be the same.")
+                exit()
+
+        return yshape,repeat_axis,repeat_dims,corr_axis
+
+    def select_repeated_x(self,x,u_x,i,repeat_axis):
+        if repeat_axis == 0:
+            xb = [x[j][i] for j in range(len(x))]
+            u_xb = [u_x[j][i] for j in range(len(x))]
+        elif repeat_axis == 1:
+            xb = [x[j][:,i] for j in range(len(x))]
+            u_xb = [u_x[j][:,i] for j in range(len(x))]
+        elif repeat_axis == 2:
+            xb = [x[j][:,:,i] for j in range(len(x))]
+            u_xb = [u_x[j][:,:,i] for j in range(len(x))]
+        else:
+            warnings.warn("The repeat axis is too large to be dealt with by the current"
+                          "version of punpy.")
+        return xb, u_xb
+
+    def combine_repeated_outs(self,outs,yshape,n_repeats,lenx,repeat_axis,return_corr,return_samples,output_vars):
+        returns=np.empty(len(outs[0]),dtype=object)
+        if output_vars==1:
+            u_func = np.zeros(yshape)
+            if repeat_axis == 0:
+                for i in range(len(outs)):
+                    u_func[i] = outs[i][0]
+            elif repeat_axis == 1:
+                for i in range(len(outs)):
+                    u_func[:,i] = outs[i][0]
+            elif repeat_axis == 2:
+                for i in range(len(outs)):
+                    u_func[:,:,i] = outs[i][0]
+        else:
+            u_func=np.zeros((output_vars,)+yshape)
+            if repeat_axis == 0:
+                for i in range(len(outs)):
+                    u_func[:,i] = outs[i][0]
+            elif repeat_axis == 1:
+                for i in range(len(outs)):
+                    u_func[:,:,i] = outs[i][0]
+            elif repeat_axis == 2:
+                for i in range(len(outs)):
+                    u_func[:,:,:,i] = outs[i][0]
+        returns[0]=u_func
+        extra_index=0
+        if return_corr:
+            returns[1]=np.mean([outs[i][1] for i in range(n_repeats)],axis=0)
+            extra_index+=1
+
+        if output_vars>1:
+            returns[1+extra_index]=np.mean([outs[i][1+extra_index] for i in range(n_repeats)],axis=0)
+            extra_index+=1
+
+        if return_samples:
+            returns[1+extra_index] = [np.vstack([outs[i][1+extra_index][k] for i in range(n_repeats)]) for k in range(lenx)]
+            returns[2+extra_index] = [np.vstack([outs[i][2+extra_index][k] for i in range(n_repeats)]) for k in range(lenx)]
+
+        return returns
 
     def process_samples(self,func,data,return_corr,return_samples,corr_axis=-99,output_vars=1):
         """
@@ -252,8 +330,7 @@ class MCPropagation:
             # We again need to reorder the input quantities samples in order to be able to pass them to p.starmap
             # We here use lists to iterate over and order them slightly different as the case above.
             data2=[[data[j][...,i] for j in range(len(data))] for i in range(self.MCsteps)]
-            with Pool(self.parallel_cores) as p:
-                MC_y2=np.array(p.starmap(func,data2))
+            MC_y2=np.array(self.pool.starmap(func,data2))
             MC_y = np.moveaxis(MC_y2,0,-1)
 
         u_func = np.std(MC_y,axis=-1)
@@ -396,34 +473,6 @@ class MCPropagation:
             print("parameter shape not supported")
             exit()
 
-    def generate_samples_both(self,param,u_param_rand,u_param_syst):
-        """
-        Generate correlated MC samples of the input quantity with random and systematic (Gaussian) uncertainties.
-
-        :param param: values of input quantity (mean of distribution)
-        :type param: float or array
-        :param u_param_rand: random uncertainties on input quantity (std of distribution)
-        :type u_param_rand: float or array
-        :param u_param_syst: systematic uncertainties on input quantity (std of distribution)
-        :type u_param_syst: float or array
-        :return: generated samples
-        :rtype: array
-        """
-        if not hasattr(param,"__len__"):
-            return np.random.normal(size=self.MCsteps)*u_param_rand+np.random.normal(
-                size=self.MCsteps)*u_param_syst+param
-        elif len(param.shape) == 1:
-            return np.random.normal(size=(len(param),self.MCsteps))*u_param_rand[:,None]+np.dot(u_param_syst[:,None],
-                np.random.normal(size=self.MCsteps)[None,:])+param[:,None]
-        elif len(param.shape) == 2:
-            return np.random.normal(size=param.shape+(self.MCsteps,))*u_param_rand[:,:,None]+np.dot(
-                u_param_syst[:,:,None],np.random.normal(size=self.MCsteps)[:,None,None])[:,:,:,0]+param[:,:,None]
-        elif len(param.shape) == 3:
-            return np.random.normal(size=param.shape+(self.MCsteps,))*u_param_rand[:,:,:,None]+np.dot(u_param_syst[:,:,:,None],np.random.normal(size=self.MCsteps)[:,None,None,None])[:,:,:,:,0,0]+param[:,:,:,None]
-        else:
-            print("parameter shape not supported")
-            exit()
-
     def generate_samples_cov(self,param,cov_param):
         """
         Generate correlated MC samples of input quantity with a given covariance matrix.
@@ -523,7 +572,7 @@ class MCPropagation:
                 raise ValueError(
                     "One of the provided covariance matrix is not postive definite. Covariance matrices need to be at least positive semi-definite. Please check your covariance matrix.")
             else:
-                print(
+                warnings.warn(
                     "One of the provided covariance matrix is not positive definite. It has been slightly changed (less than 0.01% in any element) to accomodate our method.")
                 return np.linalg.cholesky(A3)
 
