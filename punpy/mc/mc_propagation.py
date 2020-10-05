@@ -25,7 +25,7 @@ class MCPropagation:
         if parallel_cores>1:
             self.pool=Pool(parallel_cores)
 
-    def propagate_random(self,func,x,u_x,cov_x=None,corr_between=None,return_corr=False,return_samples=False,repeat_dims=-99,corr_axis=-99,output_vars=1):
+    def propagate_random(self,func,x,u_x,cov_x=None,param_fixed=None,corr_between=None,return_corr=False,return_samples=False,repeat_dims=-99,corr_axis=-99,output_vars=1):
         """
         Propagate random uncertainties through measurement function with n input quantities.
         Input quantities can be floats, vectors (1d-array) or images (2d-array).
@@ -63,10 +63,9 @@ class MCPropagation:
             n_repeats=yshape[repeat_axis]
             outs = np.empty(n_repeats,dtype=object)
             for i in range(n_repeats):
-                xb, u_xb = self.select_repeated_x(x,u_x,i,repeat_axis,n_repeats)
-                outs[i] = self.propagate_random(func,xb,u_xb,cov_x,corr_between,return_corr,
+                xb, u_xb = self.select_repeated_x(x,u_x,param_fixed,i,repeat_axis,n_repeats)
+                outs[i] = self.propagate_random(func,xb,u_xb,cov_x,param_fixed,corr_between,return_corr,
                                                 return_samples,repeat_dims,corr_axis=corr_axis,output_vars=output_vars)
-                print(np.array(outs[i]).shape)
             return self.combine_repeated_outs(outs,yshape,n_repeats,len(x),repeat_axis,return_corr,return_samples,output_vars)
 
         else:
@@ -84,7 +83,7 @@ class MCPropagation:
                 MC_data = self.correlate_samples_corr(MC_data,corr_between)
             return self.process_samples(func,MC_data,return_corr,return_samples,corr_axis,output_vars)
 
-    def propagate_systematic(self,func,x,u_x,cov_x=None,corr_between=None,return_corr=False,return_samples=False,repeat_dims=-99,corr_axis=-99,output_vars=1):
+    def propagate_systematic(self,func,x,u_x,cov_x=None,param_fixed=None,corr_between=None,return_corr=False,return_samples=False,repeat_dims=-99,corr_axis=-99,output_vars=1):
         """
         Propagate systematic uncertainties through measurement function with n input quantities.
         Input quantities can be floats, vectors (1d-array) or images (2d-array).
@@ -123,8 +122,8 @@ class MCPropagation:
             n_repeats=yshape[repeat_axis]
             outs = np.empty(n_repeats,dtype=object)
             for i in range(n_repeats):
-                xb,u_xb = self.select_repeated_x(x,u_x,i,repeat_axis,n_repeats)
-                outs[i] = self.propagate_systematic(func,xb,u_xb,cov_x,corr_between,
+                xb,u_xb = self.select_repeated_x(x,u_x,param_fixed,i,repeat_axis,n_repeats)
+                outs[i] = self.propagate_systematic(func,xb,u_xb,cov_x,param_fixed,corr_between,
                                                 return_corr,return_samples,repeat_dims,
                                                 corr_axis=corr_axis,
                                                 output_vars=output_vars)
@@ -149,7 +148,7 @@ class MCPropagation:
 
             return self.process_samples(func,MC_data,return_corr,return_samples,corr_axis,output_vars)
 
-    def propagate_cov(self,func,x,cov_x,corr_between=None,return_corr=True,return_samples=False,repeat_dims=-99,corr_axis=-99,output_vars=1):
+    def propagate_cov(self,func,x,cov_x,param_fixed=None,corr_between=None,return_corr=True,return_samples=False,repeat_dims=-99,corr_axis=-99,output_vars=1):
         """
         Propagate uncertainties with given covariance matrix through measurement function with n input quantities.
         Input quantities can be floats, vectors (1d-array) or images (2d-array).
@@ -187,8 +186,8 @@ class MCPropagation:
             n_repeats=yshape[repeat_axis]
             outs = np.empty(n_repeats,dtype=object)
             for i in range(n_repeats):
-                xb,_ = self.select_repeated_x(x,x,i,repeat_axis,n_repeats)
-                outs[i] = self.propagate_cov(func,xb,cov_x,corr_between,
+                xb,_ = self.select_repeated_x(x,x,param_fixed,i,repeat_axis,n_repeats)
+                outs[i] = self.propagate_cov(func,xb,cov_x,param_fixed,corr_between,
                                                 return_corr,return_samples,repeat_dims,
                                                 corr_axis=corr_axis,
                                                 output_vars=output_vars)
@@ -243,7 +242,7 @@ class MCPropagation:
 
         return yshape,u_x,repeat_axis,repeat_dims,corr_axis
 
-    def select_repeated_x(self,x,u_x,i,repeat_axis,n_repeats):
+    def select_repeated_x(self,x,u_x,param_fixed,i,repeat_axis,n_repeats):
         xb=np.zeros(len(x),dtype=object)
         u_xb=np.zeros(len(u_x),dtype=object)
         for j in range(len(x)):
@@ -251,6 +250,10 @@ class MCPropagation:
                 if (x[j].shape[repeat_axis]!=n_repeats):
                     xb[j] = x[j]
                     u_xb[j] = u_x[j]
+                elif param_fixed is not None:
+                    if param_fixed[j]==True:
+                        xb[j] = x[j]
+                        u_xb[j] = u_x[j]
                 elif repeat_axis == 0 :
                     xb[j]=x[j][i]
                     u_xb[j] = u_x[j][i]
@@ -267,6 +270,10 @@ class MCPropagation:
                 if (len(x[j])==n_repeats):
                     xb[j] = x[j][i]
                     u_xb[j] = u_x[j][i]
+                    if param_fixed is not None:
+                        if param_fixed[j]==True:
+                            xb[j] = x[j]
+                            u_xb[j] = u_x[j]
                 else:
                     xb[j] = x[j]
                     u_xb[j] = u_x[j]
