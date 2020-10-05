@@ -6,13 +6,11 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 import punpy.utilities.utilities as util
-from punpy.version import __version__
 from punpy.jacobian.jacobian_propagation import JacobianPropagation
 
 '''___Authorship___'''
 __author__ = "Pieter De Vis"
 __created__ = "14/4/2020"
-__version__ = __version__
 __maintainer__ = "Pieter De Vis"
 __email__ = "pieter.de.vis@npl.co.uk"
 __status__ = "Development"
