@@ -46,7 +46,7 @@ class JacobianRetrieval:
         Jx=util.calculate_Jacobian(self.measurement_function,res.x)
         # print("wer",res.x,theta_0,Jx,util.calculate_Jacobian(self.measurement_function,theta_0))
 
-        return res.x, *self.process_inverse_jacobian(Jx,return_corr)
+        return tuple(res.x) + tuple(self.process_inverse_jacobian(Jx,return_corr))
 
     def process_inverse_jacobian(self,J,return_corr=True):
         print(self.invcov,J.T,np.dot(J.T,self.invcov),np.dot(np.dot(J.T,self.invcov),J), np.linalg.inv(np.dot(np.dot(J.T,self.invcov),J)))
