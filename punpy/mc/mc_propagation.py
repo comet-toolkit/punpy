@@ -80,6 +80,7 @@ class MCPropagation:
 
                 #print(MC_data[i].nbytes)
             if corr_between is not None:
+                print(len(MC_data),MC_data.shape)
                 MC_data = self.correlate_samples_corr(MC_data,corr_between)
             return self.process_samples(func,MC_data,return_corr,return_samples,corr_axis,output_vars)
 
@@ -213,12 +214,19 @@ class MCPropagation:
         else:
             yshape = np.array(func(*x)[0]).shape
 
-        if x[0].shape != yshape and self.parallel_cores == 0:
+        shapewarning=False
+        for i in range(len(x)):
+            if hasattr(x[i], "__len__"):
+                if x[i].shape != yshape and self.parallel_cores == 0:
+                    shapewarning=True
+            elif self.parallel_cores == 0:
+                shapewarning=True
+
+        if shapewarning:
             print(
-                "It looks like one of your input quantities is not the same shape as the measurand."
-                "This is not a problem, but means you cannot use array operations in your measurement function."
-                "You will need to set parallel_cores to 1 or higher when creating your MCPropagation object.")
-            exit()
+                "It looks like one of your input quantities is not an array or does not the same shape as the measurand."
+                "This is not a problem, but means you likely cannot use array operations in your measurement function."
+                "You might need to set parallel_cores to 1 or higher when creating your MCPropagation object.")
 
         for i in range(len(x)):
             if u_x[i] is None:
@@ -556,7 +564,7 @@ class MCPropagation:
         :return: correlated samples of input quantities
         :rtype: array[array]
         """
-        if np.max(corr) > 1 or len(corr) != len(samples):
+        if np.max(corr) > 1.000000001 or len(corr) != len(samples):
             raise ValueError("The correlation matrix between variables is not the right shape or has elements >1.")
         else:
             try:

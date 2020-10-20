@@ -71,7 +71,7 @@ class MCMCRetrieval:
 
     def find_chisum(self,theta):
         model=self.measurement_function(theta)
-        diff = model-self.observed-theta[0]
+        diff = model-self.observed
         if np.isfinite(np.sum(diff)):
             if self.invcov is None:
                 return np.sum((diff)**2/self.rand_uncertainty**2)

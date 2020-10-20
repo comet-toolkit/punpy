@@ -44,10 +44,12 @@ class JacobianRetrieval:
     def run_retrieval(self,theta_0,return_corr=True):
         res = minimize(self.find_chisum,theta_0)
         Jx=util.calculate_Jacobian(self.measurement_function,res.x)
+        # print("wer",res.x,theta_0,Jx,util.calculate_Jacobian(self.measurement_function,theta_0))
 
-        return res.x, self.process_inverse_jacobian(Jx,return_corr)
+        return res.x, *self.process_inverse_jacobian(Jx,return_corr)
 
     def process_inverse_jacobian(self,J,return_corr=True):
+        print(self.invcov,J.T,np.dot(J.T,self.invcov),np.dot(np.dot(J.T,self.invcov),J), np.linalg.inv(np.dot(np.dot(J.T,self.invcov),J)))
         covx = np.linalg.inv(np.dot(np.dot(J.T,self.invcov),J))
         u_func = np.diag(covx)**0.5
         corr_x = util.convert_cov_to_corr(covx,u_func)
@@ -77,7 +79,7 @@ class JacobianRetrieval:
 
     def find_chisum(self,theta):
         model = self.measurement_function(theta)
-        diff = model-self.observed-theta[0]
+        diff = model-self.observed
         if np.isfinite(np.sum(diff)):
             if self.invcov is None:
                 return np.sum((diff)**2/self.rand_uncertainty**2)
