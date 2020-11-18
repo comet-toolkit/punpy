@@ -143,8 +143,8 @@ test_report:
      name: oberonamsterdam/wkhtmltopdf
      entrypoint: [""]
   script:
-      - wkhtmltopdf --enable-local-file-access file:////builds/eco/eo/punpy/test_report/report.html test_report.pdf
-      - wkhtmltopdf --enable-local-file-access file:////builds/eco/eo/punpy/test_report/cov_report/index.html cov_report.pdf
+      - wkhtmltopdf --enable-local-file-access file:////builds/eco/tools/punpy/test_report/report.html test_report.pdf
+      - wkhtmltopdf --enable-local-file-access file:////builds/eco/tools/punpy/test_report/cov_report/index.html cov_report.pdf
   artifacts:
     paths:
     - test_report.pdf

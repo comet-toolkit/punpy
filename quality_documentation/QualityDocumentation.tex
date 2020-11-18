@@ -1,0 +1,78 @@
+%!TEX options = --shell-escape
+% This is a magic comment that tells LatexTools to enable shell-escape
+% If you're not using LatexTools to compile, you will need to enable shell escape on your editor
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% <Name of your project here>
+% 	by Charles Baynham
+% 	30 May, 2018
+%
+% Based on template by Charles Baynham,
+% modified from template by Ajeet Sandu
+% https://www.overleaf.com/latex/templates/requirements-specification-layout/vbrqbjpzcmfy
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass{article}
+
+\usepackage{softwareRequirements}
+
+\begin{document}
+
+\pagenumbering{roman}
+\DeclareGraphicsExtensions{.pdf,.jpg,.png}
+
+%% Table of contents
+\tableofcontents
+
+%% Version table insertion
+\input{base/history}
+
+\clearpage
+\pagestyle{long}
+
+\pagenumbering{arabic}
+
+% The content:
+\graphicspath{{images/}}
+
+\section{Introduction}\label{introduction}
+
+This the quality document for the punpy software package.
+
+
+The statement of work for this project defines the user requirements.
+
+The functional requirements are included as a separate document in this folder as `Functional\_Requirements.docx'.
+
+The software design is described in Section \ref{design}.
+
+An automated test report is given in Section \ref{testreport}. This includes:
+\begin{itemize}
+\item A table detailing the environment that was used during testing.
+\item A summary of the results, indicating how many tests passed and how long it took.
+\item A table showing each of the tests that was run, how long they took, and what output was captured during testing.
+\item A test coverage report, showing how many lines of the software were covered by the combined tests.
+\end{itemize}
+
+\clearpage
+\section{Software design}\label{design}
+
+
+
+\clearpage
+\section{Test report}\label{testreport}
+
+\includegraphics[page=1,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{test_report.pdf}
+
+\includegraphics[page=2,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{test_report.pdf}
+
+%\includegraphics[page=3,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{test_report.pdf}
+
+\includegraphics[page=1,trim= 20mm 10mm  10mm 10mm,width=\textwidth]{cov_report.pdf}
+
+\includepdf[pages=-,delta= 15mm 15mm]{test_report.pdf}
+\includepdf[pages=-,delta= 15mm 15mm]{cov_report.pdf}
+
+\end{document}

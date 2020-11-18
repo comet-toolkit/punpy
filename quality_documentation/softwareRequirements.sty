@@ -1,0 +1,153 @@
+%!TEX root = second_app_planning.tex
+
+\usepackage[colorlinks=false,hidelinks]{hyperref}%%The hy­per­ref pack­age is used to han­dle cross-ref­er­enc­ing com­mands in LATEX to pro­duce hy­per­text links in the doc­u­ment. 
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[pdftex]{graphicx} %%Graphics in pdfLaTeX
+\usepackage{pdfpages}
+\usepackage{longtable} %%For tables that exceed a page width
+% \usepackage{pdflscape} %%Adds PDF sup­port to the land­scape en­vi­ron­ment of pack­age
+\usepackage{caption} %%Pro­vides many ways to cus­tomise the cap­tions in float­ing en­vi­ron­ments like fig­ure and ta­ble
+\usepackage{float} %%Im­proves the in­ter­face for defin­ing float­ing ob­jects such as fig­ures and ta­bles
+\usepackage[tablegrid,nochapter]{vhistory} %%Vhis­tory sim­pli­fies the cre­ation of a his­tory of ver­sions of a doc­u­ment
+\usepackage{cite} %%The pack­age sup­ports com­pressed, sorted lists of nu­mer­i­cal ci­ta­tions, and also deals with var­i­ous punc­tu­a­tion and other is­sues of rep­re­sen­ta­tion, in­clud­ing com­pre­hen­sive man­age­ment of break points
+\usepackage[]{acronym} %%This pack­age en­sures that all acronyms used in the text are spelled out in full at least once. It also pro­vides an en­vi­ron­ment to build a list of acronyms used
+
+% This pack­age pro­vides an easy and flex­i­ble user in­ter­face to cus­tomize page lay­out, im­ple­ment­ing auto-cen­ter­ing and auto-bal­anc­ing mech­a­nisms so that the users have only to give the least de­scrip­tion for the page lay­out. For ex­am­ple, if you want to set each mar­gin 2cm with­out header space, what you need is just \usep­a­ck­age[mar­gin=2cm,no­head]{ge­om­e­try}.
+\usepackage[margin=4cm]{geometry}
+
+\usepackage{booktabs}
+
+% \usepackage{layout} %%The pack­age de­fines a com­mand \lay­out, which will show a sum­mary of the lay­out of the cur­rent doc­u­ment
+% \usepackage{subfigure} %%Pro­vides sup­port for the ma­nip­u­la­tion and ref­er­ence of small or ‘sub’ fig­ures and ta­bles within a sin­gle fig­ure or ta­ble en­vi­ron­ment.
+% \usepackage[toc]{glossaries} %%The glos­saries pack­age sup­ports acronyms and mul­ti­ple glos­saries, and has pro­vi­sion for op­er­a­tion in sev­eral lan­guages (us­ing the fa­cil­i­ties of ei­ther ba­bel or poly­glos­sia).
+\usepackage[left,pagewise,modulo]{lineno} %%Adds line num­bers to se­lected para­graphs with ref­er­ence pos­si­ble through the LATEX \ref and \pageref cross ref­er­ence mech­a­nism
+
+\usepackage{metainfo}
+\usepackage[pagestyles,raggedright]{titlesec}
+
+\usepackage{siunitx}
+
+\usepackage{cleveref}
+
+\usepackage{etoolbox}
+\usepackage{%
+	array, %%An ex­tended im­ple­men­ta­tion of the ar­ray and tab­u­lar en­vi­ron­ments which ex­tends the op­tions for col­umn for­mats, and pro­vides "pro­grammable" for­mat spec­i­fi­ca­tions
+	booktabs, %%The pack­age en­hances the qual­ity of ta­bles in LATEX, pro­vid­ing ex­tra com­mands as well as be­hind-the-scenes op­ti­mi­sa­tion
+	dcolumn, %%
+	rotating,
+	shortvrb,
+	units,
+	url,
+	lastpage,
+	longtable,
+	lscape,
+	qtree,
+	skmath,	
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Python --> latex 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{listings}
+\usepackage{color}
+\definecolor{pblue}{rgb}{0.13,0.13,1}
+\definecolor{pgreen}{rgb}{0,0.5,0}
+\definecolor{pred}{rgb}{0.9,0,0}
+\definecolor{pgrey}{rgb}{0.46,0.45,0.48}
+
+\input{base/pythoninputstyle}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Make an enviroment for requirements lists
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newenvironment{reqs}
+	{\begin{enumerate}[label={\thesubsection.\arabic*}]}
+	{\end{enumerate}}
+
+\usepackage{enumitem} % Allows for referencing to individual \items
+
+\crefalias{enumi}{requirement}
+\crefname{requirement}{}{}
+\creflabelformat{requirement}{#2R#1#3}%
+\crefmultiformat{requirement}{#2R#1#3}%
+	{ \& #2R#1#3}{, #2R#1#3}{ \&~#2R#1#3}
+\Crefmultiformat{requirement}{#2#1#3}%
+	{ \& #2R#1#3}{, #2R#1#3}{ \&~#2R#1#3}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Inserting the metadata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{base/metadata}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Creating the frontpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\AtBeginDocument{
+	\maketitle
+	\thispagestyle{empty}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Creation of the header
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\patchcmd{\chapter}{plain}{short}{}{} %$ <-- the header on chapter 1
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Creation of page-styles
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \newpagestyle{long}{%
+% 	\sethead[\thepage][][\chaptername\ \thechapter:\ \chaptertitle]{\chaptername\ \thechapter:\ \chaptertitle}{}{\thepage}
+% 	\headrule
+% }
+
+% \newpagestyle{short}{%
+% 	\sethead[\thepage][][]{}{}{\thepage}
+% 	\headrule
+% }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Git stuff
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{fancyhdr}
+
+% Get current git version
+% Note: this command requires a) git installed and b) shell escape in latex enabled
+% \immediate\write18{git describe --always --tags --dirty --long --abbrev=6 > \jobname_desc.nogit.txt }
+\immediate\write18{ git describe --match nopenopenope --always --long --dirty --abbrev=6 > \jobname_desc.nogit.txt }
+
+\IfFileExists{\jobname_desc.nogit.txt}{
+	\usepackage{catchfile}
+	\CatchFileDef{\gitVer}{\jobname_desc.nogit.txt}{}
+}{
+	\newcommand\gitVer{unknown}
+}
+
+% Add the git version and the date/time to the header
+% \newcommand{\versionBox}{\fbox{Manuscript version: \textit{\#\gitVer} - \today{} \currenttime{} }}
+
+% \renewcommand{\sectionmark}[1]{\markright{\thesection.\ #1}}
+
+\fancypagestyle{short}{
+	\fancyhf{}
+	% \lfoot{\versionBox{}}
+	\rfoot{\thepage}
+	\lhead{\scshape\rightmark}
+	\rhead{\textit{\#\gitVer}}
+}
+
+\fancypagestyle{long}{
+	\fancyhf{}
+	% \lfoot{\versionBox{}}
+	\rfoot{\thepage}
+	\lhead{\scshape\rightmark}
+	\rhead{\textit{\#\gitVer}}
+}
+
+% Put it into the metadata too
+\hypersetup{
+    pdfsubject={Version \#\gitVer{}}
+}
