@@ -699,9 +699,8 @@ class MCPropagation:
                 A3 += I*(-mineig*k**2+spacing)
                 k += 1
 
-            maxdiff=np.max(np.abs(A-A3))
-
             if corr == True:
+                maxdiff = np.max(np.abs(A-A3))
                 if maxdiff>diff:
                     raise ValueError(
                         "One of the correlation matrices is not postive definite. "
@@ -710,13 +709,13 @@ class MCPropagation:
                 else:
                     print(
                         "One of the correlation matrices is not positive "
-                        "definite. It has been slightly changed (less than %s in any "
-                        "element) to accomodate our method."%(diff))
+                        "definite. It has been slightly changed (maximum difference of %s) to accomodate our method."%(maxdiff))
                     if return_cholesky:
                         return np.linalg.cholesky(A3)
                     else:
                         return A3
             else:
+                maxdiff = np.max(np.abs(A-A3)/(A3+diff))
                 if maxdiff > diff:
                     raise ValueError(
                         "One of the provided covariance matrices is not postive "
@@ -725,8 +724,7 @@ class MCPropagation:
                 else:
                     print(
                         "One of the provided covariance matrix is not positive "
-                        "definite. It has been slightly changed (less than %s percent in "
-                        "any element) to accomodate our method."%(diff*100))
+                        "definite. It has been slightly changed (maximum difference of %s percent) to accomodate our method."%(maxdiff*100))
                     if return_cholesky:
                         return np.linalg.cholesky(A3)
                     else:
