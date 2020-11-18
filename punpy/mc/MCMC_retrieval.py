@@ -70,7 +70,7 @@ class MCMCRetrieval:
                 return medians,unc_avg
 
     def find_chisum(self,theta):
-        model=self.measurement_function(theta)
+        model=self.measurement_function(*theta)
         diff = model-self.observed
         if np.isfinite(np.sum(diff)):
             if self.invcov is None:
