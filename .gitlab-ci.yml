@@ -9,6 +9,8 @@ stages:
   - Full test
   - Publish test report
   - Publish Pages
+  - Combine Documentation
+
 
 ### Setup cache ###
 # See https://docs.gitlab.com/ee/ci/caching/index.html
@@ -145,9 +147,6 @@ test_report:
   script:
       - wkhtmltopdf --enable-local-file-access file:////builds/eco/tools/punpy/test_report/report.html test_report.pdf
       - wkhtmltopdf --enable-local-file-access file:////builds/eco/tools/punpy/test_report/cov_report/index.html cov_report.pdf
-      - pwd
-      - cd quality_documentation
-      - cd ..
       - cp test_report.pdf ./quality_documentation/test_report.pdf
       - cp cov_report.pdf ./quality_documentation/cov_report.pdf
   artifacts:
@@ -199,6 +198,22 @@ pdf_compile:
     - cd latex
     - make
     - cp punpy.pdf ../punpy.pdf
+
+
+pdf_compile_all:
+  needs: ["pdf_make","test_report"]
+  stage: Combine Documentation
+  image:  charlesbaynham/ctanfull
+  artifacts:
+    paths:
+    - QualityDocumentation.pdf
+    expose_as: "Manual"
+    name: ${CI_COMMIT_REF_SLUG}_manual.pdf
+  script:
+    - ls
+    - cd quality_documentation
+    - latexmk -e '$pdflatex=q/pdflatex %O -shell-escape %S/' -pdf
+    - cp QualityDocumentation.pdf ../.
 
 # Copied contents of Gitlab's Code-Quality.gitlab-ci.yml so I can edit the rules
 
