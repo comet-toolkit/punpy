@@ -151,8 +151,8 @@ test_report:
       - mv cov_report.pdf ./quality_documentation/cov_report.pdf
   artifacts:
     paths:
-    - test_report.pdf
-    - cov_report.pdf
+    - quality_documentation/test_report.pdf
+    - quality_documentation/cov_report.pdf
 
 ### Documentation ###
 
@@ -210,6 +210,7 @@ pdf_compile_all:
     expose_as: "Manual"
     name: ${CI_COMMIT_REF_SLUG}_manual.pdf
   script:
+    - ls
     - cd quality_documentation
     - ls
     - pwd
