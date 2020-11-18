@@ -71,7 +71,11 @@ class MCPropagation:
         else:
             MC_data = np.empty(len(x),dtype=np.ndarray)
             for i in range(len(x)):
-                if cov_x is None or cov_x[i]=="rand":
+                if u_x[i] is None:
+                    u_x[i] = np.zeros_like(x[i])
+                if cov_x is None:
+                    MC_data[i] = self.generate_samples_random(x[i],u_x[i])
+                elif cov_x[i] is None or cov_x[i]=="rand":
                     MC_data[i] = self.generate_samples_random(x[i],u_x[i])
                 elif cov_x[i]=="syst":
                     MC_data[i] = self.generate_samples_systematic(x[i],u_x[i])
@@ -150,7 +154,9 @@ class MCPropagation:
             for i in range(len(x)):
                 if u_x[i] is None:
                     u_x[i] = np.zeros_like(x[i])
-                if cov_x[i] is None or cov_x[i] == "syst":
+                if cov_x is None:
+                    MC_data[i] = self.generate_samples_systematic(x[i],u_x[i])
+                elif cov_x[i] is None or cov_x[i] == "syst":
                     MC_data[i] = self.generate_samples_systematic(x[i],u_x[i])
                 elif cov_x[i] == "rand":
                     MC_data[i] = self.generate_samples_random(x[i],u_x[i])
@@ -383,8 +389,14 @@ class MCPropagation:
             extra_index=0
             if return_corr:
                 corr=np.mean([outs[i][1] for i in range(n_repeats)],axis=0)
-                if not self.isPD(corr):
-                    corr=self.nearestPD_cholesky(corr,corr=True,return_cholesky=False)
+                if output_vars > 1:
+                    for j in range(output_vars):
+                        if not self.isPD(corr[j]):
+                            corr[j] = self.nearestPD_cholesky(corr[j] ,corr=True,
+                                                           return_cholesky=False)
+                else:
+                    if not self.isPD(corr):
+                        corr=self.nearestPD_cholesky(corr,corr=True,return_cholesky=False)
                 returns[1]=corr
                 extra_index+=1
 
@@ -697,7 +709,7 @@ class MCPropagation:
                         "semi-definite.")
                 else:
                     print(
-                        "One of the provided covariance matrix is not positive "
+                        "One of the correlation matrices is not positive "
                         "definite. It has been slightly changed (less than %s in any "
                         "element) to accomodate our method."%(diff))
                     if return_cholesky:
@@ -713,8 +725,8 @@ class MCPropagation:
                 else:
                     print(
                         "One of the provided covariance matrix is not positive "
-                        "definite. It has been slightly changed (less than %s \% in "
-                        "any element) to accomodate our method."%(diff/100))
+                        "definite. It has been slightly changed (less than %s percent in "
+                        "any element) to accomodate our method."%(diff*100))
                     if return_cholesky:
                         return np.linalg.cholesky(A3)
                     else:

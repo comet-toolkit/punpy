@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Test Report</title>
+    <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) { // eslint-disable-line no-redeclare
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function find_all(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sort_column(elem) {
+    toggle_sort_states(elem);
+    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    let key;
+    if (elem.classList.contains('numeric')) {
+        key = key_num;
+    } else if (elem.classList.contains('result')) {
+        key = key_result;
+    } else if (elem.classList.contains('links')) {
+        key = key_link;
+    } else {
+        key = key_alpha;
+    }
+    sort_table(elem, key(colIndex));
+}
+
+function show_all_extras() { // eslint-disable-line no-unused-vars
+    find_all('.col-result').forEach(show_extras);
+}
+
+function hide_all_extras() { // eslint-disable-line no-unused-vars
+    find_all('.col-result').forEach(hide_extras);
+}
+
+function show_extras(colresult_elem) {
+    const extras = colresult_elem.parentNode.nextElementSibling;
+    const expandcollapse = colresult_elem.firstElementChild;
+    extras.classList.remove('collapsed');
+    expandcollapse.classList.remove('expander');
+    expandcollapse.classList.add('collapser');
+}
+
+function hide_extras(colresult_elem) {
+    const extras = colresult_elem.parentNode.nextElementSibling;
+    const expandcollapse = colresult_elem.firstElementChild;
+    extras.classList.add('collapsed');
+    expandcollapse.classList.remove('collapser');
+    expandcollapse.classList.add('expander');
+}
+
+function show_filters() {
+    const filter_items = document.getElementsByClassName('filter');
+    for (let i = 0; i < filter_items.length; i++)
+        filter_items[i].hidden = false;
+}
+
+function add_collapse() {
+    // Add links for show/hide all
+    const resulttable = find('table#results-table');
+    const showhideall = document.createElement('p');
+    showhideall.innerHTML = '<a href="javascript:show_all_extras()">Show all details</a> / ' +
+                            '<a href="javascript:hide_all_extras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    find_all('.col-result').forEach(function(elem) {
+        const collapsed = get_query_parameter('collapsed') || 'Passed';
+        const extras = elem.parentNode.nextElementSibling;
+        const expandcollapse = document.createElement('span');
+        if (extras.classList.contains('collapsed')) {
+            expandcollapse.classList.add('expander');
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add('collapsed');
+            expandcollapse.classList.add('expander');
+        } else {
+            expandcollapse.classList.add('collapser');
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener('click', function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
+                show_extras(event.currentTarget);
+            } else {
+                hide_extras(event.currentTarget);
+            }
+        });
+    });
+}
+
+function get_query_parameter(name) {
+    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () { // eslint-disable-line no-unused-vars
+    reset_sort_headers();
+
+    add_collapse();
+
+    show_filters();
+
+    sort_column(find('.initial-sort'));
+
+    find_all('.sortable').forEach(function(elem) {
+        elem.addEventListener('click',
+            function() {
+                sort_column(elem);
+            }, false);
+    });
+}
+
+function sort_table(clicked, key_func) {
+    const rows = find_all('.results-table-row');
+    const reversed = !clicked.classList.contains('asc');
+    const sorted_rows = sort(rows, key_func, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    const thead = document.getElementById('results-table-head');
+    document.getElementById('results-table').remove();
+    const parent = document.createElement('table');
+    parent.id = 'results-table';
+    parent.appendChild(thead);
+    sorted_rows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName('BODY')[0].appendChild(parent);
+}
+
+function sort(items, key_func, reversed) {
+    const sort_array = items.map(function(item, i) {
+        return [key_func(item), i];
+    });
+
+    sort_array.sort(function(a, b) {
+        const key_a = a[0];
+        const key_b = b[0];
+
+        if (key_a == key_b) return 0;
+
+        if (reversed) {
+            return key_a < key_b ? 1 : -1;
+        } else {
+            return key_a > key_b ? 1 : -1;
+        }
+    });
+
+    return sort_array.map(function(item) {
+        const index = item[1];
+        return items[index];
+    });
+}
+
+function key_alpha(col_index) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[col_index].firstChild.data.toLowerCase();
+    };
+}
+
+function key_num(col_index) {
+    return function(elem) {
+        return parseFloat(elem.childNodes[1].childNodes[col_index].firstChild.data);
+    };
+}
+
+function key_link(col_index) {
+    return function(elem) {
+        const dataCell = elem.childNodes[1].childNodes[col_index].firstChild;
+        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
+    };
+}
+
+function key_result(col_index) {
+    return function(elem) {
+        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+            'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[col_index].firstChild.data);
+    };
+}
+
+function reset_sort_headers() {
+    find_all('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    find_all('.sortable').forEach(function(elem) {
+        const icon = document.createElement('div');
+        icon.className = 'sort-icon';
+        icon.textContent = 'vvv';
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove('desc', 'active');
+        elem.classList.add('asc', 'inactive');
+    });
+}
+
+function toggle_sort_states(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        reset_sort_headers();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function is_all_rows_hidden(value) {
+    return value.hidden == false;
+}
+
+function filter_table(elem) { // eslint-disable-line no-unused-vars
+    const outcome_att = 'data-test-result';
+    const outcome = elem.getAttribute(outcome_att);
+    const class_outcome = outcome + ' results-table-row';
+    const outcome_rows = document.getElementsByClassName(class_outcome);
+
+    for(let i = 0; i < outcome_rows.length; i++){
+        outcome_rows[i].hidden = !elem.checked;
+    }
+
+    const rows = find_all('.results-table-row').filter(is_all_rows_hidden);
+    const all_rows_hidden = rows.length == 0 ? true : false;
+    const not_found_message = document.getElementById('not-found-message');
+    not_found_message.hidden = !all_rows_hidden;
+}
+</script>
+    <h1>report.html</h1>
+    <p>Report generated on 18-Nov-2020 at 12:53:14 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.0.0</p>
+    <h2>Environment</h2>
+    <table id="environment">
+      <tr>
+        <td>JAVA_HOME</td>
+        <td>C:\Program Files\Java\jdk1.8.0_231</td></tr>
+      <tr>
+        <td>Packages</td>
+        <td>{"pluggy": "0.13.1", "py": "1.9.0", "pytest": "6.1.2"}</td></tr>
+      <tr>
+        <td>Platform</td>
+        <td>Windows-10-10.0.17134-SP0</td></tr>
+      <tr>
+        <td>Plugins</td>
+        <td>{"html": "3.0.0", "metadata": "1.10.0"}</td></tr>
+      <tr>
+        <td>Python</td>
+        <td>3.8.3</td></tr></table>
+    <h2>Summary</h2>
+    <p>4 tests ran in 375.16 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="passed">1 passed</span>, <input checked="true" class="filter" data-test-result="skipped" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="skipped">0 skipped</span>, <input checked="true" class="filter" data-test-result="failed" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="failed">3 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filter_table(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable numeric" col="duration">Duration</th>
+          <th class="sortable links" col="links">Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">punpy/mc/tests/test_mc_propagation.py::TestMCPropagation::test_propagate_cov</td>
+          <td class="col-duration">2.89</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;punpy.mc.mc_propagation.MCPropagation object at 0x00000227C14FB8E0&gt;<br/>samples = array([array([[11.51764332,  7.93117978, 10.55547489, ..., 12.20231432,<br/>        10.0248012 ,  9.81025613],<br/>       [ 9....],<br/>       [27.62426788, 30.44911301, 29.65565011, ..., 29.05241806,<br/>        32.52962214, 28.229092  ]])], dtype=object)<br/>corr = array([[1., 1.],<br/>       [1., 1.]])<br/><br/>    def correlate_samples_corr(self,samples,corr):<br/>        &quot;&quot;&quot;<br/>        Method to correlate independent samples of input quantities using correlation matrix and Cholesky decomposition.<br/>    <br/>        :param samples: independent samples of input quantities<br/>        :type samples: array[array]<br/>        :param corr: correlation matrix between input quantities<br/>        :type corr: array<br/>        :return: correlated samples of input quantities<br/>        :rtype: array[array]<br/>        &quot;&quot;&quot;<br/>        if np.max(corr) &gt; 1.000000001 or len(corr) != len(samples):<br/>            raise ValueError(&quot;The correlation matrix between variables is not the right shape or has elements &gt;1.&quot;)<br/>        else:<br/>            try:<br/>&gt;               L = np.array(np.linalg.cholesky(corr))<br/><br/>punpy\mc\mc_propagation.py:629: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>args = (array([[1., 1.],<br/>       [1., 1.]]),), kwargs = {}, relevant_args = (array([[1., 1.],<br/>       [1., 1.]]),)<br/><br/>&gt;   ???<br/><br/>&lt;__array_function__ internals&gt;:5: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>a = array([[1., 1.],<br/>       [1., 1.]])<br/><br/>    @array_function_dispatch(_unary_dispatcher)<br/>    def cholesky(a):<br/>        &quot;&quot;&quot;<br/>        Cholesky decomposition.<br/>    <br/>        Return the Cholesky decomposition, `L * L.H`, of the square matrix `a`,<br/>        where `L` is lower-triangular and .H is the conjugate transpose operator<br/>        (which is the ordinary transpose if `a` is real-valued).  `a` must be<br/>        Hermitian (symmetric if real-valued) and positive-definite. No<br/>        checking is performed to verify whether `a` is Hermitian or not.<br/>        In addition, only the lower-triangular and diagonal elements of `a`<br/>        are used. Only `L` is actually returned.<br/>    <br/>        Parameters<br/>        ----------<br/>        a : (..., M, M) array_like<br/>            Hermitian (symmetric if all elements are real), positive-definite<br/>            input matrix.<br/>    <br/>        Returns<br/>        -------<br/>        L : (..., M, M) array_like<br/>            Upper or lower-triangular Cholesky factor of `a`.  Returns a<br/>            matrix object if `a` is a matrix object.<br/>    <br/>        Raises<br/>        ------<br/>        LinAlgError<br/>           If the decomposition fails, for example, if `a` is not<br/>           positive-definite.<br/>    <br/>        See Also<br/>        --------<br/>        scipy.linalg.cholesky : Similar function in SciPy.<br/>        scipy.linalg.cholesky_banded : Cholesky decompose a banded Hermitian<br/>                                       positive-definite matrix.<br/>        scipy.linalg.cho_factor : Cholesky decomposition of a matrix, to use in<br/>                                  `scipy.linalg.cho_solve`.<br/>    <br/>        Notes<br/>        -----<br/>    <br/>        .. versionadded:: 1.8.0<br/>    <br/>        Broadcasting rules apply, see the `numpy.linalg` documentation for<br/>        details.<br/>    <br/>        The Cholesky decomposition is often used as a fast way of solving<br/>    <br/>        .. math:: A \\mathbf{x} = \\mathbf{b}<br/>    <br/>        (when `A` is both Hermitian/symmetric and positive-definite).<br/>    <br/>        First, we solve for :math:`\\mathbf{y}` in<br/>    <br/>        .. math:: L \\mathbf{y} = \\mathbf{b},<br/>    <br/>        and then for :math:`\\mathbf{x}` in<br/>    <br/>        .. math:: L.H \\mathbf{x} = \\mathbf{y}.<br/>    <br/>        Examples<br/>        --------<br/>        &gt;&gt;&gt; A = np.array([[1,-2j],[2j,5]])<br/>        &gt;&gt;&gt; A<br/>        array([[ 1.+0.j, -0.-2.j],<br/>               [ 0.+2.j,  5.+0.j]])<br/>        &gt;&gt;&gt; L = np.linalg.cholesky(A)<br/>        &gt;&gt;&gt; L<br/>        array([[1.+0.j, 0.+0.j],<br/>               [0.+2.j, 1.+0.j]])<br/>        &gt;&gt;&gt; np.dot(L, L.T.conj()) # verify that L * L.H = A<br/>        array([[1.+0.j, 0.-2.j],<br/>               [0.+2.j, 5.+0.j]])<br/>        &gt;&gt;&gt; A = [[1,-2j],[2j,5]] # what happens if A is only array_like?<br/>        &gt;&gt;&gt; np.linalg.cholesky(A) # an ndarray object is returned<br/>        array([[1.+0.j, 0.+0.j],<br/>               [0.+2.j, 1.+0.j]])<br/>        &gt;&gt;&gt; # But a matrix object is returned if A is a matrix object<br/>        &gt;&gt;&gt; np.linalg.cholesky(np.matrix(A))<br/>        matrix([[ 1.+0.j,  0.+0.j],<br/>                [ 0.+2.j,  1.+0.j]])<br/>    <br/>        &quot;&quot;&quot;<br/>        extobj = get_linalg_error_extobj(_raise_linalgerror_nonposdef)<br/>        gufunc = _umath_linalg.cholesky_lo<br/>        a, wrap = _makearray(a)<br/>        _assert_stacked_2d(a)<br/>        _assert_stacked_square(a)<br/>        t, result_t = _commonType(a)<br/>        signature = &#x27;D-&gt;D&#x27; if isComplexType(t) else &#x27;d-&gt;d&#x27;<br/>&gt;       r = gufunc(a, signature=signature, extobj=extobj)<br/><br/>c:\tools\anaconda3\envs\punpy\lib\site-packages\numpy\linalg\linalg.py:764: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>err = &#x27;invalid value&#x27;, flag = 8<br/><br/>    def _raise_linalgerror_nonposdef(err, flag):<br/>&gt;       raise LinAlgError(&quot;Matrix is not positive definite&quot;)<br/><span class="error">E       numpy.linalg.LinAlgError: Matrix is not positive definite</span><br/><br/>c:\tools\anaconda3\envs\punpy\lib\site-packages\numpy\linalg\linalg.py:91: LinAlgError<br/><br/>During handling of the above exception, another exception occurred:<br/><br/>A = array([[1., 1.],<br/>       [1., 1.]]), diff = 0.001, corr = False, return_cholesky = True<br/><br/>    @staticmethod<br/>    def nearestPD_cholesky(A,diff=0.001,corr=False,return_cholesky=True):<br/>        &quot;&quot;&quot;<br/>        Find the nearest positive-definite matrix<br/>    <br/>        :param A: correlation matrix or covariance matrix<br/>        :type A: array<br/>        :return: nearest positive-definite matrix<br/>        :rtype: array<br/>    <br/>        Copied and adapted from [1] under BSD license.<br/>        A Python/Numpy port of John D&#x27;Errico&#x27;s `nearestSPD` MATLAB code [2], which<br/>        credits [3].<br/>        [1] https://gist.github.com/fasiha/fdb5cec2054e6f1c6ae35476045a0bbd<br/>        [2] https://www.mathworks.com/matlabcentral/fileexchange/42885-nearestspd<br/>        [3] N.J. Higham, &quot;Computing a nearest symmetric positive semidefinite<br/>        matrix&quot; (1988): https://doi.org/10.1016/0024-3795(88)90223-6<br/>        &quot;&quot;&quot;<br/>    <br/>        B = (A+A.T)/2<br/>        _,s,V = np.linalg.svd(B)<br/>    <br/>        H = np.dot(V.T,np.dot(np.diag(s),V))<br/>    <br/>        A2 = (B+H)/2<br/>    <br/>        A3 = (A2+A2.T)/2<br/>    <br/>        try:<br/>&gt;           return np.linalg.cholesky(A3)<br/><br/>punpy\mc\mc_propagation.py:678: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>args = (array([[1., 1.],<br/>       [1., 1.]]),), kwargs = {}, relevant_args = (array([[1., 1.],<br/>       [1., 1.]]),)<br/><br/>&gt;   ???<br/><br/>&lt;__array_function__ internals&gt;:5: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>a = array([[1., 1.],<br/>       [1., 1.]])<br/><br/>    @array_function_dispatch(_unary_dispatcher)<br/>    def cholesky(a):<br/>        &quot;&quot;&quot;<br/>        Cholesky decomposition.<br/>    <br/>        Return the Cholesky decomposition, `L * L.H`, of the square matrix `a`,<br/>        where `L` is lower-triangular and .H is the conjugate transpose operator<br/>        (which is the ordinary transpose if `a` is real-valued).  `a` must be<br/>        Hermitian (symmetric if real-valued) and positive-definite. No<br/>        checking is performed to verify whether `a` is Hermitian or not.<br/>        In addition, only the lower-triangular and diagonal elements of `a`<br/>        are used. Only `L` is actually returned.<br/>    <br/>        Parameters<br/>        ----------<br/>        a : (..., M, M) array_like<br/>            Hermitian (symmetric if all elements are real), positive-definite<br/>            input matrix.<br/>    <br/>        Returns<br/>        -------<br/>        L : (..., M, M) array_like<br/>            Upper or lower-triangular Cholesky factor of `a`.  Returns a<br/>            matrix object if `a` is a matrix object.<br/>    <br/>        Raises<br/>        ------<br/>        LinAlgError<br/>           If the decomposition fails, for example, if `a` is not<br/>           positive-definite.<br/>    <br/>        See Also<br/>        --------<br/>        scipy.linalg.cholesky : Similar function in SciPy.<br/>        scipy.linalg.cholesky_banded : Cholesky decompose a banded Hermitian<br/>                                       positive-definite matrix.<br/>        scipy.linalg.cho_factor : Cholesky decomposition of a matrix, to use in<br/>                                  `scipy.linalg.cho_solve`.<br/>    <br/>        Notes<br/>        -----<br/>    <br/>        .. versionadded:: 1.8.0<br/>    <br/>        Broadcasting rules apply, see the `numpy.linalg` documentation for<br/>        details.<br/>    <br/>        The Cholesky decomposition is often used as a fast way of solving<br/>    <br/>        .. math:: A \\mathbf{x} = \\mathbf{b}<br/>    <br/>        (when `A` is both Hermitian/symmetric and positive-definite).<br/>    <br/>        First, we solve for :math:`\\mathbf{y}` in<br/>    <br/>        .. math:: L \\mathbf{y} = \\mathbf{b},<br/>    <br/>        and then for :math:`\\mathbf{x}` in<br/>    <br/>        .. math:: L.H \\mathbf{x} = \\mathbf{y}.<br/>    <br/>        Examples<br/>        --------<br/>        &gt;&gt;&gt; A = np.array([[1,-2j],[2j,5]])<br/>        &gt;&gt;&gt; A<br/>        array([[ 1.+0.j, -0.-2.j],<br/>               [ 0.+2.j,  5.+0.j]])<br/>        &gt;&gt;&gt; L = np.linalg.cholesky(A)<br/>        &gt;&gt;&gt; L<br/>        array([[1.+0.j, 0.+0.j],<br/>               [0.+2.j, 1.+0.j]])<br/>        &gt;&gt;&gt; np.dot(L, L.T.conj()) # verify that L * L.H = A<br/>        array([[1.+0.j, 0.-2.j],<br/>               [0.+2.j, 5.+0.j]])<br/>        &gt;&gt;&gt; A = [[1,-2j],[2j,5]] # what happens if A is only array_like?<br/>        &gt;&gt;&gt; np.linalg.cholesky(A) # an ndarray object is returned<br/>        array([[1.+0.j, 0.+0.j],<br/>               [0.+2.j, 1.+0.j]])<br/>        &gt;&gt;&gt; # But a matrix object is returned if A is a matrix object<br/>        &gt;&gt;&gt; np.linalg.cholesky(np.matrix(A))<br/>        matrix([[ 1.+0.j,  0.+0.j],<br/>                [ 0.+2.j,  1.+0.j]])<br/>    <br/>        &quot;&quot;&quot;<br/>        extobj = get_linalg_error_extobj(_raise_linalgerror_nonposdef)<br/>        gufunc = _umath_linalg.cholesky_lo<br/>        a, wrap = _makearray(a)<br/>        _assert_stacked_2d(a)<br/>        _assert_stacked_square(a)<br/>        t, result_t = _commonType(a)<br/>        signature = &#x27;D-&gt;D&#x27; if isComplexType(t) else &#x27;d-&gt;d&#x27;<br/>&gt;       r = gufunc(a, signature=signature, extobj=extobj)<br/><br/>c:\tools\anaconda3\envs\punpy\lib\site-packages\numpy\linalg\linalg.py:764: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>err = &#x27;invalid value&#x27;, flag = 8<br/><br/>    def _raise_linalgerror_nonposdef(err, flag):<br/>&gt;       raise LinAlgError(&quot;Matrix is not positive definite&quot;)<br/><span class="error">E       numpy.linalg.LinAlgError: Matrix is not positive definite</span><br/><br/>c:\tools\anaconda3\envs\punpy\lib\site-packages\numpy\linalg\linalg.py:91: LinAlgError<br/><br/>During handling of the above exception, another exception occurred:<br/><br/>self = &lt;punpy.mc.tests.test_mc_propagation.TestMCPropagation testMethod=test_propagate_cov&gt;<br/><br/>    def test_propagate_cov(self):<br/>        prop = MCPropagation(20000)<br/>    <br/>        cov = [util.convert_corr_to_cov(np.eye(len(xerr.flatten())),xerr) for xerr in xerrs]<br/>        uf,ucorr = prop.propagate_cov(function,xs,cov,return_corr=True)<br/>        npt.assert_allclose(ucorr,np.eye(len(ucorr)),atol=0.06)<br/>        npt.assert_allclose(uf,yerr_uncorr,rtol=0.06)<br/>    <br/>        cov = [util.convert_corr_to_cov(np.ones((len(xerr.flatten()),len(xerr.flatten())))+np.eye(len(xerr)),xerr) for xerr in xerrs]<br/>        uf,ucorr = prop.propagate_cov(function,xs,cov,return_corr=True)<br/>        npt.assert_allclose(uf,yerr_uncorr*2**0.5,rtol=0.06)<br/>    <br/>        cov = [util.convert_corr_to_cov(np.eye(len(xerr.flatten())),xerr) for xerr in xerrs]<br/>&gt;       uf,ucorr = prop.propagate_cov(function,xs,cov,return_corr=True,corr_between=np.ones((2,2)))<br/><br/>punpy\mc\tests\test_mc_propagation.py:203: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/>punpy\mc\mc_propagation.py:245: in propagate_cov<br/>    MC_data = self.correlate_samples_corr(MC_data,corr_between)<br/>punpy\mc\mc_propagation.py:631: in correlate_samples_corr<br/>    L = self.nearestPD_cholesky(corr)<br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>A = array([[1., 1.],<br/>       [1., 1.]]), diff = 0.001, corr = False, return_cholesky = True<br/><br/>    @staticmethod<br/>    def nearestPD_cholesky(A,diff=0.001,corr=False,return_cholesky=True):<br/>        &quot;&quot;&quot;<br/>        Find the nearest positive-definite matrix<br/>    <br/>        :param A: correlation matrix or covariance matrix<br/>        :type A: array<br/>        :return: nearest positive-definite matrix<br/>        :rtype: array<br/>    <br/>        Copied and adapted from [1] under BSD license.<br/>        A Python/Numpy port of John D&#x27;Errico&#x27;s `nearestSPD` MATLAB code [2], which<br/>        credits [3].<br/>        [1] https://gist.github.com/fasiha/fdb5cec2054e6f1c6ae35476045a0bbd<br/>        [2] https://www.mathworks.com/matlabcentral/fileexchange/42885-nearestspd<br/>        [3] N.J. Higham, &quot;Computing a nearest symmetric positive semidefinite<br/>        matrix&quot; (1988): https://doi.org/10.1016/0024-3795(88)90223-6<br/>        &quot;&quot;&quot;<br/>    <br/>        B = (A+A.T)/2<br/>        _,s,V = np.linalg.svd(B)<br/>    <br/>        H = np.dot(V.T,np.dot(np.diag(s),V))<br/>    <br/>        A2 = (B+H)/2<br/>    <br/>        A3 = (A2+A2.T)/2<br/>    <br/>        try:<br/>            return np.linalg.cholesky(A3)<br/>        except:<br/>    <br/>            spacing = np.spacing(np.linalg.norm(A))<br/>    <br/>            I = np.eye(A.shape[0])<br/>            k = 1<br/>            while not MCPropagation.isPD(A3):<br/>                mineig = np.min(np.real(np.linalg.eigvals(A3)))<br/>                A3 += I*(-mineig*k**2+spacing)<br/>                k += 1<br/>    <br/>            maxdiff=np.max(np.abs(A-A3))<br/>    <br/>            if corr == True:<br/>                if maxdiff&gt;diff:<br/>                    raise ValueError(<br/>                        &quot;One of the correlation matrices is not postive definite. &quot;<br/>                        &quot;Correlation matrices need to be at least positive &quot;<br/>                        &quot;semi-definite.&quot;)<br/>                else:<br/>                    print(<br/>                        &quot;One of the provided covariance matrix is not positive &quot;<br/>                        &quot;definite. It has been slightly changed (less than %s in any &quot;<br/>                        &quot;element) to accomodate our method.&quot;%(diff))<br/>                    if return_cholesky:<br/>                        return np.linalg.cholesky(A3)<br/>                    else:<br/>                        return A3<br/>            else:<br/>                if maxdiff &gt; diff:<br/>                    raise ValueError(<br/>                        &quot;One of the provided covariance matrices is not postive &quot;<br/>                        &quot;definite. Covariance matrices need to be at least positive &quot;<br/>                        &quot;semi-definite. Please check your covariance matrix.&quot;)<br/>                else:<br/>                    print(<br/>&gt;                       &quot;One of the provided covariance matrix is not positive &quot;<br/>                        &quot;definite. It has been slightly changed (less than %s \% in &quot;<br/>                        &quot;any element) to accomodate our method.&quot;%(diff/100))<br/><span class="error">E                   TypeError: not enough arguments for format string</span><br/><br/>punpy\mc\mc_propagation.py:715: TypeError<br/></div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">punpy/mc/tests/test_mc_propagation.py::TestMCPropagation::test_propagate_random</td>
+          <td class="col-duration">1.71</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;punpy.mc.mc_propagation.MCPropagation object at 0x00000227C3597610&gt;<br/>samples = array([array([[10.14520738,  9.42777787, 10.37725883, ...,  9.42668064,<br/>        10.25890539,  9.95242905],<br/>       [ 9....],<br/>       [33.66219065, 31.7381205 , 29.99548266, ..., 29.59553793,<br/>        30.20520979, 28.26631806]])], dtype=object)<br/>corr = array([[1., 1.],<br/>       [1., 1.]])<br/><br/>    def correlate_samples_corr(self,samples,corr):<br/>        &quot;&quot;&quot;<br/>        Method to correlate independent samples of input quantities using correlation matrix and Cholesky decomposition.<br/>    <br/>        :param samples: independent samples of input quantities<br/>        :type samples: array[array]<br/>        :param corr: correlation matrix between input quantities<br/>        :type corr: array<br/>        :return: correlated samples of input quantities<br/>        :rtype: array[array]<br/>        &quot;&quot;&quot;<br/>        if np.max(corr) &gt; 1.000000001 or len(corr) != len(samples):<br/>            raise ValueError(&quot;The correlation matrix between variables is not the right shape or has elements &gt;1.&quot;)<br/>        else:<br/>            try:<br/>&gt;               L = np.array(np.linalg.cholesky(corr))<br/><br/>punpy\mc\mc_propagation.py:629: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>args = (array([[1., 1.],<br/>       [1., 1.]]),), kwargs = {}, relevant_args = (array([[1., 1.],<br/>       [1., 1.]]),)<br/><br/>&gt;   ???<br/><br/>&lt;__array_function__ internals&gt;:5: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>a = array([[1., 1.],<br/>       [1., 1.]])<br/><br/>    @array_function_dispatch(_unary_dispatcher)<br/>    def cholesky(a):<br/>        &quot;&quot;&quot;<br/>        Cholesky decomposition.<br/>    <br/>        Return the Cholesky decomposition, `L * L.H`, of the square matrix `a`,<br/>        where `L` is lower-triangular and .H is the conjugate transpose operator<br/>        (which is the ordinary transpose if `a` is real-valued).  `a` must be<br/>        Hermitian (symmetric if real-valued) and positive-definite. No<br/>        checking is performed to verify whether `a` is Hermitian or not.<br/>        In addition, only the lower-triangular and diagonal elements of `a`<br/>        are used. Only `L` is actually returned.<br/>    <br/>        Parameters<br/>        ----------<br/>        a : (..., M, M) array_like<br/>            Hermitian (symmetric if all elements are real), positive-definite<br/>            input matrix.<br/>    <br/>        Returns<br/>        -------<br/>        L : (..., M, M) array_like<br/>            Upper or lower-triangular Cholesky factor of `a`.  Returns a<br/>            matrix object if `a` is a matrix object.<br/>    <br/>        Raises<br/>        ------<br/>        LinAlgError<br/>           If the decomposition fails, for example, if `a` is not<br/>           positive-definite.<br/>    <br/>        See Also<br/>        --------<br/>        scipy.linalg.cholesky : Similar function in SciPy.<br/>        scipy.linalg.cholesky_banded : Cholesky decompose a banded Hermitian<br/>                                       positive-definite matrix.<br/>        scipy.linalg.cho_factor : Cholesky decomposition of a matrix, to use in<br/>                                  `scipy.linalg.cho_solve`.<br/>    <br/>        Notes<br/>        -----<br/>    <br/>        .. versionadded:: 1.8.0<br/>    <br/>        Broadcasting rules apply, see the `numpy.linalg` documentation for<br/>        details.<br/>    <br/>        The Cholesky decomposition is often used as a fast way of solving<br/>    <br/>        .. math:: A \\mathbf{x} = \\mathbf{b}<br/>    <br/>        (when `A` is both Hermitian/symmetric and positive-definite).<br/>    <br/>        First, we solve for :math:`\\mathbf{y}` in<br/>    <br/>        .. math:: L \\mathbf{y} = \\mathbf{b},<br/>    <br/>        and then for :math:`\\mathbf{x}` in<br/>    <br/>        .. math:: L.H \\mathbf{x} = \\mathbf{y}.<br/>    <br/>        Examples<br/>        --------<br/>        &gt;&gt;&gt; A = np.array([[1,-2j],[2j,5]])<br/>        &gt;&gt;&gt; A<br/>        array([[ 1.+0.j, -0.-2.j],<br/>               [ 0.+2.j,  5.+0.j]])<br/>        &gt;&gt;&gt; L = np.linalg.cholesky(A)<br/>        &gt;&gt;&gt; L<br/>        array([[1.+0.j, 0.+0.j],<br/>               [0.+2.j, 1.+0.j]])<br/>        &gt;&gt;&gt; np.dot(L, L.T.conj()) # verify that L * L.H = A<br/>        array([[1.+0.j, 0.-2.j],<br/>               [0.+2.j, 5.+0.j]])<br/>        &gt;&gt;&gt; A = [[1,-2j],[2j,5]] # what happens if A is only array_like?<br/>        &gt;&gt;&gt; np.linalg.cholesky(A) # an ndarray object is returned<br/>        array([[1.+0.j, 0.+0.j],<br/>               [0.+2.j, 1.+0.j]])<br/>        &gt;&gt;&gt; # But a matrix object is returned if A is a matrix object<br/>        &gt;&gt;&gt; np.linalg.cholesky(np.matrix(A))<br/>        matrix([[ 1.+0.j,  0.+0.j],<br/>                [ 0.+2.j,  1.+0.j]])<br/>    <br/>        &quot;&quot;&quot;<br/>        extobj = get_linalg_error_extobj(_raise_linalgerror_nonposdef)<br/>        gufunc = _umath_linalg.cholesky_lo<br/>        a, wrap = _makearray(a)<br/>        _assert_stacked_2d(a)<br/>        _assert_stacked_square(a)<br/>        t, result_t = _commonType(a)<br/>        signature = &#x27;D-&gt;D&#x27; if isComplexType(t) else &#x27;d-&gt;d&#x27;<br/>&gt;       r = gufunc(a, signature=signature, extobj=extobj)<br/><br/>c:\tools\anaconda3\envs\punpy\lib\site-packages\numpy\linalg\linalg.py:764: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>err = &#x27;invalid value&#x27;, flag = 8<br/><br/>    def _raise_linalgerror_nonposdef(err, flag):<br/>&gt;       raise LinAlgError(&quot;Matrix is not positive definite&quot;)<br/><span class="error">E       numpy.linalg.LinAlgError: Matrix is not positive definite</span><br/><br/>c:\tools\anaconda3\envs\punpy\lib\site-packages\numpy\linalg\linalg.py:91: LinAlgError<br/><br/>During handling of the above exception, another exception occurred:<br/><br/>A = array([[1., 1.],<br/>       [1., 1.]]), diff = 0.001, corr = False, return_cholesky = True<br/><br/>    @staticmethod<br/>    def nearestPD_cholesky(A,diff=0.001,corr=False,return_cholesky=True):<br/>        &quot;&quot;&quot;<br/>        Find the nearest positive-definite matrix<br/>    <br/>        :param A: correlation matrix or covariance matrix<br/>        :type A: array<br/>        :return: nearest positive-definite matrix<br/>        :rtype: array<br/>    <br/>        Copied and adapted from [1] under BSD license.<br/>        A Python/Numpy port of John D&#x27;Errico&#x27;s `nearestSPD` MATLAB code [2], which<br/>        credits [3].<br/>        [1] https://gist.github.com/fasiha/fdb5cec2054e6f1c6ae35476045a0bbd<br/>        [2] https://www.mathworks.com/matlabcentral/fileexchange/42885-nearestspd<br/>        [3] N.J. Higham, &quot;Computing a nearest symmetric positive semidefinite<br/>        matrix&quot; (1988): https://doi.org/10.1016/0024-3795(88)90223-6<br/>        &quot;&quot;&quot;<br/>    <br/>        B = (A+A.T)/2<br/>        _,s,V = np.linalg.svd(B)<br/>    <br/>        H = np.dot(V.T,np.dot(np.diag(s),V))<br/>    <br/>        A2 = (B+H)/2<br/>    <br/>        A3 = (A2+A2.T)/2<br/>    <br/>        try:<br/>&gt;           return np.linalg.cholesky(A3)<br/><br/>punpy\mc\mc_propagation.py:678: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>args = (array([[1., 1.],<br/>       [1., 1.]]),), kwargs = {}, relevant_args = (array([[1., 1.],<br/>       [1., 1.]]),)<br/><br/>&gt;   ???<br/><br/>&lt;__array_function__ internals&gt;:5: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>a = array([[1., 1.],<br/>       [1., 1.]])<br/><br/>    @array_function_dispatch(_unary_dispatcher)<br/>    def cholesky(a):<br/>        &quot;&quot;&quot;<br/>        Cholesky decomposition.<br/>    <br/>        Return the Cholesky decomposition, `L * L.H`, of the square matrix `a`,<br/>        where `L` is lower-triangular and .H is the conjugate transpose operator<br/>        (which is the ordinary transpose if `a` is real-valued).  `a` must be<br/>        Hermitian (symmetric if real-valued) and positive-definite. No<br/>        checking is performed to verify whether `a` is Hermitian or not.<br/>        In addition, only the lower-triangular and diagonal elements of `a`<br/>        are used. Only `L` is actually returned.<br/>    <br/>        Parameters<br/>        ----------<br/>        a : (..., M, M) array_like<br/>            Hermitian (symmetric if all elements are real), positive-definite<br/>            input matrix.<br/>    <br/>        Returns<br/>        -------<br/>        L : (..., M, M) array_like<br/>            Upper or lower-triangular Cholesky factor of `a`.  Returns a<br/>            matrix object if `a` is a matrix object.<br/>    <br/>        Raises<br/>        ------<br/>        LinAlgError<br/>           If the decomposition fails, for example, if `a` is not<br/>           positive-definite.<br/>    <br/>        See Also<br/>        --------<br/>        scipy.linalg.cholesky : Similar function in SciPy.<br/>        scipy.linalg.cholesky_banded : Cholesky decompose a banded Hermitian<br/>                                       positive-definite matrix.<br/>        scipy.linalg.cho_factor : Cholesky decomposition of a matrix, to use in<br/>                                  `scipy.linalg.cho_solve`.<br/>    <br/>        Notes<br/>        -----<br/>    <br/>        .. versionadded:: 1.8.0<br/>    <br/>        Broadcasting rules apply, see the `numpy.linalg` documentation for<br/>        details.<br/>    <br/>        The Cholesky decomposition is often used as a fast way of solving<br/>    <br/>        .. math:: A \\mathbf{x} = \\mathbf{b}<br/>    <br/>        (when `A` is both Hermitian/symmetric and positive-definite).<br/>    <br/>        First, we solve for :math:`\\mathbf{y}` in<br/>    <br/>        .. math:: L \\mathbf{y} = \\mathbf{b},<br/>    <br/>        and then for :math:`\\mathbf{x}` in<br/>    <br/>        .. math:: L.H \\mathbf{x} = \\mathbf{y}.<br/>    <br/>        Examples<br/>        --------<br/>        &gt;&gt;&gt; A = np.array([[1,-2j],[2j,5]])<br/>        &gt;&gt;&gt; A<br/>        array([[ 1.+0.j, -0.-2.j],<br/>               [ 0.+2.j,  5.+0.j]])<br/>        &gt;&gt;&gt; L = np.linalg.cholesky(A)<br/>        &gt;&gt;&gt; L<br/>        array([[1.+0.j, 0.+0.j],<br/>               [0.+2.j, 1.+0.j]])<br/>        &gt;&gt;&gt; np.dot(L, L.T.conj()) # verify that L * L.H = A<br/>        array([[1.+0.j, 0.-2.j],<br/>               [0.+2.j, 5.+0.j]])<br/>        &gt;&gt;&gt; A = [[1,-2j],[2j,5]] # what happens if A is only array_like?<br/>        &gt;&gt;&gt; np.linalg.cholesky(A) # an ndarray object is returned<br/>        array([[1.+0.j, 0.+0.j],<br/>               [0.+2.j, 1.+0.j]])<br/>        &gt;&gt;&gt; # But a matrix object is returned if A is a matrix object<br/>        &gt;&gt;&gt; np.linalg.cholesky(np.matrix(A))<br/>        matrix([[ 1.+0.j,  0.+0.j],<br/>                [ 0.+2.j,  1.+0.j]])<br/>    <br/>        &quot;&quot;&quot;<br/>        extobj = get_linalg_error_extobj(_raise_linalgerror_nonposdef)<br/>        gufunc = _umath_linalg.cholesky_lo<br/>        a, wrap = _makearray(a)<br/>        _assert_stacked_2d(a)<br/>        _assert_stacked_square(a)<br/>        t, result_t = _commonType(a)<br/>        signature = &#x27;D-&gt;D&#x27; if isComplexType(t) else &#x27;d-&gt;d&#x27;<br/>&gt;       r = gufunc(a, signature=signature, extobj=extobj)<br/><br/>c:\tools\anaconda3\envs\punpy\lib\site-packages\numpy\linalg\linalg.py:764: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>err = &#x27;invalid value&#x27;, flag = 8<br/><br/>    def _raise_linalgerror_nonposdef(err, flag):<br/>&gt;       raise LinAlgError(&quot;Matrix is not positive definite&quot;)<br/><span class="error">E       numpy.linalg.LinAlgError: Matrix is not positive definite</span><br/><br/>c:\tools\anaconda3\envs\punpy\lib\site-packages\numpy\linalg\linalg.py:91: LinAlgError<br/><br/>During handling of the above exception, another exception occurred:<br/><br/>self = &lt;punpy.mc.tests.test_mc_propagation.TestMCPropagation testMethod=test_propagate_random&gt;<br/><br/>    def test_propagate_random(self):<br/>        prop = MCPropagation(20000,parallel_cores=0)<br/>    <br/>        uf,ucorr = prop.propagate_random(function,xs,xerrs,return_corr=True)<br/>        npt.assert_allclose(ucorr,np.eye(len(ucorr)),atol=0.06)<br/>        npt.assert_allclose(uf,yerr_uncorr,rtol=0.06)<br/>        ucov= util.convert_corr_to_cov(ucorr,uf)<br/>        ucorr2= util.convert_cov_to_corr(ucov,uf)<br/>        npt.assert_allclose(ucorr,ucorr2,atol=0.01)<br/>    <br/>&gt;       uf = prop.propagate_random(function,xs,xerrs,corr_between=np.ones((2,2)))<br/><br/>punpy\mc\tests\test_mc_propagation.py:95: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/>punpy\mc\mc_propagation.py:96: in propagate_random<br/>    MC_data = self.correlate_samples_corr(MC_data,corr_between)<br/>punpy\mc\mc_propagation.py:631: in correlate_samples_corr<br/>    L = self.nearestPD_cholesky(corr)<br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>A = array([[1., 1.],<br/>       [1., 1.]]), diff = 0.001, corr = False, return_cholesky = True<br/><br/>    @staticmethod<br/>    def nearestPD_cholesky(A,diff=0.001,corr=False,return_cholesky=True):<br/>        &quot;&quot;&quot;<br/>        Find the nearest positive-definite matrix<br/>    <br/>        :param A: correlation matrix or covariance matrix<br/>        :type A: array<br/>        :return: nearest positive-definite matrix<br/>        :rtype: array<br/>    <br/>        Copied and adapted from [1] under BSD license.<br/>        A Python/Numpy port of John D&#x27;Errico&#x27;s `nearestSPD` MATLAB code [2], which<br/>        credits [3].<br/>        [1] https://gist.github.com/fasiha/fdb5cec2054e6f1c6ae35476045a0bbd<br/>        [2] https://www.mathworks.com/matlabcentral/fileexchange/42885-nearestspd<br/>        [3] N.J. Higham, &quot;Computing a nearest symmetric positive semidefinite<br/>        matrix&quot; (1988): https://doi.org/10.1016/0024-3795(88)90223-6<br/>        &quot;&quot;&quot;<br/>    <br/>        B = (A+A.T)/2<br/>        _,s,V = np.linalg.svd(B)<br/>    <br/>        H = np.dot(V.T,np.dot(np.diag(s),V))<br/>    <br/>        A2 = (B+H)/2<br/>    <br/>        A3 = (A2+A2.T)/2<br/>    <br/>        try:<br/>            return np.linalg.cholesky(A3)<br/>        except:<br/>    <br/>            spacing = np.spacing(np.linalg.norm(A))<br/>    <br/>            I = np.eye(A.shape[0])<br/>            k = 1<br/>            while not MCPropagation.isPD(A3):<br/>                mineig = np.min(np.real(np.linalg.eigvals(A3)))<br/>                A3 += I*(-mineig*k**2+spacing)<br/>                k += 1<br/>    <br/>            maxdiff=np.max(np.abs(A-A3))<br/>    <br/>            if corr == True:<br/>                if maxdiff&gt;diff:<br/>                    raise ValueError(<br/>                        &quot;One of the correlation matrices is not postive definite. &quot;<br/>                        &quot;Correlation matrices need to be at least positive &quot;<br/>                        &quot;semi-definite.&quot;)<br/>                else:<br/>                    print(<br/>                        &quot;One of the provided covariance matrix is not positive &quot;<br/>                        &quot;definite. It has been slightly changed (less than %s in any &quot;<br/>                        &quot;element) to accomodate our method.&quot;%(diff))<br/>                    if return_cholesky:<br/>                        return np.linalg.cholesky(A3)<br/>                    else:<br/>                        return A3<br/>            else:<br/>                if maxdiff &gt; diff:<br/>                    raise ValueError(<br/>                        &quot;One of the provided covariance matrices is not postive &quot;<br/>                        &quot;definite. Covariance matrices need to be at least positive &quot;<br/>                        &quot;semi-definite. Please check your covariance matrix.&quot;)<br/>                else:<br/>                    print(<br/>&gt;                       &quot;One of the provided covariance matrix is not positive &quot;<br/>                        &quot;definite. It has been slightly changed (less than %s \% in &quot;<br/>                        &quot;any element) to accomodate our method.&quot;%(diff/100))<br/><span class="error">E                   TypeError: not enough arguments for format string</span><br/><br/>punpy\mc\mc_propagation.py:715: TypeError<br/></div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">punpy/mc/tests/test_mc_propagation.py::TestMCPropagation::test_propagate_systematic</td>
+          <td class="col-duration">0.13</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;punpy.mc.tests.test_mc_propagation.TestMCPropagation testMethod=test_propagate_systematic&gt;<br/><br/>    def test_propagate_systematic(self):<br/>        prop = MCPropagation(30000,parallel_cores=3)<br/>    <br/>&gt;       uf,ucorr = prop.propagate_systematic(function,xs,xerrs,return_corr=True)<br/><br/>punpy\mc\tests\test_mc_propagation.py:146: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;punpy.mc.mc_propagation.MCPropagation object at 0x00000227A27434F0&gt;, func = &lt;function function at 0x00000227C14DF4C0&gt;<br/>x = array([[10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10.,<br/>        10., 10., 10., 10., 10., 10., 10., 10..., 30., 30.,<br/>        30., 30., 30., 30., 30., 30., 30., 30., 30., 30., 30., 30., 30.,<br/>        30., 30., 30., 30., 30.]])<br/>u_x = array([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,<br/>        1., 1., 1., 1., 1., 1., 1., 1., 1., 1...., 2.,<br/>        2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2.,<br/>        2., 2., 2., 2., 2., 2., 2., 2.]])<br/>cov_x = None, param_fixed = None, corr_between = None, return_corr = True, return_samples = False, repeat_dims = -99, corr_axis = -99, output_vars = 1, PD_corr = True<br/><br/>    def propagate_systematic(self,func,x,u_x,cov_x=None,param_fixed=None,corr_between=None,return_corr=False,return_samples=False,repeat_dims=-99,corr_axis=-99,output_vars=1,PD_corr=True):<br/>        &quot;&quot;&quot;<br/>        Propagate systematic uncertainties through measurement function with n input quantities.<br/>        Input quantities can be floats, vectors (1d-array) or images (2d-array).<br/>        Systematic uncertainties arise when there is full correlation between repeated measurements.<br/>        There is a often also a correlation between measurements along the dimensions that is not one of the repeat_dims.<br/>    <br/>        :param func: measurement function<br/>        :type func: function<br/>        :param x: list of input quantities (usually numpy arrays)<br/>        :type x: list[array]<br/>        :param u_x: list of systematic uncertainties on input quantities (usually numpy arrays)<br/>        :type u_x: list[array]<br/>        :param cov_x: list of covariance matrices (n,n) along non-repeating axis, defaults to None<br/>        :type cov_x: list[array], optional<br/>        :param corr_between: covariance matrix (n,n) between input quantities, defaults to None<br/>        :type corr_between: array, optional<br/>        :param return_corr: set to True to return correlation matrix of measurand, defaults to False<br/>        :type return_corr: bool, optional<br/>        :param return_samples: set to True to return generated samples, defaults to False<br/>        :type return_samples: bool, optional<br/>        :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..<br/>        :type repeat_dims: integer or list of 2 integers, optional<br/>        :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.<br/>        :type corr_axis: integer, optional<br/>        :param output_vars: number of output parameters in the measurement function. Defaults to 1.<br/>        :type output_vars: integer, optional<br/>        :return: uncertainties on measurand<br/>        :rtype: array<br/>        &quot;&quot;&quot;<br/>        yshape,u_x,repeat_axis,repeat_dims,corr_axis = self.perform_checks(func,x,u_x,<br/>                                                                       repeat_dims,<br/>                                                                       corr_axis,<br/>                                                                       output_vars)<br/>    <br/>        if repeat_axis &gt;= 0:<br/>            n_repeats=yshape[repeat_axis]<br/>            outs = np.empty(n_repeats,dtype=object)<br/>            for i in range(n_repeats):<br/>                xb,u_xb = self.select_repeated_x(x,u_x,param_fixed,i,repeat_axis,n_repeats)<br/>                # for ij in range(len(xb)):<br/>                #     print(ij,xb[ij],u_xb[ij])<br/>                outs[i] = self.propagate_systematic(func,xb,u_xb,cov_x,param_fixed,corr_between,<br/>                                                return_corr,return_samples,repeat_dims,<br/>                                                corr_axis=corr_axis,<br/>                                                output_vars=output_vars,PD_corr=False)<br/>            return self.combine_repeated_outs(outs,yshape,n_repeats,len(x),repeat_axis,<br/>                                              return_corr,return_samples,output_vars)<br/>    <br/>        else:<br/>            MC_data = np.empty(len(x),dtype=np.ndarray)<br/>            for i in range(len(x)):<br/>                if u_x[i] is None:<br/>                    u_x[i] = np.zeros_like(x[i])<br/>&gt;               if cov_x[i] is None or cov_x[i] == &quot;syst&quot;:<br/><span class="error">E               TypeError: &#x27;NoneType&#x27; object is not subscriptable</span><br/><br/>punpy\mc\mc_propagation.py:153: TypeError<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">punpy/jacobian/tests/test_jacobian_propagation.py::TestMCPropagation::test_propagate_random</td>
+          <td class="col-duration">354.41</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody></table></body></html>
