@@ -17,6 +17,8 @@
 \documentclass{article}
 
 \usepackage{softwareRequirements}
+\usepackage{standalone}
+\usepackage{sphinx}
 
 \begin{document}
 
@@ -65,15 +67,22 @@ An automated test report is given in Section \ref{testreport}. This includes:
 \clearpage
 \section{Test report}\label{testreport}
 
-\includegraphics[page=1,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{test_report.pdf}
-
-%\includegraphics[page=2,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{test_report.pdf}
-
-%\includegraphics[page=3,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{test_report.pdf}
-
-\includegraphics[page=1,trim= 20mm 10mm  10mm 10mm,width=\textwidth]{cov_report.pdf}
-
-\includepdf[pages=-,delta= 15mm 15mm]{test_report.pdf}
-\includepdf[pages=-,delta= 15mm 15mm]{cov_report.pdf}
+%\includegraphics[page=1,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{test_report.pdf}
+%
+%%\includegraphics[page=2,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{test_report.pdf}
+%
+%%\includegraphics[page=3,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{test_report.pdf}
+%
+%\includegraphics[page=1,trim= 20mm 10mm  10mm 10mm,width=\textwidth]{cov_report.pdf}
+%
+%\includepdf[pages=-,delta= 15mm 15mm]{test_report.pdf}
+%\includepdf[pages=-,delta= 15mm 15mm]{cov_report.pdf}
+\part*{User Manual}
+\phantomsection
+\addcontentsline{toc}{part}{User Manual}
+\appendix
+\def\maketitle{}
+\def\tableofcontents{}
+\input{./latex/punpy.tex}
 
 \end{document}
