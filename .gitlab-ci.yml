@@ -184,7 +184,7 @@ pdf_make:
     - cp -r latex ./quality_documentation/latex
   artifacts:
     paths:
-    - latex
+    - quality_documentation/latex
     expire_in: 1 hour
 
 
@@ -199,9 +199,9 @@ pdf_compile:
     name: ${CI_COMMIT_REF_SLUG}_manual.pdf
   script:
     - ls
-    - cd latex
+    - cd quality_documentation/latex
     - make
-    - cp punpy.pdf ../punpy.pdf
+    - cp punpy.pdf ../../punpy.pdf
 
 
 pdf_compile_all:
@@ -211,7 +211,7 @@ pdf_compile_all:
   artifacts:
     paths:
     - QualityDocumentation.pdf
-    expose_as: "Manual"
+    expose_as: "QualityDocumentation"
     name: ${CI_COMMIT_REF_SLUG}_manual.pdf
   script:
     - cd quality_documentation
