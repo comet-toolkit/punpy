@@ -152,8 +152,7 @@ test_report:
       - mv cov_report.pdf ./quality_documentation/cov_report.pdf
   artifacts:
     paths:
-    - quality_documentation/test_report.pdf
-    - quality_documentation/cov_report.pdf
+    - quality_documentation
     expire_in: 1 hour
 
 ### Documentation ###
@@ -182,7 +181,7 @@ pdf_make:
   needs: []
   script:
     - sphinx-build docs latex -b latex
-    - cp -r latex ./user_documentation/latex
+    - cp -r latex ./quality_documentation/latex
   artifacts:
     paths:
     - latex
@@ -215,11 +214,7 @@ pdf_compile_all:
     expose_as: "Manual"
     name: ${CI_COMMIT_REF_SLUG}_manual.pdf
   script:
-    - ls
-    - cd latex
-    - make
-    - cd ../quality_documentation
-    - cp latex/*.sty ./
+    - cd quality_documentation
     - ls
     - pwd
     - latexmk -e '$pdflatex=q/pdflatex %O -shell-escape %S/' -pdf
