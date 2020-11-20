@@ -3,6 +3,7 @@
 import numpy as np
 from multiprocessing import Pool
 import warnings
+import punpy.utilities.utilities as util
 
 '''___Authorship___'''
 __author__ = "Pieter De Vis"
@@ -391,19 +392,19 @@ class MCPropagation:
                 corr=np.mean([outs[i][1] for i in range(n_repeats)],axis=0)
                 if output_vars > 1:
                     for j in range(output_vars):
-                        if not self.isPD(corr[j]):
-                            corr[j] = self.nearestPD_cholesky(corr[j] ,corr=True,
+                        if not util.isPD(corr[j]):
+                            corr[j] = util.nearestPD_cholesky(corr[j] ,corr=True,
                                                            return_cholesky=False)
                 else:
-                    if not self.isPD(corr):
-                        corr=self.nearestPD_cholesky(corr,corr=True,return_cholesky=False)
+                    if not util.isPD(corr):
+                        corr=util.nearestPD_cholesky(corr,corr=True,return_cholesky=False)
                 returns[1]=corr
                 extra_index+=1
 
             if output_vars>1:
                 corr_out = np.mean([outs[i][1+extra_index] for i in range(n_repeats)],axis=0)
-                if not self.isPD(corr_out):
-                    corr_out=self.nearestPD_cholesky(corr_out,corr=True,return_cholesky=False)
+                if not util.isPD(corr_out):
+                    corr_out=util.nearestPD_cholesky(corr_out,corr=True,return_cholesky=False)
                 returns[1+extra_index]=corr_out
                 extra_index+=1
 
@@ -463,8 +464,8 @@ class MCPropagation:
             if output_vars==1:
                 corr_y = self.calculate_corr(MC_y,corr_axis).astype("float32")
                 if PD_corr:
-                    if not self.isPD(corr_y):
-                        corr_y = self.nearestPD_cholesky(corr_y,corr=True,
+                    if not util.isPD(corr_y):
+                        corr_y = util.nearestPD_cholesky(corr_y,corr=True,
                                                        return_cholesky=False)
                 if return_samples:
                     return u_func,corr_y,MC_y,data
@@ -477,14 +478,14 @@ class MCPropagation:
                 for i in range(output_vars):
                     corr_ys[i] = self.calculate_corr(MC_y[i],corr_axis).astype("float32")
                     if PD_corr:
-                        if not self.isPD(corr_ys[i]):
-                            corr_ys[i] = self.nearestPD_cholesky(corr_ys[i],corr=True,
+                        if not util.isPD(corr_ys[i]):
+                            corr_ys[i] = util.nearestPD_cholesky(corr_ys[i],corr=True,
                                                              return_cholesky=False)
                 #calculate correlation matrix between the different outputs produced by the measurement function.
                 corr_out=np.corrcoef(MC_y.reshape((output_vars,-1))).astype("float32")
                 if PD_corr:
-                    if not self.isPD(corr_out):
-                        corr_out = self.nearestPD_cholesky(corr_out,corr=True,
+                    if not util.isPD(corr_out):
+                        corr_out = util.nearestPD_cholesky(corr_out,corr=True,
                                                          return_cholesky=False)
 
                 if return_samples:
@@ -619,7 +620,7 @@ class MCPropagation:
         try:
             L = np.linalg.cholesky(cov_param)
         except:
-            L = self.nearestPD_cholesky(cov_param)
+            L = util.nearestPD_cholesky(cov_param)
 
         return np.dot(L,np.random.normal(size=(len(param),self.MCsteps)))+param[:,None]
 
@@ -640,7 +641,7 @@ class MCPropagation:
             try:
                 L = np.array(np.linalg.cholesky(corr))
             except:
-                L = self.nearestPD_cholesky(corr)
+                L = util.nearestPD_cholesky(corr)
 
             #Cholesky needs to be applied to Gaussian distributions with mean=0 and std=1,
             #We first calculate the mean and std for each input quantity
