@@ -61,22 +61,13 @@ An automated test report is given in Section \ref{testreport}. This includes:
 
 \clearpage
 \section{Software design}\label{design}
-
-
+\input{design.tex}
 
 \clearpage
 \section{Test report}\label{testreport}
 
-\includegraphics[page=1,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{test_report.pdf}
-
-%\includegraphics[page=2,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{test_report.pdf}
-
-%\includegraphics[page=3,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{test_report.pdf}
-
-\includegraphics[page=1,trim= 20mm 10mm  10mm 10mm,width=\textwidth]{cov_report.pdf}
-
-\includepdf[pages=-,delta= 15mm 15mm]{test_report.pdf}
-\includepdf[pages=-,delta= 15mm 15mm]{cov_report.pdf}
+\input{test_report.tex}
+\input{cov_report.tex}
 
 \clearpage
 
