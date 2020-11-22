@@ -15,7 +15,7 @@ __status__ = "Development"
 class MCPropagation:
     def __init__(self,steps,parallel_cores=0):
         """
-        Initialise MC Propagator
+        Initialise MC PropagatoKr
 
         :param steps: number of MC iterations
         :type steps: int
