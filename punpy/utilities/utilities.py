@@ -95,7 +95,7 @@ def nearestPD_cholesky(A,diff=0.001,corr=False,return_cholesky=True):
 
         I = np.eye(A.shape[0])
         k = 1
-        while not MCPropagation.isPD(A3):
+        while not isPD(A3):
             mineig = np.min(np.real(np.linalg.eigvals(A3)))
             A3 += I*(-mineig*k**2+spacing)
             k += 1

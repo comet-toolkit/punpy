@@ -45,7 +45,10 @@ class MCMCRetrieval:
         pos = [theta_0*np.random.normal(1.0,0.1,theta_0.shape)+np.random.normal(0.0,0.001,theta_0.shape) for i in
                range(nwalkers)]
         #print(self.measurement_function(theta_0))
-        p = Pool(self.parallel_cores)
+        if self.parallel_cores>1:
+            p = Pool(self.parallel_cores)
+        else:
+            p=None
         sampler = emcee.EnsembleSampler(nwalkers,ndimw,self.lnprob,pool=p)
         sampler.run_mcmc(pos,steps,progress=False)
 

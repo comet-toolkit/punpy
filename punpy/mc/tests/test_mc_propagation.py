@@ -17,7 +17,7 @@ __email__ = "pieter.de.vis@npl.co.uk"
 __status__ = "Development"
 
 def function(x1,x2):
-    return x1**2 - 10*x2
+    return x1**2 - 10*x2 + 30.
 
 x1=np.ones(200)*10
 x2=np.ones(200)*30
@@ -140,12 +140,18 @@ class TestMCPropagation(unittest.TestCase):
     #     ufd,yvaluesd,xvaluesd = prop.propagate_random(functiond,xsd,xerrsd,corr_between=corr_d,return_samples=True,output_vars=2)
     #     npt.assert_allclose(ufd,yerr_corrd,atol=0.1)
     #
-    # def test_propagate_systematic(self):
-    #     prop = MCPropagation(30000,parallel_cores=3)
-    #
-    #     uf,ucorr = prop.propagate_systematic(function,xs,xerrs,return_corr=True)
-    #     npt.assert_allclose(ucorr,np.ones_like(ucorr),atol=0.06)
-    #     npt.assert_allclose(uf,yerr_uncorr,rtol=0.06)
+    def test_propagate_systematic(self):
+        prop = MCPropagation(30000,parallel_cores=3)
+
+        corr=(np.ones_like(x1err)+np.eye(len(x1err)))/2
+        covs=[util.convert_corr_to_cov(corr,x1err),None]
+        uf,ucorr = prop.propagate_systematic(function,xs,[x1err,None],corr_x=[corr,None],return_corr=True)
+        npt.assert_allclose(ucorr,corr,atol=0.01)
+        #npt.assert_allclose(uf,yerr_uncorr,rtol=0.06)
+
+        # uf,ucorr = prop.propagate_systematic(function,xs,xerrs,return_corr=True)
+        # npt.assert_allclose(ucorr,np.ones_like(ucorr),atol=0.06)
+        # npt.assert_allclose(uf,yerr_uncorr,rtol=0.06)
     #
     #     uf = prop.propagate_systematic(function,xs,xerrs,
     #                                corr_between=np.ones((2,2)))
@@ -187,13 +193,13 @@ class TestMCPropagation(unittest.TestCase):
     #                                                     output_vars=2)
     #     npt.assert_allclose(ucorrd[0],np.ones_like(ucorrd[0]),atol=0.06)
     #
-    # def test_propagate_cov(self):
-    #     prop = MCPropagation(20000)
-    #
-    #     cov = [util.convert_corr_to_cov(np.eye(len(xerr.flatten())),xerr) for xerr in xerrs]
-    #     uf,ucorr = prop.propagate_cov(function,xs,cov,return_corr=True)
-    #     npt.assert_allclose(ucorr,np.eye(len(ucorr)),atol=0.06)
-    #     npt.assert_allclose(uf,yerr_uncorr,rtol=0.06)
+    def test_propagate_cov(self):
+        prop = MCPropagation(20000)
+
+        cov = [util.convert_corr_to_cov(np.eye(len(xerr.flatten())),xerr) for xerr in xerrs]
+        uf,ucorr = prop.propagate_cov(function,xs,cov,return_corr=True)
+        npt.assert_allclose(ucorr,np.eye(len(ucorr)),atol=0.06)
+        npt.assert_allclose(uf,yerr_uncorr,rtol=0.06)
     #
     #     cov = [util.convert_corr_to_cov(np.ones((len(xerr.flatten()),len(xerr.flatten())))+np.eye(len(xerr)),xerr) for xerr in xerrs]
     #     uf,ucorr = prop.propagate_cov(function,xs,cov,return_corr=True)
