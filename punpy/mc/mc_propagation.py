@@ -23,8 +23,6 @@ class MCPropagation:
 
         self.MCsteps = steps
         self.parallel_cores = parallel_cores
-        if parallel_cores>1:
-            self.pool=Pool(parallel_cores)
 
     def propagate_random(self,func,x,u_x,corr_x=None,param_fixed=None,corr_between=None,
                          return_corr=False,return_samples=False,repeat_dims=-99,
@@ -470,7 +468,9 @@ class MCPropagation:
             # We again need to reorder the input quantities samples in order to be able to pass them to p.starmap
             # We here use lists to iterate over and order them slightly different as the case above.
             data2=[[data[j][...,i] for j in range(len(data))] for i in range(self.MCsteps)]
-            MC_y2=np.array(self.pool.starmap(func,data2))
+            pool = Pool(parallel_cores)
+            MC_y2=np.array(pool.starmap(func,data2))
+            del pool
             MC_y = np.moveaxis(MC_y2,0,-1)
 
         u_func = np.std(MC_y,axis=-1)
