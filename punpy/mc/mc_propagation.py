@@ -73,6 +73,7 @@ class MCPropagation:
                                                 return_samples,repeat_dims,
                                                 corr_axis=corr_axis,
                                                 output_vars=output_vars,
+                                                fixed_corr_var = fixed_corr_var,
                                                 PD_corr=False)
 
             return self.combine_repeated_outs(outs,yshape,n_repeats,len(x),repeat_axis,
@@ -143,7 +144,7 @@ class MCPropagation:
                 #     print(ij,xb[ij],u_xb[ij])
                 outs[i] = self.propagate_systematic(func,xb,u_xb,corr_x,param_fixed,corr_between,
                                                 return_corr,return_samples,repeat_dims,
-                                                corr_axis=corr_axis,
+                                                corr_axis=corr_axis,fixed_corr_var=fixed_corr_var,
                                                 output_vars=output_vars,PD_corr=False)
             return self.combine_repeated_outs(outs,yshape,n_repeats,len(x),repeat_axis,
                                               return_corr,return_samples,output_vars)
