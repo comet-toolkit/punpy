@@ -468,7 +468,7 @@ class MCPropagation:
             # We again need to reorder the input quantities samples in order to be able to pass them to p.starmap
             # We here use lists to iterate over and order them slightly different as the case above.
             data2=[[data[j][...,i] for j in range(len(data))] for i in range(self.MCsteps)]
-            pool = Pool(parallel_cores)
+            pool = Pool(self.parallel_cores)
             MC_y2=np.array(pool.starmap(func,data2))
             del pool
             MC_y = np.moveaxis(MC_y2,0,-1)
