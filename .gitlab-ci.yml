@@ -217,7 +217,7 @@ pdf_compile_all:
     - cd quality_documentation
     - pwd
     - cd uml
-    - for i in *.pdf; do echo "\includegraphics[width=\textwidth]{$i}">>../design.tex; done
+    - for i in *.pdf; do echo "\includegraphics{$i}">>../design.tex; done
     - cd ..
     - less design.tex
     # - foo=$(pdfinfo test_report.pdf | grep Pages | awk '{print $2}'); for ((i=1;i<=$foo;i++)); do echo "\includegraphics[page=$i,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{test_report.pdf}"; done >>test_report.tex
