@@ -199,7 +199,7 @@ class MCPropagation:
         :rtype: array
         """
         yshape,u_x,repeat_axis,repeat_dims,corr_axis,fixed_corr = self.perform_checks(
-            func,x,cov_x,cov_x,repeat_dims,corr_axis,output_vars,fixed_corr_var)
+            func,x,cov_x,None,repeat_dims,corr_axis,output_vars,fixed_corr_var)
 
         if repeat_axis >= 0:
             n_repeats=yshape[repeat_axis]
