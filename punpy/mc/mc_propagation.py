@@ -26,7 +26,7 @@ class MCPropagation:
 
     def propagate_random(self,func,x,u_x,corr_x=None,param_fixed=None,corr_between=None,
                          return_corr=False,return_samples=False,repeat_dims=-99,
-                         corr_axis=-99,fixed_corr_var=-99,output_vars=1,PD_corr=True):
+                         corr_axis=-99,fixed_corr_var=False,output_vars=1,PD_corr=True):
         """
         Propagate random uncertainties through measurement function with n input quantities.
         Input quantities can be floats, vectors (1d-array) or images (2d-array).
@@ -51,8 +51,12 @@ class MCPropagation:
         :type repeat_dims: integer or list of 2 integers, optional
         :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
         :type corr_axis: integer, optional
+        :param fixed_corr_var: set to integer to copy the correlation matrix of the dimiension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
+        :type fixed_corr_var: bool or integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
         :type output_vars: integer, optional
+        :param PD_corr: set to True to make sure returned correlation matrices are positive semi-definite, default to True
+        :type PD_corr: bool, optional
         :return: uncertainties on measurand
         :rtype: array
         """
@@ -87,8 +91,7 @@ class MCPropagation:
                 elif corr_x[i]=="syst":
                     MC_data[i] = self.generate_samples_systematic(x[i],u_x[i])
                 else:
-                    MC_data[i] = self.generate_samples_correlated(x,u_x,corr_x,
-                                                                  param_fixed,i)
+                    MC_data[i] = self.generate_samples_correlated(x,u_x,corr_x,i)
 
             if corr_between is not None:
                 MC_data = self.correlate_samples_corr(MC_data,corr_between)
@@ -99,7 +102,7 @@ class MCPropagation:
 
     def propagate_systematic(self,func,x,u_x,corr_x=None,param_fixed=None,
                              corr_between=None,return_corr=False,return_samples=False,
-                             repeat_dims=-99,corr_axis=-99,fixed_corr_var=-99,
+                             repeat_dims=-99,corr_axis=-99,fixed_corr_var=False,
                              output_vars=1,PD_corr=True):
         """
         Propagate systematic uncertainties through measurement function with n input quantities.
@@ -117,6 +120,8 @@ class MCPropagation:
         :type corr_x: list[array], optional
         :param corr_between: correlation matrix (n,n) between input quantities, defaults to None
         :type corr_between: array, optional
+        :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the parameter is fixed (param fixed=True), defaults to None (no parameters fixed).
+        :type param_fixed: list of bools, optional
         :param return_corr: set to True to return correlation matrix of measurand, defaults to False
         :type return_corr: bool, optional
         :param return_samples: set to True to return generated samples, defaults to False
@@ -125,8 +130,12 @@ class MCPropagation:
         :type repeat_dims: integer or list of 2 integers, optional
         :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
         :type corr_axis: integer, optional
+        :param fixed_corr_var: set to integer to copy the correlation matrix of the dimiension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
+        :type fixed_corr_var: bool or integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
         :type output_vars: integer, optional
+        :param PD_corr: set to True to make sure returned correlation matrices are positive semi-definite, default to True
+        :type PD_corr: bool, optional
         :return: uncertainties on measurand
         :rtype: array
         """
@@ -158,8 +167,7 @@ class MCPropagation:
                 elif corr_x[i] == "rand":
                     MC_data[i] = self.generate_samples_random(x[i],u_x[i])
                 else:
-                    MC_data[i] = self.generate_samples_correlated(x,u_x,corr_x,
-                                                                  param_fixed,i)
+                    MC_data[i] = self.generate_samples_correlated(x,u_x,corr_x,i)
 
             if corr_between is not None:
                 MC_data = self.correlate_samples_corr(MC_data,corr_between)
@@ -169,7 +177,7 @@ class MCPropagation:
 
     def propagate_cov(self,func,x,cov_x,param_fixed=None,corr_between=None,
                       return_corr=True,return_samples=False,repeat_dims=-99,
-                      corr_axis=-99,fixed_corr_var=-99,output_vars=1,PD_corr=True):
+                      corr_axis=-99,fixed_corr_var=False,output_vars=1,PD_corr=True):
         """
         Propagate uncertainties with given covariance matrix through measurement function with n input quantities.
         Input quantities can be floats, vectors (1d-array) or images (2d-array).
@@ -193,8 +201,12 @@ class MCPropagation:
         :type repeat_dims: integer or list of 2 integers, optional
         :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
         :type corr_axis: integer, optional
+        :param fixed_corr_var: set to integer to copy the correlation matrix of the dimiension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
+        :type fixed_corr_var: bool or integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
         :type output_vars: integer, optional
+        :param PD_corr: set to True to make sure returned correlation matrices are positive semi-definite, default to True
+        :type PD_corr: bool, optional
         :return: uncertainties on measurand
         :rtype: array
         """
@@ -241,6 +253,28 @@ class MCPropagation:
 
     def perform_checks(self,func,x,u_x,corr_x,repeat_dims,corr_axis,output_vars,
                        fixed_corr_var):
+        """
+        Perform checks on the input parameters and set up the appropriate keywords for further processing
+
+        :param func: measurement function
+        :type func: function
+        :param x: list of input quantities (usually numpy arrays)
+        :type x: list[array]
+        :param u_x: list of uncertainties/covariances on input quantities (usually numpy arrays)
+        :type u_x: list[array]
+        :param corr_x: list of correlation matrices (n,n) along non-repeating axis, defaults to None. Can optionally be set to "rand" (diagonal correlation matrix), "syst" (correlation matrix of ones) or a custom correlation matrix.
+        :type corr_x: list[array], optional
+        :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
+        :type repeat_dims: integer or list of 2 integers, optional
+        :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+        :type corr_axis: integer, optional
+        :param output_vars: number of output parameters in the measurement function. Defaults to 1.
+        :type output_vars: integer, optional
+        :param fixed_corr_var: set to integer to copy the correlation matrix of the dimiension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
+        :type fixed_corr_var: bool or integer, optional
+        :return: yshape,u_x,repeat_axis,repeat_dims,corr_axis,fixed_corr
+        :rtype: tuple, list[array], int, int, int, array
+        """
 
 
         # find the shape
@@ -325,6 +359,24 @@ class MCPropagation:
 
 
     def select_repeated_x(self,x,u_x,param_fixed,i,repeat_axis,n_repeats):
+        """
+        Select one (index i) of multiple repeated entries and return the input quantities and uncertainties for that entry.
+
+        :param x: list of input quantities (usually numpy arrays)
+        :type x: list[array]
+        :param u_x: list of uncertainties/covariances on input quantities (usually numpy arrays)
+        :type u_x: list[array]
+        :param param_fixed: set to True to indicate this parameter does not have
+        :type param_fixed:
+        :param i:
+        :type i:
+        :param repeat_axis:
+        :type repeat_axis:
+        :param n_repeats:
+        :type n_repeats:
+        :return:
+        :rtype:
+        """
         xb=np.zeros(len(x),dtype=object)
         u_xb=np.zeros(len(u_x),dtype=object)
         for j in range(len(x)):
@@ -593,7 +645,7 @@ class MCPropagation:
 
         return corr_y
 
-    def generate_samples_correlated(self,x,u_x,corr_x,param_fixed,i):
+    def generate_samples_correlated(self,x,u_x,corr_x,i):
         if (len(x[i].shape) == 2):
             if len(corr_x[i]) == len(u_x[i]):
                 MC_data = np.zeros((u_x[i].shape)+(self.MCsteps,))
