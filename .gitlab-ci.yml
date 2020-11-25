@@ -216,10 +216,9 @@ pdf_compile_all:
   script:
     - cd quality_documentation
     - pwd
-    # - cd uml
-    # - for i in *.pdf; do echo "\includegraphics{$i}">>../design.tex; done
-    # - cd ..
-    - less design.tex
+    - cd uml
+    - for i in *.png; do echo "\includegraphics[]{$i}">>uml.tex; done
+    - cd ..
     # - foo=$(pdfinfo test_report.pdf | grep Pages | awk '{print $2}'); for ((i=1;i<=$foo;i++)); do echo "\includegraphics[page=$i,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{test_report.pdf}"; done >>test_report.tex
     # - foo=$(pdfinfo cov_report.pdf | grep Pages | awk '{print $2}'); for ((i=1;i<=$foo;i++)); do echo "\includegraphics[page=$i,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{cov_report.pdf}"; done >>cov_report.tex
     - ls
