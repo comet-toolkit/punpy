@@ -277,7 +277,7 @@ class MCPropagation:
                     u_x[i] = np.zeros(x[i].shape)
                 else:
                     u_x[i] = 0.
-            if np.sum(u_x[i])!=0:
+            if np.sum(u_x[i])!=0 and fixed_corr_var==True:
                 count+=1
                 var=i
             if corr_x is not None:
@@ -288,6 +288,9 @@ class MCPropagation:
 
         if count==1:
             fixed_corr_var=var
+        else:
+            fixed_corr_var=-99
+
 
         if fixed_corr_var >= 0 and corr_x is not None:
             if corr_x[fixed_corr_var] == "rand":
@@ -599,6 +602,7 @@ class MCPropagation:
                     MC_data[:,j,:] = self.generate_samples_cov(x[i][:,j].flatten(),
                                      cov_x).reshape(x[i][:,j].shape+(self.MCsteps,))
             else:
+                MC_data = np.zeros((u_x[i].shape)+(self.MCsteps,))
                 for j in range(len(u_x[i][:,0])):
                     cov_x = util.convert_corr_to_cov(corr_x[i],u_x[i][j])
                     MC_data[j,:,:] = self.generate_samples_cov(x[i][j].flatten(),
