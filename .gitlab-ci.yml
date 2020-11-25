@@ -9,6 +9,7 @@ stages:
   - Full test
   - Publish test report
   - Publish Pages
+  - Count pdf pages
   - Combine Documentation
 
 
@@ -206,14 +207,14 @@ pdf_compile:
 
 count_pdf_pages:
   needs: ["pdf_make","test_report"]
-  stage: Combine Documentation
+  stage: Count pdf pages
   image:  mercstudio/pdfinfo
   artifacts:
     paths:
     - quality_documentation/test_report.tex
     - quality_documentation/cov_report.tex
-    expose_as: "QualityDocumentation"
-    name: ${CI_COMMIT_REF_SLUG}_manual.pdf
+    expire_in: 1 hour
+
   script:
     - cd quality_documentation
     - pwd
@@ -236,9 +237,6 @@ pdf_compile_all:
     - cd uml
     - for i in *.png; do echo "\includegraphics[width=\textwidth]{$i}">>uml.tex; done
     - cd ..
-    # - foo=$(pdfinfo test_report.pdf | grep Pages | awk '{print $2}'); for ((i=1;i<=$foo;i++)); do echo "\includegraphics[page=$i,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{test_report.pdf}"; done >>test_report.tex
-    # - foo=$(pdfinfo cov_report.pdf | grep Pages | awk '{print $2}'); for ((i=1;i<=$foo;i++)); do echo "\includegraphics[page=$i,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{cov_report.pdf}"; done >>cov_report.tex
-    - ls
     - latexmk -e '$pdflatex=q/pdflatex %O -shell-escape %S/' -pdf
     - cp QualityDocumentation.pdf ../.
 
