@@ -144,14 +144,14 @@ class TestMCPropagation(unittest.TestCase):
         prop = MCPropagation(30000,parallel_cores=3)
 
         corr=(np.ones_like(x1err)+np.eye(len(x1err)))/2
-        covs=[util.convert_corr_to_cov(corr,x1err),None]
-        uf,ucorr = prop.propagate_systematic(function,xs,[x1err,None],corr_x=[corr,None],return_corr=True)
-        npt.assert_allclose(ucorr,corr,atol=0.01)
-        #npt.assert_allclose(uf,yerr_uncorr,rtol=0.06)
+        uf,ucorr = prop.propagate_systematic(function,xs,[x1err,None],
+                                             corr_x=[corr,None],return_corr=True,
+                                             fixed_corr_var=True)
+        npt.assert_allclose(ucorr,corr,atol=0.0001)
 
-        # uf,ucorr = prop.propagate_systematic(function,xs,xerrs,return_corr=True)
-        # npt.assert_allclose(ucorr,np.ones_like(ucorr),atol=0.06)
-        # npt.assert_allclose(uf,yerr_uncorr,rtol=0.06)
+        uf,ucorr = prop.propagate_systematic(function,xs,xerrs,return_corr=True)
+        npt.assert_allclose(ucorr,np.ones_like(ucorr),atol=0.06)
+        npt.assert_allclose(uf,yerr_uncorr,rtol=0.06)
     #
     #     uf = prop.propagate_systematic(function,xs,xerrs,
     #                                corr_between=np.ones((2,2)))
