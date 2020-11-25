@@ -101,6 +101,7 @@ def nearestPD_cholesky(A,diff=0.001,corr=False,return_cholesky=True):
             k += 1
 
         if corr == True:
+            A3 = correlation_from_covariance(A3)
             maxdiff = np.max(np.abs(A-A3))
             if maxdiff>diff:
                 raise ValueError(
@@ -145,3 +146,10 @@ def isPD(B):
         return True
     except np.linalg.LinAlgError:
         return False
+
+def correlation_from_covariance(covariance):
+    v = np.sqrt(np.diag(covariance))
+    outer_v = np.outer(v, v)
+    correlation = covariance / outer_v
+    correlation[covariance == 0] = 0
+    return correlation

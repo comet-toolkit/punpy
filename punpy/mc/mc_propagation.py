@@ -280,6 +280,11 @@ class MCPropagation:
             if np.sum(u_x[i])!=0:
                 count+=1
                 var=i
+            if corr_x is not None:
+                if corr_x[i] is not None:
+                    if np.any(corr_x[i]>1.000001):
+                        raise ValueError("One of the provided correlation matrices "
+                                         "has elements >1.")
 
         if count==1:
             fixed_corr_var=var
@@ -490,8 +495,7 @@ class MCPropagation:
                             corr_y = util.nearestPD_cholesky(corr_y,corr=True,
                                                            return_cholesky=False)
                 else:
-                    corr_y=fixed_corr
-
+                    corr_y = fixed_corr
                 if return_samples:
                     return u_func,corr_y,MC_y,data
                 else:
@@ -516,7 +520,6 @@ class MCPropagation:
                     if not util.isPD(corr_out):
                         corr_out = util.nearestPD_cholesky(corr_out,corr=True,
                                                          return_cholesky=False)
-
                 if return_samples:
                     return u_func,corr_ys,corr_out,MC_y,data
                 else:
@@ -684,7 +687,7 @@ class MCPropagation:
         :return: correlated samples of input quantities
         :rtype: array[array]
         """
-        if np.max(corr) > 1.000000001 or len(corr) != len(samples):
+        if np.max(corr) > 1.000001 or len(corr) != len(samples):
             raise ValueError("The correlation matrix between variables is not the right shape or has elements >1.")
         else:
             try:
