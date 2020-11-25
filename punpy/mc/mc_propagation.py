@@ -259,9 +259,11 @@ class MCPropagation:
 
         if shapewarning:
             warnings.warn(
-                "It looks like one of your input quantities is not an array or does not the same shape as the measurand."
-                "This is not a problem, but means you likely cannot use array operations in your measurement function."
-                "You might need to set parallel_cores to 1 or higher when creating your MCPropagation object.")
+                "It looks like one of your input quantities is not an array or does not "
+                "have the same shape as the measurand. This is not a problem, but means "
+                "you likely cannot use array operations in your measurement function. "
+                "You might need to set parallel_cores to 1 or higher when creating "
+                "your MCPropagation object.")
 
         # Check for which input quantities there is no uncertainty,
         # replacing Nones with zeros where necessary.
