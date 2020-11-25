@@ -138,12 +138,13 @@ class MCPropagation:
             outs = np.empty(n_repeats,dtype=object)
             for i in range(n_repeats):
                 xb,u_xb = self.select_repeated_x(x,u_x,param_fixed,i,repeat_axis,n_repeats)
-                # for ij in range(len(xb)):
-                #     print(ij,xb[ij],u_xb[ij])
-                outs[i] = self.propagate_systematic(func,xb,u_xb,corr_x,param_fixed,corr_between,
-                                                return_corr,return_samples,repeat_dims,
-                                                corr_axis=corr_axis,fixed_corr_var=fixed_corr_var,
-                                                output_vars=output_vars,PD_corr=False)
+                outs[i] = self.propagate_systematic(func,xb,u_xb,corr_x,param_fixed,
+                                                    corr_between,return_corr,
+                                                    return_samples,repeat_dims,
+                                                    corr_axis=corr_axis,
+                                                    fixed_corr_var=fixed_corr_var,
+                                                    output_vars=output_vars,
+                                                    PD_corr=False)
             return self.combine_repeated_outs(outs,yshape,n_repeats,len(x),repeat_axis,
                                               return_corr,return_samples,output_vars)
 
@@ -226,13 +227,11 @@ class MCPropagation:
                                                range(x[i].shape[1])]).T
                         MC_data[i] = np.moveaxis(MC_data[i],0,1)
                     else:
-                        MC_data[i] = self.generate_samples_cov(x[i].flatten()
-                                                               ,cov_x[i]).reshape\
-                            (x[i].shape+(self.MCsteps,))
+                        MC_data[i] = self.generate_samples_cov(x[i].flatten(),cov_x[i])\
+                                         .reshape(x[i].shape+(self.MCsteps,))
                 else:
-                    MC_data[i] = self.generate_samples_cov(x[i].flatten(),
-                                                           cov_x[i]).reshape(
-                        x[i].shape+(self.MCsteps,))
+                    MC_data[i] = self.generate_samples_cov(x[i].flatten(),cov_x[i])\
+                                     .reshape(x[i].shape+(self.MCsteps,))
 
             if corr_between is not None:
                 MC_data = self.correlate_samples_corr(MC_data,corr_between)
@@ -587,32 +586,22 @@ class MCPropagation:
         return corr_y
 
     def generate_samples_correlated(self,x,u_x,corr_x,param_fixed,i):
-        if param_fixed is not None:
-            if param_fixed[i] and (len(x[i].shape) == 2):
-                try:
-                    cov_x = util.convert_corr_to_cov(corr_x[i],u_x[i])
-                except:
-                    if len(corr_x[i]) == len(u_x[i]):
-                        cov_x = util.convert_corr_to_cov(corr_x[i],
-                                                         np.mean(u_x[i],axis=1))
-                    else:
-                        cov_x = util.convert_corr_to_cov(corr_x[i],
-                                                         np.mean(u_x[i],axis=0))
-                MC_data = np.array([
-                    self.generate_samples_cov(x[i][:,j].flatten(),cov_x).reshape(
-                        x[i][:,j].shape+(self.MCsteps,)) for j in
-                    range(x[i].shape[1])]).T
-                MC_data = np.moveaxis(MC_data[i],0,1)
-
+        if (len(x[i].shape) == 2):
+            if len(corr_x[i]) == len(u_x[i]):
+                MC_data = np.zeros((u_x[i].shape)+(self.MCsteps,))
+                for j in range(len(u_x[i][0])):
+                    cov_x = util.convert_corr_to_cov(corr_x[i],u_x[i][:,j])
+                    MC_data[:,j,:] = self.generate_samples_cov(x[i][:,j].flatten(),
+                                     cov_x).reshape(x[i][:,j].shape+(self.MCsteps,))
             else:
-                cov_x = util.convert_corr_to_cov(corr_x[i],u_x[i])
-                MC_data = self.generate_samples_cov(x[i].flatten(),cov_x).reshape(
-                    x[i].shape+(self.MCsteps,))
-
+                for j in range(len(u_x[i][:,0])):
+                    cov_x = util.convert_corr_to_cov(corr_x[i],u_x[i][j])
+                    MC_data[j,:,:] = self.generate_samples_cov(x[i][j].flatten(),
+                                     cov_x).reshape(x[i][j].shape+(self.MCsteps,))
         else:
             cov_x = util.convert_corr_to_cov(corr_x[i],u_x[i])
             MC_data = self.generate_samples_cov(x[i].flatten(),cov_x).reshape(
-                x[i].shape+(self.MCsteps,))
+                        x[i].shape+(self.MCsteps,))
 
         return MC_data
 
