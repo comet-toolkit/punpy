@@ -78,14 +78,15 @@ An automated test report is given in Section \ref{testreport}. This includes:
 \section{Test report}\label{testreport}
 \getpdfpages{test_report.pdf}
 \foreach \x in {1,...,\value{pdfpages}} {
-    \includegraphics[page=\x,width=\textwidth]{test_report.pdf}%
+    \includegraphics[page=\x,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{test_report.pdf}%
+    \clearpage
+
 }
 \getpdfpages{cov_report.pdf}
 \foreach \x in {1,...,\value{pdfpages}} {
-    \includegraphics[page=\x,width=\textwidth]{cov_report.pdf}%
+    \includegraphics[page=\x,trim= 10mm 10mm  10mm 10mm,width=\textwidth]{cov_report.pdf}%
+    \clearpage
 }
-
-\clearpage
 
 \part*{User Manual}
 \phantomsection

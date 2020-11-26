@@ -10,7 +10,6 @@ The **punpy** module is a Python software package to propagate random, structure
 
 This documentation provides general information on how to use the module (with some examples), as well as a detailed API of the included classes and function.
 
-Basic Useage:
 ~~~~~~~~~~~~~~
 
 .. toctree::
