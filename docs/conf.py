@@ -26,6 +26,8 @@ project_title = "punpy".replace("_", " ").title()
 
 # -- General configuration ---------------------------------------------
 
+latex_toplevel_sectioning = 'section'
+
 # If your documentation needs a minimal Sphinx version, state it here.
 #
 # needs_sphinx = '1.0'

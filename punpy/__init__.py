@@ -2,7 +2,7 @@ from punpy.mc.mc_propagation import MCPropagation
 from punpy.jacobian.jacobian_propagation import JacobianPropagation
 from punpy.mc.MCMC_retrieval import MCMCRetrieval
 from punpy.jacobian.jacobian_retrieval import JacobianRetrieval
-from punpy.utilities.utilities import calculate_Jacobian, convert_corr_to_cov, convert_cov_to_corr
+from punpy.utilities.utilities import calculate_Jacobian, convert_corr_to_cov, convert_cov_to_corr, correlation_from_covariance
 from ._version import get_versions
 
 '''___Authorship___'''

@@ -36,4 +36,4 @@ Then go into the created directory and install the module with pip::
    $ pip install -e .
 
 This should automatically install the dependencies.
-Ideally, it is recommended to do this inside a conda environment.
+Ideally, it is recommended to do this inside a virtual environment (e.g. conda).

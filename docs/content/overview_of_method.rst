@@ -12,7 +12,9 @@ Summary
 #########
 **Measurement Function**
 
-The punpy package uses a Monte Carlo (MC) approach to propagate various types of uncertainty through a given measurement function. 
+In this section we give a short overview of some of the key capabilities of punpy for propagating uncertainties through a measurement function.
+The code in this section is just as illustration and we refer to the Examples Section for example with all requied information for running punpy.
+The punpy package can propagate various types of uncertainty through a given measurement function. 
 The measurement function can be written mathematically as:
 
 .. math:: y = f\left( x_{i},\ldots,\ x_{N} \right)
@@ -43,40 +45,23 @@ Once this kind of measurement function is defined, we can use the various punpy 
    # Or if you have a measurement function that does not accept higher dimensional arrays as argument:
    prop=punpy.MCPropagation(10000,parallel_cores=1)
 
-In order to do propagate uncertainties, punpy generates MC samples from the input quantities
-(which can be individually correlated or not), and then propagates these samples through the
-measurement function. This is typically done by passing an array consisting of all MC steps of an
-input quantity instead of the input quantity themselve for each of the input quantities. Here it is assumed
-the measurement function can deal with these higher dimensional arrays by just perfurming numpy operations.
-However, this is not always the case. If the inputs to the measurement function are less flexible,
-We can instead pass each MC sample individually tothe measurement function by setting the optional
-parallel_cores keyword to 1. At the end of this section we'll also see how to use this keyword for parallel processing.
+   #Alternatively it is possible to use Jacobian methods to propagate uncertainties
+   prop=punpy.JacobianPropagation()
+
+In order to do propagate uncertainties, punpy uses Monte Carlo methods (see Section :ref:`MC Method`) 
+or Jacobian methods (see Section :ref:`Jacobian Method`). MC methods generate MC samples from the input 
+quantities (which can be individually correlated or not), and then propagate these samples through the
+measurement function. The Jacobian methods implement the law of propagation of uncertainties from the 
+GUM (Guide to the Expression of Uncertainty in Measurement).
 
 A number of methods can then be used to propagate uncertainties, depending on the kind of uncertainties that need to be propagated.
-Internally, punpy always generates random normally distributed samples first and then correlates
-them where necessary using the Cholesky decomposition method. For more details see the Monte
-Carlo Approach section below.
-
-We start by showing how to propagating random and systematic uncertainties individually.
-When given values (arrays or numbers) for the input quantities xn, and their random (ur_xn) or systematic (us_xn) uncertainties, punpy can be used to propage these uncertainties as follows::
+We start by showing how to propagating random and systematic uncertainties.
+When given values (arrays or numbers) for the input quantities xn, and their random (ur_xn) 
+or systematic (us_xn) uncertainties, punpy can be used to propage these uncertainties as follows::
 
    y = measurement_function(x1, x2, x3)
    ur_y = prop.propagate_random(measurement_function, [x1, x2, x3], [ur_x1, ur_x2, ur_x3])
    us_y = prop.propagate_systematic(measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3])
-
-Note that these function return as standard product only the uncertainties on the measurand (because the correlation matrices are trivial in this case).
-However these functions have an optional return_corr argument that can be set to True. 
-
-It is also possible to include both types of uncertainty at the same time, or to combine random uncertainties in one input quantity with systematic uncertainties in another::
-
-   ub_y, corrb_y = prop.propagate_both(measurement_function, [x1, x2, x3], [ur_x1, ur_x2, ur_x3], [us_x1, us_x2, us_x3])
-   ut_y, corrt_y = prop.propagate_type(measurement_function, [x1, x2, x3], [ur_x1, us_x2, us_x3], ['rand','syst','syst'])
-
-Here, in addition to the uncertainties on the measurand, we also provide a correlation matrix between the elements in the measurand.
-If required, this correlation matrix can easily be converted to a covariance matrix as::
-
-   covb_y = prop.convert_corr_to_cov(corrb_y, ub_y)
-
 
 **Propagating uncertainties when measurements are correlated (within input quantity)**
 
@@ -84,26 +69,96 @@ Sometimes the elements of an input quantity xn are not simply independent (rando
 In this case, it is possible to specify a covariance matrix cov_xn between all the elements of xn. If such a covariance matrix is known for every xn, punpy can use them to propage the combined uncertainty::
 
    uc_y, corrc_y = prop.propagate_cov(measurement_function, [x1, x2, x3], [cov_x1, cov_x2, cov_x3])
-   
 
-**Propagating uncertainties when input quantities are correlated (between input quantity)**
+Here, in addition to the uncertainties on the measurand, we also provide a correlation matrix between the elements in the measurand.
+If required, this correlation matrix can easily be converted to a covariance matrix as::
+
+   cov_y = prop.convert_corr_to_cov(corr_y, u_y)
+
+Note that propagate_cov() by default returns the correlation matrix, yet propagate_random() and propagate_systematic() 
+return only the uncertainties on the measurand (because the correlation matrices are trivial in this case).
+However these functions have an optional `return_corr` argument that can be used to define whether the correlation matrix should be returned.
+
+**Input quantities with repeated measurements along one axis**
+
+In general, random uncertainties are uncorrelated between repeated measurements, and systematic 
+uncertainties are fully correlated between repeated measurements. 
+If the input quantities are arrays and no further information is specified, punpy assumes that all the different
+values in the array are repeated measurements, and the correlation between the values is treated accordingly.
+
+However, it is also possible that the arrays provided in the input quantities have multiple dimensions, 
+one of which is for repeated measurements, and one is another dimension. E.g. when propagating uncertainties 
+in spectra, often one of the input quantities is a 2D array where along one dimension there are repeated 
+measurements and along another there are different wavelengths. In this case the `repeat_dims` keyword can 
+be set to an integer indicating which dimension has repeated measurements and the `corr_x` keyword can be 
+set to indicate for each input quantity the correlation matrix along the other dimension (wavelength in the above example). 
+When the repeat_dims keyword is set, punpy also splits the calculations and does them separately per repeated measurement.
+This significantly reduces the memory requirements and as a result speeds up the calculations. It is however possible that 
+not all of the input quantities have repeated measurements. E.g. one of the input quantities could be an array of three 
+calibration coefficients, whereas another input quantity is an array with repeated spectral measurements which are being calibrated.
+If the repeat_dims keyword does not apply to one of the input quantities, this can be specified by the param_fixed keyword. 
+This keyword then needs to be set to a list of bools where each bool indicates whether the corresponding input quantity 
+should remain fixed (True) or should be split along repeat_dims (False).
+
+If return_corr is set to True, the keyword corr_axis can be used to indicate along which axis the correlation should be 
+calculated (this is typically the other dimension to the repeat_dims one). If x1, x2, us_x1, us_x2 are all 
+arrays with shape (n_wav,n_repeats) where n_wav is the number of wavelengths and n_repeats is the number of repeated 
+measurements, and x3 is an array with some calibration coefficients (with uncertainties u_x3)::
+	
+   import numpy as np
+
+   corr_wav_x1= np.eye(len(wavelengths))  		     # This is a diagonal (i.e. uncorrelated) correlation matrix with shape (n_wav,n_wav) where n_wav is the number of wavelengths.
+   corr_wav_x2= np.ones((len(wavelengths),len(wavelengths))  # This is a correlation matrix of ones (i.e. fully correlated) with shape (n_wav,n_wav) where n_wav is the number of wavelengths.
+   corr_wav_x3= None 					     # When set to None, the correlation between wavelength defaults to the same as the correlation between repeated wavelengths (i.e. fully correlated for propagate_systematic()).
+   param_fixed_x1x2x3 = [False,False,True]		     # indicates that x1 and x2 have repeated measurements along repeat_dims and calculations will be split up accordingly, and x3 will remain fixed and not split up (x3 does not have the right shape to be split up)
+   us_y, corr_y = prop.propagate_systematic(measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3], corr_x=[corr_wav_x1,corr_wav_x2,corr_wav_x3], param_fixed=, fixed return_corr=True, repeat_dims=1, corr_axis=0)
+
+Here only one matrix is returned for corr_y, rather than a correlation matrix per repeated measurement. The matrices for each repeated measurement have been averaged.
+It is also possible to set corr_axis without the need for repeat_dims to be set. In this case the correlation coefficients will be averaged over all dimensions other than corr_axis.
+Another important option is that the corr_x for each input quantitty can not only be set to None or a custom correlation matrix, but also to the strings "rand" or "syst". For
+"rand" these is no error correlation along the non-repeated dimension and for "syst" the errors along the non-repeated dimension are fully correlated. 
+In the above code, we could have thus used "rand" and "syst" instead of corr_wav_x1 and corr_wav_x2, which would in fact have made the calculation slightly faster.
+
+
+**Propagating uncertainties when input quantities are correlated (between different input quantities)**
 
 In addition to the elements within an input quantity being correlated, it is also possible the input quantities are correlated to eachother.
 If this is the case, this functionality can be included in each of the functions specified above by giving an argument to the optional keyword corr_between.
 This keyword needs to be set to the correlation matrix between the input quantities, and thus needs to have the appropriate shape (e.g. 3 x 3 array for 3 input quantities)::
 
-   ur2_y = prop.propagate_random(measurement_function, [x1, x2, x3], [ur_x1, ur_x2, ur_x3], corr_between = corr_x1x2x3)
-   uc2_y, corrc2_y = prop.propagate_cov(measurement_function, [x1, x2, x3], [cov_x1, cov_x2, cov_x3], corr_between = corr_x1x2x3)
+   ur_y = prop.propagate_random(measurement_function, [x1, x2, x3], [ur_x1, ur_x2, ur_x3], corr_between = corr_x1x2x3)
+   uc_y, corr_y = prop.propagate_cov(measurement_function, [x1, x2, x3], [cov_x1, cov_x2, cov_x3], corr_between = corr_x1x2x3)
 
+**Additional options**
 
 It is also possible to return the generated samples by setting the optional return_samples keyword to True::
 
    ur_y, samplesr_y, samplesr_x = prop.propagate_random(measurement_function, [x1, x2, x3], [ur_x1, ur_x2, ur_x3], corr_between=corr_x1x2x3, return_samples=True)
-   ub_y, corrb_y, samplesr_y, samplesr_x = prop.propagate_both(measurement_function, [x1, x2, x3], [ur_x1, ur_x2, ur_x3], [us_x1, us_x2, us_x3], return_samples=True)
+   ub_y, corr_y, samplesr_y, samplesr_x = prop.propagate_systematic(measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3], return_corr=True, return_samples=True)
 
-Further examples for different shapes of input quantities are given on the 'examples <https://punpy.readthedocs.io/en/latest/content/examples.html>'_ page.
+In some cases, the measurement function has multiple outputs::
+
+    def measurement_function(x1,x2,x3):
+	y1=x1+x2-x3 # here any real measurement function can be implemented
+        y2=x1-x2+x3 # here any real measurement function can be implemented
+        return y1,y2
+
+These functions can still be handled by punpy, but require the `output_vars` keyword to be set to the number of outputs::
+
+   us_y, corr_y, corr_out = prop.propagate_systematic(measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3], return_corr=True, corr_axis=0,output_vars=2)
+
+Note that now there is an additional output `corr_out` which gives the correlation between the different output variables (in the above case a 2 by 2 matrix).
+Here the correlation coefficients between the 2 variables are averaged over all measurements. 
+
+In some cases, when there is only one correlation matrix contributing to the measurand (e.g. a complicated 
+measurement function where all but one of the input quantities are known with perfect precision, i.e. without uncertainty),
+it can be beneficial to just copy this correlation matrix to the measurand rather than calculating it (since copying is faster
+and does not introduce MC noise). When the `fixed_corr_var` is set to True, punpy automatically detects if there is only one 
+term of uncertainty, and if so copies the relevant correlation matrix to the output instead of calculating it. If `fixed_corr_var`
+is set to an integer, the correlation matrix corresponding to that dimension is copied instead. 
 
 **Processing the MC samples in parallel**
+
 At the start of this section we already saw that the optional parallel_cores keyword can be used to running the MC
 samples one-by-one through the measurement function rather than all at once as in the standard case. It is also possible
 to use the same keyword to use parallel processing. Here, only the processing of the input quantities through the measurement
@@ -118,13 +173,12 @@ Parallel processing can be done as follows::
       prop = punpy.MCPropagation(10000,parallel_cores=4)
       ur_y = prop.propagate_random(measurement_function, [x1, x2, x3], [ur_x1, ur_x2, ur_x3])
       us_y = prop.propagate_systematic(measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3])
-      print(ur_y)
-      print(us_y)
 
 Note that the use of 'if __name__ == "__main__":' is required when using a Windows machine for multiprocessing and is generally good practise.
 When processing in parallel, child processes are generated from the parent code, and the above statement is necessary in Windows to avoid the child processes to generate children themselves.
 Everything using the results of the multiprocessing needs to be inside the 'if __name__ == "__main__"'.
 However the measurement function itself needs to be outside this since the child processes need to find this.
+
 
 Principles of Uncertainty Analysis
 ###################################
@@ -148,7 +202,7 @@ Generally, the "reference quantity" is considered to be the "true value"
 of the measurand and is therefore unknown. Figure 1 illustrates these
 concepts.
 
-|image0|
+.. image:: images/image1.png
 
 *Figure 1 - Diagram illustrating the different concepts of measured value and true value, uncertainty and error.*
  
@@ -185,7 +239,8 @@ where:
 -  :math:`\mathbf{S(x)}` is the error covariance matrix for the input
    quantities.
 
-|image1|
+
+.. image:: images/image2.png
 
 *Figure 2 - Conceptual process of uncertainty propagation.*
 
@@ -224,8 +279,24 @@ correlation effects important to satellite data products, as follows:
 .. [1] See: https://www.fiduceo.eu
 
 
-Monte Carlo Apprach
+.. _MC Method
+
+Monte Carlo Method
 ########################
-in progress
+This is typically done by passing an array consisting of all MC steps of an
+input quantity instead of the input quantity themselve for each of the input quantities. Here it is assumed
+the measurement function can deal with these higher dimensional arrays by just perfurming numpy operations.
+However, this is not always the case. If the inputs to the measurement function are less flexible,
+We can instead pass each MC sample individually tothe measurement function by setting the optional
+parallel_cores keyword to 1. At the end of this section we'll also see how to use this keyword for parallel processing.
 
 
+Internally, punpy always generates random normally distributed samples first and then correlates
+them where necessary using the Cholesky decomposition method. For more details see the Monte
+Carlo Approach section below.
+
+
+.. _Jacobian Method
+
+Jacobian Method
+########################
