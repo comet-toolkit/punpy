@@ -230,7 +230,7 @@ pdf_compile_all:
     paths:
     - QualityDocumentation.pdf
     expose_as: "QualityDocumentation"
-    name: ${CI_COMMIT_REF_SLUG}_manual.pdf
+    name: ${CI_COMMIT_REF_SLUG}_QualityDocumentation.pdf
   script:
     - cd quality_documentation
     - pwd

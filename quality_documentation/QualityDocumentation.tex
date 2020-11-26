@@ -20,6 +20,17 @@
 \usepackage{standalone}
 \usepackage{sphinx}
 
+\newcounter{pdfpages}
+\newcommand*{\getpdfpages}[1]{%
+  \begingroup
+    \sbox0{% 
+      \includegraphics{#1}%
+      \setcounter{pdfpages}{\pdflastximagepages}%
+    }%
+  \endgroup
+}
+
+
 \begin{document}
 
 \pagenumbering{roman}
@@ -64,12 +75,15 @@ An automated test report is given in Section \ref{testreport}. This includes:
 
 \clearpage
 \section{Test report}\label{testreport}
-%
-%\input{test_report.tex}
-%\input{cov_report.tex}
-\pdfximage{test_report.pdf}
-\the\pdflastximagepages\ pages
-    
+\getpdfpages{test_report.pdf}
+\foreach \x in {1,...,\value{pdfpages}} {
+    \includegraphics[page=\x,width=\textwidth]{test_report.pdf}%
+}
+\getpdfpages{cov_report.pdf}
+\foreach \x in {1,...,\value{pdfpages}} {
+    \includegraphics[page=\x,width=\textwidth]{cov_report.pdf}%
+}
+
 \clearpage
 
 \part*{User Manual}
