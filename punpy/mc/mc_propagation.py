@@ -41,6 +41,8 @@ class MCPropagation:
         :type u_x: list[array]
         :param corr_x: list of correlation matrices (n,n) along non-repeating axis, defaults to None. Can optionally be set to "rand" (diagonal correlation matrix), "syst" (correlation matrix of ones) or a custom correlation matrix.
         :type corr_x: list[array], optional
+        :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
+        :type param_fixed: list of bools, optional
         :param corr_between: correlation matrix (n,n) between input quantities, defaults to None
         :type corr_between: array, optional
         :param return_corr: set to True to return correlation matrix of measurand, defaults to False
@@ -118,10 +120,10 @@ class MCPropagation:
         :type u_x: list[array]
         :param corr_x: list of correlation matrices (n,n) along non-repeating axis, defaults to None. Can optionally be set to "rand" (diagonal correlation matrix), "syst" (correlation matrix of ones) or a custom correlation matrix.
         :type corr_x: list[array], optional
+        :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
+        :type param_fixed: list of bools, optional
         :param corr_between: correlation matrix (n,n) between input quantities, defaults to None
         :type corr_between: array, optional
-        :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the parameter is fixed (param fixed=True), defaults to None (no parameters fixed).
-        :type param_fixed: list of bools, optional
         :param return_corr: set to True to return correlation matrix of measurand, defaults to False
         :type return_corr: bool, optional
         :param return_samples: set to True to return generated samples, defaults to False
@@ -191,6 +193,8 @@ class MCPropagation:
         :type x: list[array]
         :param cov_x: list of covariance matrices on input quantities (usually numpy arrays). In case the input quantity is an array of shape (m,o), the covariance matrix needs to be given as an array of shape (m*o,m*o).
         :type cov_x: list[array]
+        :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
+        :type param_fixed: list of bools, optional
         :param corr_between: covariance matrix (n,n) between input quantities, defaults to None
         :type corr_between: array, optional
         :param return_corr: set to True to return correlation matrix of measurand, defaults to True
@@ -366,16 +370,16 @@ class MCPropagation:
         :type x: list[array]
         :param u_x: list of uncertainties/covariances on input quantities (usually numpy arrays)
         :type u_x: list[array]
-        :param param_fixed: set to True to indicate this parameter does not have
-        :type param_fixed:
-        :param i:
-        :type i:
-        :param repeat_axis:
-        :type repeat_axis:
-        :param n_repeats:
-        :type n_repeats:
-        :return:
-        :rtype:
+        :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
+        :type param_fixed: list of bools, optional
+        :param i: index of the input quantity (in x)
+        :type i: int
+        :param repeat_axis: dimension along which the measurements are repeated
+        :type repeat_axis: int
+        :param n_repeats: number of repeated measurements
+        :type n_repeats: int
+        :return: list of input quantities, list of uncertainties for single measurement
+        :rtype: list[array]. list[array]
         """
         xb=np.zeros(len(x),dtype=object)
         u_xb=np.zeros(len(u_x),dtype=object)
@@ -413,7 +417,28 @@ class MCPropagation:
         return xb, u_xb
 
     def combine_repeated_outs(self,outs,yshape,n_repeats,lenx,repeat_axis,return_corr,return_samples,output_vars):
+        """
+        Combine the outputs of the repeated measurements into one results array
 
+        :param outs: list of outputs of the repeated measurements
+        :type outs: list[array]
+        :param yshape: shape of the measurand
+        :type yshape: tuple
+        :param n_repeats: number of repeated measurements
+        :type n_repeats: int
+        :param lenx: number of input quantities
+        :type lenx: int
+        :param repeat_axis: dimension along which the measurements are repeated
+        :type repeat_axis: int
+        :param return_corr: set to True to return correlation matrix of measurand, defaults to True
+        :type return_corr: bool, optional
+        :param return_samples: set to True to return generated samples, defaults to False
+        :type return_samples: bool, optional
+        :param output_vars: number of output parameters in the measurement function. Defaults to 1.
+        :type output_vars: integer, optional
+        :return: combined outputs
+        :rtype: list[array]
+        """
         if not return_corr and not return_samples:
             if output_vars == 1:
                 u_func = np.zeros(yshape)
@@ -508,6 +533,10 @@ class MCPropagation:
         :type return_samples: bool
         :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
         :type corr_axis: integer, optional
+        :param fixed_corr: correlation matrix to be copied without changing, defaults to None (correlation matrix is calculated rather than copied)
+        :type fixed_corr: array
+        :param PD_corr: set to True to make sure returned correlation matrices are positive semi-definite, default to True
+        :type PD_corr: bool, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
         :type output_vars: integer, optional
         :return: uncertainties on measurand
@@ -646,6 +675,22 @@ class MCPropagation:
         return corr_y
 
     def generate_samples_correlated(self,x,u_x,corr_x,i):
+        """
+        Generate correlated MC samples of input quantity with given uncertainties and correlation matrix.
+        Samples are generated using generate_samples_cov() after matching up the uncertainties to the right correlation matrix.
+        It is possible to provide one correlation matrix to be used for each measurement (which each have an uncertainty) or a correlation matrix per measurement.
+
+        :param x: list of input quantities (usually numpy arrays)
+        :type x: list[array]
+        :param u_x: list of uncertainties/covariances on input quantities (usually numpy arrays)
+        :type u_x: list[array]
+        :param corr_x: list of correlation matrices (n,n) along non-repeating axis, or list of correlation matrices for each repeated measurement.
+        :type corr_x: list[array], optional
+        :param i: index of the input quantity (in x)
+        :type i: int
+        :return: generated samples
+        :rtype: array
+        """
         if (len(x[i].shape) == 2):
             if len(corr_x[i]) == len(u_x[i]):
                 MC_data = np.zeros((u_x[i].shape)+(self.MCsteps,))
