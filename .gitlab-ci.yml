@@ -9,7 +9,7 @@ stages:
   - Full test
   - Publish test report
   - Publish Pages
-  - Count pdf pages
+  # - Count pdf pages
   - Combine Documentation
 
 
@@ -223,7 +223,7 @@ pdf_compile:
 #     - cd ..
 
 pdf_compile_all:
-  needs: ["count_pdf_pages"]
+  needs: ["pdf_make","test_report"]
   stage: Combine Documentation
   image:  charlesbaynham/ctanfull
   artifacts:
