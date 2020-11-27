@@ -48,13 +48,19 @@ Once this kind of measurement function is defined, we can use the various punpy 
    #Alternatively it is possible to use Jacobian methods to propagate uncertainties
    prop=punpy.JacobianPropagation()
 
-In order to do propagate uncertainties, punpy uses Monte Carlo methods (see Section :ref:`MC Method`) 
+In order to do propagate uncertainties, punpy uses Monte Carlo (MC) methods (see Section :ref:`Monte Carlo Method`) 
 or Jacobian methods (see Section :ref:`Jacobian Method`). MC methods generate MC samples from the input 
 quantities (which can be individually correlated or not), and then propagate these samples through the
-measurement function. The Jacobian methods implement the law of propagation of uncertainties from the 
+measurement function. This is typically done by passing an array consisting of all MC steps of an
+input quantity instead of the input quantity themselve for each of the input quantities. Here it is assumed
+the measurement function can deal with these higher dimensional arrays by just performing numpy operations.
+However, this is not always the case. If the inputs to the measurement function are less flexible,
+We can instead pass each MC sample individually tothe measurement function by setting the optional
+`parallel_cores` keyword to 1. At the end of this section we'll also see how to use this keyword for parallel processing.
+The Jacobian methods implement the law of propagation of uncertainties from the 
 GUM (Guide to the Expression of Uncertainty in Measurement).
 
-A number of methods can then be used to propagate uncertainties, depending on the kind of uncertainties that need to be propagated.
+Once a prop object has been made, a number of methods can then be used to propagate uncertainties, depending on the kind of uncertainties that need to be propagated.
 We start by showing how to propagating random and systematic uncertainties.
 When given values (arrays or numbers) for the input quantities xn, and their random (ur_xn) 
 or systematic (us_xn) uncertainties, punpy can be used to propage these uncertainties as follows::
@@ -92,15 +98,15 @@ in spectra, often one of the input quantities is a 2D array where along one dime
 measurements and along another there are different wavelengths. In this case the `repeat_dims` keyword can 
 be set to an integer indicating which dimension has repeated measurements and the `corr_x` keyword can be 
 set to indicate for each input quantity the correlation matrix along the other dimension (wavelength in the above example). 
-When the repeat_dims keyword is set, punpy also splits the calculations and does them separately per repeated measurement.
+When the `repeat_dims` keyword is set, punpy also splits the calculations and does them separately per repeated measurement.
 This significantly reduces the memory requirements and as a result speeds up the calculations. It is however possible that 
 not all of the input quantities have repeated measurements. E.g. one of the input quantities could be an array of three 
 calibration coefficients, whereas another input quantity is an array with repeated spectral measurements which are being calibrated.
-If the repeat_dims keyword does not apply to one of the input quantities, this can be specified by the param_fixed keyword. 
+If the `repeat_dims` keyword does not apply to one of the input quantities, this can be specified by the `param_fixed` keyword. 
 This keyword then needs to be set to a list of bools where each bool indicates whether the corresponding input quantity 
 should remain fixed (True) or should be split along repeat_dims (False).
 
-If return_corr is set to True, the keyword corr_axis can be used to indicate along which axis the correlation should be 
+If `return_corr` is set to True, the keyword `corr_axis` can be used to indicate along which axis the correlation should be 
 calculated (this is typically the other dimension to the repeat_dims one). If x1, x2, us_x1, us_x2 are all 
 arrays with shape (n_wav,n_repeats) where n_wav is the number of wavelengths and n_repeats is the number of repeated 
 measurements, and x3 is an array with some calibration coefficients (with uncertainties u_x3)::
@@ -123,7 +129,7 @@ In the above code, we could have thus used "rand" and "syst" instead of corr_wav
 **Propagating uncertainties when input quantities are correlated (between different input quantities)**
 
 In addition to the elements within an input quantity being correlated, it is also possible the input quantities are correlated to eachother.
-If this is the case, this functionality can be included in each of the functions specified above by giving an argument to the optional keyword corr_between.
+If this is the case, this functionality can be included in each of the functions specified above by giving an argument to the optional keyword `corr_between`.
 This keyword needs to be set to the correlation matrix between the input quantities, and thus needs to have the appropriate shape (e.g. 3 x 3 array for 3 input quantities)::
 
    ur_y = prop.propagate_random(measurement_function, [x1, x2, x3], [ur_x1, ur_x2, ur_x3], corr_between = corr_x1x2x3)
@@ -131,7 +137,7 @@ This keyword needs to be set to the correlation matrix between the input quantit
 
 **Additional options**
 
-It is also possible to return the generated samples by setting the optional return_samples keyword to True::
+It is also possible to return the generated samples by setting the optional `return_samples` keyword to True::
 
    ur_y, samplesr_y, samplesr_x = prop.propagate_random(measurement_function, [x1, x2, x3], [ur_x1, ur_x2, ur_x3], corr_between=corr_x1x2x3, return_samples=True)
    ub_y, corr_y, samplesr_y, samplesr_x = prop.propagate_systematic(measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3], return_corr=True, return_samples=True)
@@ -159,7 +165,7 @@ is set to an integer, the correlation matrix corresponding to that dimension is 
 
 **Processing the MC samples in parallel**
 
-At the start of this section we already saw that the optional parallel_cores keyword can be used to running the MC
+At the start of this section we already saw that the optional `parallel_cores` keyword can be used to running the MC
 samples one-by-one through the measurement function rather than all at once as in the standard case. It is also possible
 to use the same keyword to use parallel processing. Here, only the processing of the input quantities through the measurement
 function is done in parallel. Generating the samples and calculating the covariance matrix etc is still done as normal.
@@ -279,16 +285,9 @@ correlation effects important to satellite data products, as follows:
 .. [1] See: https://www.fiduceo.eu
 
 
-.. _MC Method
-
+.. _Monte Carlo Method
 Monte Carlo Method
 ########################
-This is typically done by passing an array consisting of all MC steps of an
-input quantity instead of the input quantity themselve for each of the input quantities. Here it is assumed
-the measurement function can deal with these higher dimensional arrays by just perfurming numpy operations.
-However, this is not always the case. If the inputs to the measurement function are less flexible,
-We can instead pass each MC sample individually tothe measurement function by setting the optional
-parallel_cores keyword to 1. At the end of this section we'll also see how to use this keyword for parallel processing.
 
 
 Internally, punpy always generates random normally distributed samples first and then correlates
@@ -297,6 +296,5 @@ Carlo Approach section below.
 
 
 .. _Jacobian Method
-
 Jacobian Method
 ########################
