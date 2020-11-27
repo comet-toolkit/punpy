@@ -120,10 +120,10 @@ measurements, and x3 is an array with some calibration coefficients (with uncert
    us_y, corr_y = prop.propagate_systematic(measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3], corr_x=[corr_wav_x1,corr_wav_x2,corr_wav_x3], param_fixed=, fixed return_corr=True, repeat_dims=1, corr_axis=0)
 
 Here only one matrix is returned for corr_y, rather than a correlation matrix per repeated measurement. The matrices for each repeated measurement have been averaged.
-It is also possible to set corr_axis without the need for repeat_dims to be set. In this case the correlation coefficients will be averaged over all dimensions other than corr_axis.
-Another important option is that the corr_x for each input quantitty can not only be set to None or a custom correlation matrix, but also to the strings "rand" or "syst". For
+It is also possible to set `corr_axis` without the need for `repeat_dims` to be set. In this case the correlation coefficients will be averaged over all dimensions other than `corr_axis`.
+Another important option is that the `corr_x` for each input quantitty can not only be set to None or a custom correlation matrix, but also to the strings "rand" or "syst". For
 "rand" these is no error correlation along the non-repeated dimension and for "syst" the errors along the non-repeated dimension are fully correlated. 
-In the above code, we could have thus used "rand" and "syst" instead of corr_wav_x1 and corr_wav_x2, which would in fact have made the calculation slightly faster.
+In the above code, we could have thus used "rand" and "syst" instead of corr_wav_x1 and corr_wav_x2 respectively, which would in fact have made the calculation slightly faster.
 
 
 **Propagating uncertainties when input quantities are correlated (between different input quantities)**
@@ -153,7 +153,7 @@ These functions can still be handled by punpy, but require the `output_vars` key
 
    us_y, corr_y, corr_out = prop.propagate_systematic(measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3], return_corr=True, corr_axis=0,output_vars=2)
 
-Note that now there is an additional output `corr_out` which gives the correlation between the different output variables (in the above case a 2 by 2 matrix).
+Note that now there is an additional output corr_out, which gives the correlation between the different output variables (in the above case a 2 by 2 matrix).
 Here the correlation coefficients between the 2 variables are averaged over all measurements. 
 
 In some cases, when there is only one correlation matrix contributing to the measurand (e.g. a complicated 
@@ -288,13 +288,13 @@ correlation effects important to satellite data products, as follows:
 .. _Monte Carlo Method
 Monte Carlo Method
 ########################
-
+In progress
 
 Internally, punpy always generates random normally distributed samples first and then correlates
-them where necessary using the Cholesky decomposition method. For more details see the Monte
-Carlo Approach section below.
-
+them where necessary using the Cholesky decomposition method. 
 
 .. _Jacobian Method
 Jacobian Method
 ########################
+In progress
+
