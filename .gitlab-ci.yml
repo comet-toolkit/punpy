@@ -214,9 +214,9 @@ pdf_compile_all:
     expose_as: "QualityDocumentation"
     name: ${CI_COMMIT_REF_SLUG}_QualityDocumentation.pdf
   script:
-    - cd quality_documentation/latex/
-    - pwd
-    - cd ..
+    - cd quality_documentation/latex/content/images
+    - ls
+    - cd ../../..
     - cd uml
     - for i in *.png; do echo "\includegraphics[width=\textwidth]{$i}">>uml.tex; done
     - cd ..
