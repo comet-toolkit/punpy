@@ -288,10 +288,54 @@ correlation effects important to satellite data products, as follows:
 .. _Monte Carlo Method
 Monte Carlo Method
 ########################
-In progress
+For a detailed description of the Monte Carlo (MC) method, we refer to `Supplement 1 to the
+"Guide to the expression of uncertainty in measurement" — Propagation of distributions
+using a Monte Carlo method <https://www.bipm.org/utils/common/documents/jcgm/JCGM_101_2008_E.pdf>`_.
 
-Internally, punpy always generates random normally distributed samples first and then correlates
-them where necessary using the Cholesky decomposition method. 
+Here we summarise the main steps and detail how these were implemented.
+The main stages consist of:
+
+#. Formulation: Defining the measurand (output quantity Y), the input quantities X = (X1, . . . , XN ), 
+and the measurement function (as a model relating Y and X). One also needs to asign Probability 
+Density Functions (PDF) of each of the input quantities, as well as define the correlation between them 
+(through joint PDF).
+
+#. Propagation: propagate the PDFs for the Xi through the model to obtain the PDF for Y
+
+#. Summarizing: Use the PDF for Y to obtain the expectation of Y, the standard uncertainty u(Y) 
+associated with Y (from the standard deviation), and the covariance between the different values in Y.
+
+The MC method implemented in punpy consists of generating joint PDF from the provided 
+uncertainties and correlation matrices or covariances. Punpy then propagates the PDFs for the Xi to Y
+and then summarises the results through returning the uncertainties and correlation matrices.
+
+As punpy is meant to be widely applicable, the user can define the measurand, input quantities 
+and measurement function themselves. Within punpy, the input quantities and measurand will often 
+be provided as python arrays (or scalars) and the measurement function in particular needs to be 
+a python function that can take the input quantities as function arguments and returns the measurand.
+
+To generate the PDF, punpy generates samples of draws from the PDF for each of the input quantities (total number of
+draws is set by keyword `MCsteps`). Currently, punpy assumes all PDF to be gaussian, but this can 
+easily be expanded upon in future work. Internally, punpy always generates independent random normally distributed
+samples first and then correlates them where necessary using the Cholesky decomposition method (see paragraph below). 
+Using this Cholesky decomposition correlates the PDF of the input quantities which means the joint PDF are defined. 
+Each draw in the sample is then run through the measurement function and as a result we can a sample (and thus the 
+PDF) of the measurand Y. Punpy then calculated the uncertainties from the standard deviation in the sample and the 
+correlation matrix from the correlation coefficients between the different values in Y. 
+
+Cholesky decomposition is a usefull method from linear algebra, which allows to efficiently draw samples from a 
+multivariate probability distribution (joint PDF). The Cholesky decomposition is a decomposition of a 
+positive-definite matrix into the product of a lower triangular matrix and its conjugate transpose. The positive-definite
+matrix being decomposed here is the correlation or covriance matrix () and R is the upper triangular matrix given by the 
+Cholesky decomposition:
+:math:`S(X)=R^T R`.
+
+When sampling from the joint pdf, one can first draw samples Zi = (Z1, ... , ZN) for the input quantities Xi from the
+independent PDF for the input quantities (i.e. as if they were uncorrelated). These samples Z can then be combined 
+with the decomposition matrix R to obtain the correlated samples Ei = (E1, ... , EN):
+:math:`E = X + R^T Z`.
+The measurand pdf is then defined by processing each draw Ei to Y: :math:`Y = f(E)`.
+
 
 .. _Jacobian Method
 Jacobian Method

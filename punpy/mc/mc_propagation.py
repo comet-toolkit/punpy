@@ -447,7 +447,14 @@ class MCPropagation:
                         u_func[i] = outs[i]
                 elif repeat_axis == 1:
                     for i in range(len(outs)):
-                        u_func[:,i] = outs[i]
+                        if len(outs[i].shape)>1:
+                            if outs[i].shape[1]==1:
+                                u_func[:,i] = outs[i][:,0]
+                            else:
+                                u_func[:,i] = outs[i]
+                        else:
+                            u_func[:,i] = outs[i]
+                            
                 elif repeat_axis == 2:
                     for i in range(len(outs)):
                         u_func[:,:,i] = outs[i]
@@ -472,7 +479,13 @@ class MCPropagation:
                         u_func[i] = outs[i][0]
                 elif repeat_axis == 1:
                     for i in range(len(outs)):
-                        u_func[:,i] = outs[i][0]
+                        if len(outs[i][0].shape)>1:
+                            if outs[i][0].shape[1]==1:
+                                u_func[:,i] = outs[i][0][:,0]
+                            else:
+                                u_func[:,i] = outs[i][0]
+                        else:
+                            u_func[:,i] = outs[i][0]
                 elif repeat_axis == 2:
                     for i in range(len(outs)):
                         u_func[:,:,i] = outs[i][0]
