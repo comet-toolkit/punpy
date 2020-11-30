@@ -300,7 +300,7 @@ and the measurement function (as a model relating Y and X). One also needs to as
 Density Functions (PDF) of each of the input quantities, as well as define the correlation between them 
 (through joint PDF).
 
-#. Propagation: propagate the PDFs for the Xi through the model to obtain the PDF for Y
+#. Propagation: propagate the PDFs for the Xi through the model to obtain the PDF for Y.
 
 #. Summarizing: Use the PDF for Y to obtain the expectation of Y, the standard uncertainty u(Y) 
 associated with Y (from the standard deviation), and the covariance between the different values in Y.
@@ -328,13 +328,18 @@ multivariate probability distribution (joint PDF). The Cholesky decomposition is
 positive-definite matrix into the product of a lower triangular matrix and its conjugate transpose. The positive-definite
 matrix being decomposed here is the correlation or covriance matrix () and R is the upper triangular matrix given by the 
 Cholesky decomposition:
+
 :math:`S(X)=R^T R`.
 
 When sampling from the joint pdf, one can first draw samples Zi = (Z1, ... , ZN) for the input quantities Xi from the
 independent PDF for the input quantities (i.e. as if they were uncorrelated). These samples Z can then be combined 
 with the decomposition matrix R to obtain the correlated samples Ei = (E1, ... , EN):
+
 :math:`E = X + R^T Z`.
-The measurand pdf is then defined by processing each draw Ei to Y: :math:`Y = f(E)`.
+
+The measurand pdf is then defined by processing each draw Ei to Y:
+
+:math:`Y = f(E)`.
 
 
 .. _Jacobian Method
