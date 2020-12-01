@@ -118,18 +118,14 @@ using a Monte Carlo method <https://www.bipm.org/utils/common/documents/jcgm/JCG
 Here we summarise the main steps and detail how these were implemented.
 The main stages consist of:
 
-* Formulation: Defining the measurand (output quantity Y), the input quantities X = (X1, . . . , XN ), 
-and the measurement function (as a model relating Y and X). One also needs to asign Probability 
-Density Functions (PDF) of each of the input quantities, as well as define the correlation between them 
-(through joint PDF).
+* Formulation: Defining the measurand (output quantity Y), the input quantities :math:`X = (X1, . . . , XN )`, and the measurement function (as a model relating Y and X). One also needs to asign Probability Density Functions (PDF) of each of the input quantities, as well as define the correlation between them (through joint PDF).
 
-* Propagation: propagate the PDFs for the Xi through the model to obtain the PDF for Y.
+* Propagation: propagate the PDFs for the :math:`X_i` through the model to obtain the PDF for Y.
 
-* Summarizing: Use the PDF for Y to obtain the expectation of Y, the standard uncertainty u(Y) 
-associated with Y (from the standard deviation), and the covariance between the different values in Y.
+* Summarizing: Use the PDF for Y to obtain the expectation of Y, the standard uncertainty u(Y) associated with Y (from the standard deviation), and the covariance between the different values in Y.
 
 The MC method implemented in punpy consists of generating joint PDF from the provided 
-uncertainties and correlation matrices or covariances. Punpy then propagates the PDFs for the Xi to Y
+uncertainties and correlation matrices or covariances. Punpy then propagates the PDFs for the :math:`X_i` to Y
 and then summarises the results through returning the uncertainties and correlation matrices.
 
 As punpy is meant to be widely applicable, the user can define the measurand, input quantities 
@@ -149,20 +145,20 @@ correlation matrix from the correlation coefficients between the different value
 Cholesky decomposition is a usefull method from linear algebra, which allows to efficiently draw samples from a 
 multivariate probability distribution (joint PDF). The Cholesky decomposition is a decomposition of a 
 positive-definite matrix into the product of a lower triangular matrix and its conjugate transpose. The positive-definite
-matrix being decomposed here is the correlation or covriance matrix () and R is the upper triangular matrix given by the 
+matrix being decomposed here is the correlation or covriance matrix (S(X)) and R is the upper triangular matrix given by the 
 Cholesky decomposition:
 
 :math:`S(X)=R^T R`.
 
-When sampling from the joint pdf, one can first draw samples Zi = (Z1, ... , ZN) for the input quantities Xi from the
-independent PDF for the input quantities (i.e. as if they were uncorrelated). These samples Z can then be combined 
-with the decomposition matrix R to obtain the correlated samples Ei = (E1, ... , EN):
+When sampling from the joint pdf, one can first draw samples :math:`Z = (Z_1, ... , Z_N)` for the input quantities :math:`X_i` from the
+independent PDF for the input quantities (i.e. as if they were uncorrelated). These samples :math:`Z_i` can then be combined 
+with the decomposition matrix R to obtain the correlated samples :math:`\xi = (\xi_1, ... , \xi_N)`:
 
-:math:`E = X + R^T Z`.
+:math:`\xi = X + R^T Z`.
 
-The measurand pdf is then defined by processing each draw Ei to Y:
+The measurand pdf is then defined by processing each draw :math:`\xi_i` to Y:
 
-:math:`Y = f(E)`.
+:math:`Y = f(\xi)`.
 
 
 .. _Jacobian Method:

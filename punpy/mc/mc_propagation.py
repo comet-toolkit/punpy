@@ -320,9 +320,10 @@ class MCPropagation:
                 var=i
             if corr_x is not None:
                 if corr_x[i] is not None:
-                    if np.any(corr_x[i]>1.000001):
-                        raise ValueError("One of the provided correlation matrices "
-                                         "has elements >1.")
+                    if not isinstance(corr_x[i],str):
+                        if np.any(corr_x[i]>1.000001):
+                            raise ValueError("One of the provided correlation matrices "
+                                             "has elements >1.")
 
         if count==1:
             fixed_corr_var=var
@@ -824,4 +825,3 @@ class MCPropagation:
                 id_nonzero=np.where(stds!=0)
                 samples_out[id_nonzero]=np.dot(L[id_nonzero][:,id_nonzero],(samples[id_nonzero]-means[id_nonzero])/stds[id_nonzero])[:,0]*stds[id_nonzero]+means[id_nonzero]
                 return samples_out
-
