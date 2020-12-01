@@ -141,7 +141,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufd,yerr_corrd,atol=0.1)
 
     def test_propagate_systematic(self):
-        prop = MCPropagation(30000,parallel_cores=1)
+        prop = MCPropagation(30000,parallel_cores=2)
 
         corr=(np.ones_like(x1err)+np.eye(len(x1err)))/2
         uf,ucorr = prop.propagate_systematic(function,xs,[x1err,None],

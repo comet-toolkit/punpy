@@ -53,25 +53,35 @@
 
 \section{Introduction}\label{introduction}
 
-This the quality document for the punpy software package.
+This the quality documentation for the punpy software package.
+The punpy module is a Python software package to propagate random, structured and systematic uncertainties through a given measurement function. Quality documentation typically consists of the following elements:
+\begin{itemize}
+\item User requirements: defined in the statement of work for this project.
 
+\item Functional requirements: Included as a separate document in this folder as `punpy\_functional\_requirements.docx'.
 
-The statement of work for this project defines the user requirements.
+\item Software design: Described using UML diagrams in Section \ref{design}.
 
-The functional requirements are included as a separate document in this folder as `Functional\_Requirements.docx'.
-
-The software design is described in Section \ref{design}.
-
-An automated test report is given in Section \ref{testreport}. This includes:
+\item Test report: An automated test report is given in Section \ref{testreport}. This includes:
 \begin{itemize}
 \item A table detailing the environment that was used during testing.
 \item A summary of the results, indicating how many tests passed and how long it took.
 \item A table showing each of the tests that was run, how long they took, and what output was captured during testing.
 \item A test coverage report, showing how many lines of the software were covered by the combined tests.
 \end{itemize}
+\item User Manual: The punpy documentation is included as Appendix \ref{UserManual}. This includes:
+\begin{itemize}
+\item Installation guidelines.
+\item Overview of methods.
+\item Examples of use.
+\item Algorithm theoretical Basis.
+\item Sphinx automated API documentation from docstrings in python code.
+\end{itemize}
+\end{itemize}
 
 \clearpage
 \section{Software design}\label{design}
+The software design is specified using the following UML diagrams\footnote{These UML diagrams were made using http://www.umlet.com/umletino/umletino.html}.
 \input{uml/uml}
 
 \clearpage
@@ -92,6 +102,7 @@ An automated test report is given in Section \ref{testreport}. This includes:
 \phantomsection
 \addcontentsline{toc}{part}{User Manual}
 \appendix
+\label{UserManual}
 \def\maketitle{}
 \def\tableofcontents{}
 \input{./latex/punpy.tex}
