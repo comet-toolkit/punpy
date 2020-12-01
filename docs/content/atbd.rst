@@ -40,13 +40,13 @@ mathematical relationship between all known input quantities (e.g.
 instrument counts) and the measurand itself (e.g. radiance). Generally,
 this may be written as
 
-.. math:: y = f\left( x_{i},\ldots,\ x_{N} \right)
+.. math:: Y = f\left( X_{i},\ldots,\ X_{N} \right)
 
 where:
 
--  :math:`y` is the measurand;
+-  :math:`Y` is the measurand;
 
--  :math:`x_{i}` are the input quantities.
+-  :math:`X_{i}` are the input quantities.
 
 Uncertainty analysis is then performed by considering in turn each of
 these different input quantities to the measurement function, this
@@ -57,14 +57,14 @@ combined to determine the uncertainty of the measurand,
 :math:`u^{2}(Y)`, using the *Law of Propagation of Uncertainties* (GUM,
 2008),
 
-.. math:: u^{2}\left( y \right) = \mathbf{\text{cS}}\left( \mathbf{x} \right)\mathbf{c}^{T}
+.. math:: u^{2}\left( Y \right) = \mathbf{\text{C\ S}}\left( \mathbf{X} \right)\mathbf{C}^{T}
 
 where:
 
 -  :math:`\mathbf{C}` is the vector of sensitivity coefficients,
    :math:`\partial Y/\partial X_{i}`;
 
--  :math:`\mathbf{S(x)}` is the error covariance matrix for the input
+-  :math:`\mathbf{S(X)}` is the error covariance matrix for the input
    quantities.
 
 
@@ -118,11 +118,11 @@ using a Monte Carlo method <https://www.bipm.org/utils/common/documents/jcgm/JCG
 Here we summarise the main steps and detail how these were implemented.
 The main stages consist of:
 
-* Formulation: Defining the measurand (output quantity Y), the input quantities :math:`X = (X1, . . . , XN )`, and the measurement function (as a model relating Y and X). One also needs to asign Probability Density Functions (PDF) of each of the input quantities, as well as define the correlation between them (through joint PDF).
+-  Formulation: Defining the measurand (output quantity Y), the input quantities :math:`X = (X1, . . . , XN )`, and the measurement function (as a model relating Y and X). One also needs to asign Probability Density Functions (PDF) of each of the input quantities, as well as define the correlation between them (through joint PDF).
 
-* Propagation: propagate the PDFs for the :math:`X_i` through the model to obtain the PDF for Y.
+-  Propagation: propagate the PDFs for the :math:`X_i` through the model to obtain the PDF for Y.
 
-* Summarizing: Use the PDF for Y to obtain the expectation of Y, the standard uncertainty u(Y) associated with Y (from the standard deviation), and the covariance between the different values in Y.
+-  Summarizing: Use the PDF for Y to obtain the expectation of Y, the standard uncertainty u(Y) associated with Y (from the standard deviation), and the covariance between the different values in Y.
 
 The MC method implemented in punpy consists of generating joint PDF from the provided 
 uncertainties and correlation matrices or covariances. Punpy then propagates the PDFs for the :math:`X_i` to Y

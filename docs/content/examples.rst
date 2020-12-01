@@ -625,8 +625,10 @@ In this case, the `repeat_dims` keyword can be set to a list of multiple dimensi
    print(L1_ur)
    print(L1_us)
 
-It is also still possible to do the processing without the additional keywords if all input quantities have the same shape::
 
+It is also still possible to do the processing without the additional keywords if all input quantities have the same shape.
+This will give similar uncertainties to the above, but will use more memory and result in different correlation between wavelengths 
+(in the example below there is no correlation for random and full correlation for systematic)::
 
    import numpy as np
    import punpy
@@ -659,21 +661,15 @@ It is also still possible to do the processing without the additional keywords i
                      [0.02, 0.04, 0.02, 0.01, 0.06],
                      [0.02, 0.04, 0.02, 0.01, 0.06]]])
 
-   L0_corr=np.array([[1.        , 0.69107369, 0.5976143 , 0.44946657, 0.16265001],
-                     [0.69107369, 1.        , 0.56639386, 0.5990423 , 0.20232566],
-                     [0.5976143 , 0.56639386, 1.        , 0.48349378, 0.17496355],
-                     [0.44946657, 0.5990423 , 0.48349378, 1.        , 0.13159034],
-                     [0.16265001, 0.20232566, 0.17496355, 0.13159034, 1.        ]])
-
    gains_ur = 0.02*gains  # 2% random uncertainty
    gains_us = 0.03*gains  # 3% systematic uncertainty 
    dark_ur = np.ones((3,3,5))*0.02  # random uncertainty of 0.02
 
    prop=punpy.MCPropagation(10000)
    L1=calibrate(L0,gains,dark)
-   L1_ur,L1_corr_r=prop.propagate_random(calibrate,[L0,gains,dark],[L0_ur,gains_ur,dark_ur],corr_x=[L0_corr,None,"rand"],param_fixed=[False,True,True],return_corr=True,repeat_dims=[0,1],corr_axis=2)
-   L1_us,L1_corr_s=prop.propagate_systematic(calibrate,[L0,gains,dark],[None,gains_us,None],corr_x=[L0_corr,None,"rand"],param_fixed=[False,True,True],return_corr=True,repeat_dims=[0,1],corr_axis=2)
-   
+   L1_ur=prop.propagate_random(calibrate,[L0,gains,dark],[L0_ur,gains_ur,dark_ur])
+   L1_us=prop.propagate_systematic(calibrate,[L0,gains,dark],[None,gains_us,None])
+
    print(L1)
    print(L1_ur)
    print(L1_us)

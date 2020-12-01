@@ -26,7 +26,9 @@ The easiest way to install punpy is using pip::
 
    $ pip install punpy
 
-Alternatively, for the latest development version, first go to the folder where you want to save punpy and clone the project repository from GitHub::
+Ideally, it is recommended to do this inside a virtual environment (e.g. conda).
+
+Alternatively, for the latest development version, first go to the folder where you want to save punpy and clone the project repository from GitLab::
 
    $ git clone git@gitlab.npl.co.uk:eco/tools/punpy.git
 
@@ -35,5 +37,5 @@ Then go into the created directory and install the module with pip::
    $ cd punpy
    $ pip install -e .
 
-This should automatically install the dependencies.
-Ideally, it is recommended to do this inside a virtual environment (e.g. conda).
+
+
