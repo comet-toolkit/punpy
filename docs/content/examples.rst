@@ -444,10 +444,10 @@ for random, fully correlated for systematic). This can be done by setting the `r
    print(L1_us)
 
 This way the code uses less memory and as a result is typically faster.
-There is another useful option that allows some input quantities to have repeated axis, whereas other ones don't.
+There is another useful option that allows some input quantities to have repeated axis, whereas other ones do not.
 This also results in not all input quantities needing to have the same shape. For example, if we had 10 repeated measurements for L0,
-but only one set of gains, and one dark measurement. In #
-case the keyword `param_fixed` would be set to False for L0 and True for gains and dark.
+but only one set of gains, and one dark measurement. In that case the keyword `param_fixed` would be set to False for L0 and True for 
+gains and dark, as in the examples below::
 
    import numpy as np
    import punpy
