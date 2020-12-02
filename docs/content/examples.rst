@@ -42,9 +42,9 @@ After defining the data, the resulting uncertainty budget can then be calculated
 
    prop=punpy.MCPropagation(10000)
    L1=calibrate(L0,gains,dark)
-   L1_ur=prop.propagate_random(calibrate,[L0,gains,dark],\
+   L1_ur=prop.propagate_random(calibrate,[L0,gains,dark],
          [L0_ur,gains_ur,dark_ur])
-   L1_us=prop.propagate_systematic(calibrate,[L0,gains,dark],\
+   L1_us=prop.propagate_systematic(calibrate,[L0,gains,dark],
          [L0_us,gains_us,np.zeros(5)])
    L1_ut=(L1_ur**2+L1_us**2)**0.5
    L1_cov=punpy.convert_corr_to_cov(np.eye(len(L1_ur)),L1_ur)+\
@@ -74,17 +74,22 @@ It would also have been possible to use the keyword `return_corr` to get the mea
 
    # your uncertainties
    L0_ur = L0*0.05  # 5% random uncertainty
-   L0_us = np.ones(5)*0.03  # systematic uncertainty of 0.03 (common between bands)
+   L0_us = np.ones(5)*0.03  # systematic uncertainty of 0.03 
+                            # (common between bands)
    gains_ur = np.array([0.5,0.7,0.6,0.4,0.1])  # random uncertainty
-   gains_us = np.array([0.1,0.2,0.1,0.4,0.3])  # systematic uncertainty (different for each band but fully correlated)
+   gains_us = np.array([0.1,0.2,0.1,0.4,0.3])  # systematic uncertainty 
+   # (different for each band but fully correlated)
    dark_ur = np.array([0.01,0.002,0.006,0.002,0.015])  # random uncertainty
 
    prop=punpy.MCPropagation(10000)
    L1=calibrate(L0,gains,dark)
-   L1_ur,L1_corr_r=prop.propagate_random(calibrate,[L0,gains,dark],[L0_ur,gains_ur,dark_ur],return_corr=True)
-   L1_us,L1_corr_s=prop.propagate_systematic(calibrate,[L0,gains,dark],[L0_us,gains_us,np.zeros(5)],return_corr=True)
+   L1_ur,L1_corr_r=prop.propagate_random(calibrate,[L0,gains,dark],
+                   [L0_ur,gains_ur,dark_ur],return_corr=True)
+   L1_us,L1_corr_s=prop.propagate_systematic(calibrate,[L0,gains,dark],
+                   [L0_us,gains_us,np.zeros(5)],return_corr=True)
    L1_ut=(L1_ur**2+L1_us**2)**0.5
-   L1_cov=punpy.convert_corr_to_cov(L1_corr_r,L1_ur)+punpy.convert_corr_to_cov(L1_corr_s,L1_ur)
+   L1_cov=punpy.convert_corr_to_cov(L1_corr_r,L1_ur)+\
+          punpy.convert_corr_to_cov(L1_corr_s,L1_ur)
 
    print(L1)
    print(L1_ur)
@@ -111,15 +116,23 @@ In order to process a measurement function with multiple outputs, it is necessar
 
    # your uncertainties
    L0_ur = L0*0.05  # 5% random uncertainty
-   L0_us = np.ones(5)*0.03  # systematic uncertainty of 0.03 (common between bands)
+   L0_us = np.ones(5)*0.03  # systematic uncertainty of 0.03 
+                            # (common between bands)
    gains_ur = np.array([0.5,0.7,0.6,0.4,0.1])  # random uncertainty
-   gains_us = np.array([0.1,0.2,0.1,0.4,0.3])  # systematic uncertainty (different for each band but fully correlated)
+   gains_us = np.array([0.1,0.2,0.1,0.4,0.3])  # systematic uncertainty 
+   # (different for each band but fully correlated)
    dark_ur = np.array([0.01,0.002,0.006,0.002,0.015])  # random uncertainty
-
+   
    prop=punpy.MCPropagation(10000)
    L1=calibrate_2output(L0,gains,dark)
-   L1_ur,L1_corr_r,L1_corr_r_between=prop.propagate_random(calibrate_2output,[L0,gains,dark],[L0_ur,gains_ur,dark_ur],return_corr=True,output_vars=2)
-   L1_us,L1_corr_s,L1_corr_s_between=prop.propagate_systematic(calibrate_2output,[L0,gains,dark],[L0_us,gains_us,np.zeros(5)],return_corr=True,output_vars=2)
+   L1_ur,L1_corr_r,L1_corr_r_between=prop.propagate_random(
+                                     calibrate_2output,[L0,gains,dark],
+                                     [L0_ur,gains_ur,dark_ur],
+                                     return_corr=True,output_vars=2)
+   L1_us,L1_corr_s,L1_corr_s_between=prop.propagate_systematic(
+                                     calibrate_2output,[L0,gains,dark],
+                                     [L0_us,gains_us,np.zeros(5)],
+                                     return_corr=True,output_vars=2)
    
    print(L1)
    print(L1_ur)
@@ -164,7 +177,8 @@ diagonal matrix) and gains to be a custom covariance::
 
    prop=punpy.MCPropagation(10000)
    L1=calibrate(L0,gains,dark)
-   L1_ut,L1_corr=prop.propagate_cov(calibrate,[L0,gains,dark],[L0_cov,gains_cov,dark_cov])
+   L1_ut,L1_corr=prop.propagate_cov(calibrate,[L0,gains,dark],
+                                    [L0_cov,gains_cov,dark_cov])
    L1_cov=punpy.convert_corr_to_cov(L1_corr,L1_ut)
 
    print(L1)
@@ -189,21 +203,28 @@ on the input variables, the resulting uncertainty budget can then be calculated 
    dark = np.array([0.05,0.03,0.04,0.05,0.06])
    gains = np.array([23,26,28,29,31])
 
+
    # your uncertainties
    L0_ur = L0*0.05  # 5% random uncertainty
-   L0_us = np.ones(5)*0.03  # systematic uncertainty of 0.03 (common between bands)
+   L0_us = np.ones(5)*0.03  # systematic uncertainty of 0.03 
+                            # (common between bands)
    gains_ur = np.array([0.5,0.7,0.6,0.4,0.1])  # random uncertainty
-   gains_us = np.array([0.1,0.2,0.1,0.4,0.3])  # systematic uncertainty (different for each band but fully correlated)
+   gains_us = np.array([0.1,0.2,0.1,0.4,0.3])  # systematic uncertainty 
+   # (different for each band but fully correlated)
    dark_ur = np.array([0.01,0.002,0.006,0.002,0.015])  # random uncertainty
    dark_us = np.array([0.1,0.2,0.1,0.4,0.3])  # random uncertainty
 
    # correlation matrix between the input variables:
-   corr_input_syst=[[1,0,1],[0,1,0],[1,0,1]]  # Here the correlation is between the first and the third variable, following the order of the arguments in the measurement function
+   corr_input_syst=[[1,0,1],[0,1,0],[1,0,1]]  # Here the correlation is
+   # between the first and the third variable, following the order of 
+   # the arguments in the measurement function
 
    prop=punpy.MCPropagation(10000)
    L1=calibrate(L0,gains,dark)
-   L1_ur=prop.propagate_random(calibrate,[L0,gains,dark],[L0_ur,gains_ur,dark_ur])
-   L1_us=prop.propagate_systematic(calibrate,[L0,gains,dark],[L0_us,gains_us,dark_us],corr_between=corr_input_syst)
+   L1_ur=prop.propagate_random(calibrate,[L0,gains,dark],
+                               [L0_ur,gains_ur,dark_ur])
+   L1_us=prop.propagate_systematic(calibrate,[L0,gains,dark],
+         [L0_us,gains_us,dark_us],corr_between=corr_input_syst)
    
    print(L1)
    print(L1_ur)
@@ -234,17 +255,21 @@ transfer model cannot process 10000 model inputs at the same time. In this case 
 
    # your uncertainties
    L0_ur = L0*0.05  # 5% random uncertainty
-   L0_us = np.ones(5)*0.03  # systematic uncertainty of 0.03 (common between bands)
+   L0_us = np.ones(5)*0.03  # systematic uncertainty of 0.03 
+                            # (common between bands)
    gains_ur = np.array([0.5,0.7,0.6,0.4,0.1])  # random uncertainty
-   gains_us = np.array([0.1,0.2,0.1,0.4,0.3])  # systematic uncertainty (different for each band but fully correlated)
+   gains_us = np.array([0.1,0.2,0.1,0.4,0.3])  # systematic uncertainty 
+   # (different for each band but fully correlated)
    dark_ur = np.array([0.01,0.002,0.006,0.002,0.015])  # random uncertainty
- 
+   
    prop=punpy.MCPropagation(1000,parallel_cores=1)
    L1=calibrate_slow(L0,gains,dark)
    t1=time.time()
-   L1_ur = prop.propagate_random(calibrate_slow,[L0,gains,dark],[L0_ur,gains_ur,dark_ur])
+   L1_ur = prop.propagate_random(calibrate_slow,[L0,gains,dark],
+                                 [L0_ur,gains_ur,dark_ur])
    t2=time.time()
-   L1_us = prop.propagate_systematic(calibrate_slow,[L0,gains,dark],[L0_us,gains_us,np.zeros(5)])
+   L1_us = prop.propagate_systematic(calibrate_slow,[L0,gains,dark],
+                                     [L0_us,gains_us,np.zeros(5)])
 
    print(L1)
    print(L1_ur)
@@ -269,18 +294,22 @@ To speed up this slow process, it is also possible to use parallel processing. E
 
    # your uncertainties
    L0_ur = L0*0.05  # 5% random uncertainty
-   L0_us = np.ones(5)*0.03  # systematic uncertainty of 0.03 (common between bands)
+   L0_us = np.ones(5)*0.03  # systematic uncertainty of 0.03 
+                            # (common between bands)
    gains_ur = np.array([0.5,0.7,0.6,0.4,0.1])  # random uncertainty
-   gains_us = np.array([0.1,0.2,0.1,0.4,0.3])  # systematic uncertainty (different for each band but fully correlated)
+   gains_us = np.array([0.1,0.2,0.1,0.4,0.3])  # systematic uncertainty 
+   # (different for each band but fully correlated)
    dark_ur = np.array([0.01,0.002,0.006,0.002,0.015])  # random uncertainty
-
+   
    if __name__ == "__main__":
       prop=punpy.MCPropagation(1000,parallel_cores=4)
       L1=calibrate_slow(L0,gains,dark)
       t1=time.time()
-      L1_ur = prop.propagate_random(calibrate_slow,[L0,gains,dark],[L0_ur,gains_ur,dark_ur])
+      L1_ur = prop.propagate_random(calibrate_slow,[L0,gains,dark],
+                                    [L0_ur,gains_ur,dark_ur])
       t2=time.time()
-      L1_us = prop.propagate_systematic(calibrate_slow,[L0,gains,dark],[L0_us,gains_us,np.zeros(5)])
+      L1_us = prop.propagate_systematic(calibrate_slow,[L0,gains,dark],
+                                        [L0_us,gains_us,np.zeros(5)])
       
       print(L1)
       print(L1_ur)
@@ -305,15 +334,15 @@ In this case, other than the input arrays, very little changes in the propagatio
       return (L0-dark)*gains
 
    # your data
-   L0 = np.array([[0.43,0.80,0.70,0.65,0.90],\
-                  [0.41,0.82,0.73,0.64,0.93],\
-                  [0.45,0.79,0.71,0.66,0.98],\
-                  [0.42,0.83,0.69,0.64,0.88],\
-                  [0.47,0.75,0.70,0.65,0.78],\
-                  [0.45,0.86,0.72,0.66,0.86],\
-                  [0.40,0.87,0.67,0.66,0.94],\
-                  [0.39,0.80,0.70,0.65,0.87],\
-                  [0.43,0.76,0.67,0.64,0.98],\
+   L0 = np.array([[0.43,0.80,0.70,0.65,0.90],
+                  [0.41,0.82,0.73,0.64,0.93],
+                  [0.45,0.79,0.71,0.66,0.98],
+                  [0.42,0.83,0.69,0.64,0.88],
+                  [0.47,0.75,0.70,0.65,0.78],
+                  [0.45,0.86,0.72,0.66,0.86],
+                  [0.40,0.87,0.67,0.66,0.94],
+                  [0.39,0.80,0.70,0.65,0.87],
+                  [0.43,0.76,0.67,0.64,0.98],
                   [0.42,0.78,0.69,0.65,0.93]])
    dark = np.random.rand(10,5)*0.05
    gains = np.tile(np.array([23,26,28,29,31]),(10,1)) # same gains as before, but repeated 10 times so that shapes match
@@ -335,8 +364,10 @@ In this case, other than the input arrays, very little changes in the propagatio
 
    prop=punpy.MCPropagation(10000)
    L1=calibrate(L0,gains,dark)
-   L1_ur,L1_corr_r=prop.propagate_random(calibrate,[L0,gains,dark],[L0_ur,gains_ur,dark_ur],return_corr=True)
-   L1_us,L1_corr_s=prop.propagate_systematic(calibrate,[L0,gains,dark],[None,gains_us,None],return_corr=True)
+   L1_ur,L1_corr_r=prop.propagate_random(calibrate,[L0,gains,dark],
+                   [L0_ur,gains_ur,dark_ur],return_corr=True)
+   L1_us,L1_corr_s=prop.propagate_systematic(calibrate,[L0,gains,dark],
+                   [None,gains_us,None],return_corr=True)
    
    print(L1)
    print(L1_ur)
@@ -346,7 +377,7 @@ In this case, other than the input arrays, very little changes in the propagatio
 
 Note that the correlation matrices have a shape of (50,50), thus giving the correlation coefficient between all 50 elements of the L0 data. 
 Often we know the correlation between repeated measurements and are only interested in the corrlation matrix along a specific axis (in our 
-example the wavelength axis). If this is the case, this axis can be indicated by giving the `corr_axis' keyword the relevant dimension 
+example the wavelength axis). If this is the case, this axis can be indicated by giving the `corr_axis` keyword the relevant dimension 
 (1 here because wavelength dimension has index 1)::
 
    import numpy as np
@@ -357,15 +388,15 @@ example the wavelength axis). If this is the case, this axis can be indicated by
       return (L0-dark)*gains
 
    # your data
-   L0 = np.array([[0.43,0.80,0.70,0.65,0.90],\
-                  [0.41,0.82,0.73,0.64,0.93],\
-                  [0.45,0.79,0.71,0.66,0.98],\
-                  [0.42,0.83,0.69,0.64,0.88],\
-                  [0.47,0.75,0.70,0.65,0.78],\
-                  [0.45,0.86,0.72,0.66,0.86],\
-                  [0.40,0.87,0.67,0.66,0.94],\
-                  [0.39,0.80,0.70,0.65,0.87],\
-                  [0.43,0.76,0.67,0.64,0.98],\
+   L0 = np.array([[0.43,0.80,0.70,0.65,0.90],
+                  [0.41,0.82,0.73,0.64,0.93],
+                  [0.45,0.79,0.71,0.66,0.98],
+                  [0.42,0.83,0.69,0.64,0.88],
+                  [0.47,0.75,0.70,0.65,0.78],
+                  [0.45,0.86,0.72,0.66,0.86],
+                  [0.40,0.87,0.67,0.66,0.94],
+                  [0.39,0.80,0.70,0.65,0.87],
+                  [0.43,0.76,0.67,0.64,0.98],
                   [0.42,0.78,0.69,0.65,0.93]])
    dark = np.random.rand(10,5)*0.05
    gains = np.tile(np.array([23,26,28,29,31]),(10,1)) # same gains as before, but repeated 10 times so that shapes match
@@ -387,8 +418,10 @@ example the wavelength axis). If this is the case, this axis can be indicated by
 
    prop=punpy.MCPropagation(10000)
    L1=calibrate(L0,gains,dark)
-   L1_ur,L1_corr_r=prop.propagate_random(calibrate,[L0,gains,dark],[L0_ur,gains_ur,dark_ur],return_corr=True,corr_axis=1)
-   L1_us,L1_corr_s=prop.propagate_systematic(calibrate,[L0,gains,dark],[None,gains_us,None],return_corr=True,corr_axis=1)
+   L1_ur,L1_corr_r=prop.propagate_random(calibrate,[L0,gains,dark],
+                   [L0_ur,gains_ur,dark_ur],return_corr=True,corr_axis=1)
+   L1_us,L1_corr_s=prop.propagate_systematic(calibrate,[L0,gains,dark],
+                   [None,gains_us,None],return_corr=True,corr_axis=1)
    
    print(L1)
    print(L1_ur)
@@ -401,7 +434,7 @@ This method works well, but if instead of only (10,5) matrices we get larger mat
 (especially since punpy would generate samples with 10000 MCsteps in our example).
 Instead when doing propagate_random, or propagate_systematic, is possible to split the calculation along the 
 repeated measurements dimension, because we know the correlation between repeated measurements (not correlated
-for random, fully correlated for systematic). This can be done by setting the `repeat_dims' keyword::
+for random, fully correlated for systematic). This can be done by setting the `repeat_dims` keyword::
 
    import numpy as np
    import punpy
@@ -411,15 +444,15 @@ for random, fully correlated for systematic). This can be done by setting the `r
       return (L0-dark)*gains
 
    # your data
-   L0 = np.array([[0.43,0.80,0.70,0.65,0.90],\
-                  [0.41,0.82,0.73,0.64,0.93],\
-                  [0.45,0.79,0.71,0.66,0.98],\
-                  [0.42,0.83,0.69,0.64,0.88],\
-                  [0.47,0.75,0.70,0.65,0.78],\
-                  [0.45,0.86,0.72,0.66,0.86],\
-                  [0.40,0.87,0.67,0.66,0.94],\
-                  [0.39,0.80,0.70,0.65,0.87],\
-                  [0.43,0.76,0.67,0.64,0.98],\
+   L0 = np.array([[0.43,0.80,0.70,0.65,0.90],
+                  [0.41,0.82,0.73,0.64,0.93],
+                  [0.45,0.79,0.71,0.66,0.98],
+                  [0.42,0.83,0.69,0.64,0.88],
+                  [0.47,0.75,0.70,0.65,0.78],
+                  [0.45,0.86,0.72,0.66,0.86],
+                  [0.40,0.87,0.67,0.66,0.94],
+                  [0.39,0.80,0.70,0.65,0.87],
+                  [0.43,0.76,0.67,0.64,0.98],
                   [0.42,0.78,0.69,0.65,0.93]])
    dark = np.random.rand(10,5)*0.05
    gains = np.tile(np.array([23,26,28,29,31]),(10,1)) # same gains as before, but repeated 10 times so that shapes match
@@ -441,8 +474,12 @@ for random, fully correlated for systematic). This can be done by setting the `r
 
    prop=punpy.MCPropagation(10000)
    L1=calibrate(L0,gains,dark)
-   L1_ur,L1_corr_r=prop.propagate_random(calibrate,[L0,gains,dark],[L0_ur,gains_ur,dark_ur],return_corr=True,repeat_dims=0,corr_axis=1)
-   L1_us,L1_Corr_s=prop.propagate_systematic(calibrate,[L0,gains,dark],[None,gains_us,None],return_corr=True,repeat_dims=0,corr_axis=1)
+   L1_ur,L1_corr_r=prop.propagate_random(calibrate,[L0,gains,dark],
+                   [L0_ur,gains_ur,dark_ur],return_corr=True,
+                   repeat_dims=0,corr_axis=1)
+   L1_us,L1_Corr_s=prop.propagate_systematic(calibrate,[L0,gains,dark],
+                   [None,gains_us,None],return_corr=True,
+                   repeat_dims=0,corr_axis=1)
    
    print(L1)
    print(L1_ur)
@@ -462,15 +499,15 @@ gains and dark, as in the examples below::
       return (L0-dark)*gains
 
    # your data
-   L0 = np.array([[0.43,0.80,0.70,0.65,0.90],\
-                  [0.41,0.82,0.73,0.64,0.93],\
-                  [0.45,0.79,0.71,0.66,0.98],\
-                  [0.42,0.83,0.69,0.64,0.88],\
-                  [0.47,0.75,0.70,0.65,0.78],\
-                  [0.45,0.86,0.72,0.66,0.86],\
-                  [0.40,0.87,0.67,0.66,0.94],\
-                  [0.39,0.80,0.70,0.65,0.87],\
-                  [0.43,0.76,0.67,0.64,0.98],\
+   L0 = np.array([[0.43,0.80,0.70,0.65,0.90],
+                  [0.41,0.82,0.73,0.64,0.93],
+                  [0.45,0.79,0.71,0.66,0.98],
+                  [0.42,0.83,0.69,0.64,0.88],
+                  [0.47,0.75,0.70,0.65,0.78],
+                  [0.45,0.86,0.72,0.66,0.86],
+                  [0.40,0.87,0.67,0.66,0.94],
+                  [0.39,0.80,0.70,0.65,0.87],
+                  [0.43,0.76,0.67,0.64,0.98],
                   [0.42,0.78,0.69,0.65,0.93]])
    dark = np.random.rand(5)*0.05
    gains = np.array([23,26,28,29,31]) # same gains as before, but repeated 10 times so that shapes match
@@ -492,8 +529,12 @@ gains and dark, as in the examples below::
 
    prop=punpy.MCPropagation(10000)
    L1=calibrate(L0,gains,dark)
-   L1_ur,L1_corr_r=prop.propagate_random(calibrate,[L0,gains,dark],[L0_ur,gains_ur,dark_ur],param_fixed=[False,True,True],return_corr=True,repeat_dims=0,corr_axis=1)
-   L1_us,L1_corr_s=prop.propagate_systematic(calibrate,[L0,gains,dark],[None,gains_us,None],param_fixed=[False,True,True],return_corr=True,repeat_dims=0,corr_axis=1)
+   L1_ur,L1_corr_r=prop.propagate_random(calibrate,[L0,gains,dark],
+                   [L0_ur,gains_ur,dark_ur],param_fixed=[False,True,True],
+                   return_corr=True,repeat_dims=0,corr_axis=1)
+   L1_us,L1_corr_s=prop.propagate_systematic(calibrate,[L0,gains,dark],
+                   [None,gains_us,None],param_fixed=[False,True,True],
+                   return_corr=True,repeat_dims=0,corr_axis=1)
    
    print(L1)
    print(L1_ur)
@@ -526,15 +567,15 @@ In the below example we could thus have set "rand" in propagate_random to None w
       return (L0-dark)*gains
 
    # your data
-   L0 = np.array([[0.43,0.80,0.70,0.65,0.90],\
-                  [0.41,0.82,0.73,0.64,0.93],\
-                  [0.45,0.79,0.71,0.66,0.98],\
-                  [0.42,0.83,0.69,0.64,0.88],\
-                  [0.47,0.75,0.70,0.65,0.78],\
-                  [0.45,0.86,0.72,0.66,0.86],\
-                  [0.40,0.87,0.67,0.66,0.94],\
-                  [0.39,0.80,0.70,0.65,0.87],\
-                  [0.43,0.76,0.67,0.64,0.98],\
+   L0 = np.array([[0.43,0.80,0.70,0.65,0.90],
+                  [0.41,0.82,0.73,0.64,0.93],
+                  [0.45,0.79,0.71,0.66,0.98],
+                  [0.42,0.83,0.69,0.64,0.88],
+                  [0.47,0.75,0.70,0.65,0.78],
+                  [0.45,0.86,0.72,0.66,0.86],
+                  [0.40,0.87,0.67,0.66,0.94],
+                  [0.39,0.80,0.70,0.65,0.87],
+                  [0.43,0.76,0.67,0.64,0.98],
                   [0.42,0.78,0.69,0.65,0.93]])
    dark = np.random.rand(5)*0.05
    gains = np.array([23,26,28,29,31]) # same gains as before, but repeated 10 times so that shapes match
@@ -563,8 +604,14 @@ In the below example we could thus have set "rand" in propagate_random to None w
 
    prop=punpy.MCPropagation(10000)
    L1=calibrate(L0,gains,dark)
-   L1_ur,L1_corr_r=prop.propagate_random(calibrate,[L0,gains,dark],[L0_ur,gains_ur,dark_ur],corr_x=[L0_corr,None,"rand"],param_fixed=[False,True,True],return_corr=True,repeat_dims=0,corr_axis=1)
-   L1_us,L1_corr_s=prop.propagate_systematic(calibrate,[L0,gains,dark],[None,gains_us,None],corr_x=[L0_corr,None,"rand"],param_fixed=[False,True,True],return_corr=True,repeat_dims=0,corr_axis=1)
+   L1_ur,L1_corr_r=prop.propagate_random(calibrate,[L0,gains,dark],
+                   [L0_ur,gains_ur,dark_ur],corr_x=[L0_corr,None,"rand"],
+                   param_fixed=[False,True,True],return_corr=True,
+                   repeat_dims=0,corr_axis=1)
+   L1_us,L1_corr_s=prop.propagate_systematic(calibrate,[L0,gains,dark],
+                   [None,gains_us,None],corr_x=[L0_corr,None,"rand"],
+                   param_fixed=[False,True,True],return_corr=True,
+                   repeat_dims=0,corr_axis=1)
    
    print(L1)
    print(L1_ur)
@@ -588,14 +635,14 @@ In this case, the `repeat_dims` keyword can be set to a list of multiple dimensi
       return (L0-dark)*gains
 
    # your data
-   L0 = np.array([[[0.43,0.80,0.70,0.65,0.90],\
-                  [0.41,0.82,0.73,0.64,0.93],\
-                  [0.45,0.79,0.71,0.66,0.98]],\
-                  [[0.42,0.83,0.69,0.64,0.88],\
-                  [0.47,0.75,0.70,0.65,0.78],\
-                  [0.45,0.86,0.72,0.66,0.86]],\
-                  [[0.40,0.87,0.67,0.66,0.94],\
-                  [0.39,0.80,0.70,0.65,0.87],\
+   L0 = np.array([[[0.43,0.80,0.70,0.65,0.90],
+                  [0.41,0.82,0.73,0.64,0.93],
+                  [0.45,0.79,0.71,0.66,0.98]],
+                  [[0.42,0.83,0.69,0.64,0.88],
+                  [0.47,0.75,0.70,0.65,0.78],
+                  [0.45,0.86,0.72,0.66,0.86]],
+                  [[0.40,0.87,0.67,0.66,0.94],
+                  [0.39,0.80,0.70,0.65,0.87],
                   [0.42,0.78,0.69,0.65,0.93]]])
    dark = np.random.rand(5)*0.05
    gains = np.array([23,26,28,29,31]) # same gains as before, but repeated 10 times so that shapes match
@@ -643,14 +690,14 @@ This will give similar uncertainties to the above, but will use more memory and 
       return (L0-dark)*gains
 
    # your data
-   L0 = np.array([[[0.43,0.80,0.70,0.65,0.90],\
-                  [0.41,0.82,0.73,0.64,0.93],\
-                  [0.45,0.79,0.71,0.66,0.98]],\
-                  [[0.42,0.83,0.69,0.64,0.88],\
-                  [0.47,0.75,0.70,0.65,0.78],\
-                  [0.45,0.86,0.72,0.66,0.86]],\
-                  [[0.40,0.87,0.67,0.66,0.94],\
-                  [0.39,0.80,0.70,0.65,0.87],\
+   L0 = np.array([[[0.43,0.80,0.70,0.65,0.90],
+                  [0.41,0.82,0.73,0.64,0.93],
+                  [0.45,0.79,0.71,0.66,0.98]],
+                  [[0.42,0.83,0.69,0.64,0.88],
+                  [0.47,0.75,0.70,0.65,0.78],
+                  [0.45,0.86,0.72,0.66,0.86]],
+                  [[0.40,0.87,0.67,0.66,0.94],
+                  [0.39,0.80,0.70,0.65,0.87],
                   [0.42,0.78,0.69,0.65,0.93]]])
    dark = np.random.rand(3,3,5)*0.05
    gains = np.tile(np.array([23,26,28,29,31]),(3,3,1)) # same gains as before, but repeated 10 times so that shapes match
@@ -672,8 +719,10 @@ This will give similar uncertainties to the above, but will use more memory and 
 
    prop=punpy.MCPropagation(10000)
    L1=calibrate(L0,gains,dark)
-   L1_ur=prop.propagate_random(calibrate,[L0,gains,dark],[L0_ur,gains_ur,dark_ur])
-   L1_us=prop.propagate_systematic(calibrate,[L0,gains,dark],[None,gains_us,None])
+   L1_ur=prop.propagate_random(calibrate,[L0,gains,dark],
+         [L0_ur,gains_ur,dark_ur])
+   L1_us=prop.propagate_systematic(calibrate,[L0,gains,dark],
+         [None,gains_us,None])
 
    print(L1)
    print(L1_ur)
