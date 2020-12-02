@@ -82,7 +82,7 @@ class TestMCPropagation(unittest.TestCase):
     """
     Class for unit tests
     """
-    def test_propagate_random(self):
+    def test_propagate_random_1D(self):
         prop = MCPropagation(20000,parallel_cores=0)
 
         uf,ucorr = prop.propagate_random(function,xs,xerrs,return_corr=True)
@@ -101,7 +101,8 @@ class TestMCPropagation(unittest.TestCase):
         uf,yvalues,xvalues = prop.propagate_random(function,xs,xerrs,corr_between=np.ones((2,2)),return_samples=True)
         npt.assert_allclose(uf,yerr_corr,rtol=0.06)
 
-        #b
+    def test_propagate_random_2D(self):
+        prop = MCPropagation(20000,parallel_cores=0)
         ufb,ucorrb = prop.propagate_random(functionb,xsb,xerrsb,return_corr=True,
                                            repeat_dims=1)
         npt.assert_allclose(ucorrb,np.eye(len(ucorrb)),atol=0.06)
@@ -114,7 +115,8 @@ class TestMCPropagation(unittest.TestCase):
                                                    return_samples=True,repeat_dims=1)
         npt.assert_allclose(ufb,yerr_corrb,atol=0.03)
 
-        #c
+    def test_propagate_random_1D_3var(self):
+        prop = MCPropagation(20000,parallel_cores=1)
         ufc,ucorrc = prop.propagate_random(functionc,xsc,xerrsc,return_corr=True)
         npt.assert_allclose(ucorrc,np.eye(len(ucorrc)),atol=0.06)
         npt.assert_allclose(ufc,yerr_uncorrc,rtol=0.06)
@@ -125,7 +127,8 @@ class TestMCPropagation(unittest.TestCase):
         ufc,yvaluesc,xvaluesc = prop.propagate_random(functionc,xsc,xerrsc,corr_between=corr_c,return_samples=True)
         npt.assert_allclose(ufc,yerr_corrc,rtol=0.06)
 
-        #d
+    def test_propagate_random_3D_2out(self):
+        prop = MCPropagation(20000,parallel_cores=0)
         ufd,ucorrd,corr_out = prop.propagate_random(functiond,xsd,xerrsd,return_corr=True,output_vars=2)
         npt.assert_allclose(ucorrd[0],np.eye(len(ucorrd[0])),atol=0.06)
         npt.assert_allclose(ufd,yerr_uncorrd,rtol=0.06)
@@ -140,8 +143,8 @@ class TestMCPropagation(unittest.TestCase):
         ufd,yvaluesd,xvaluesd = prop.propagate_random(functiond,xsd,xerrsd,corr_between=corr_d,return_samples=True,output_vars=2)
         npt.assert_allclose(ufd,yerr_corrd,atol=0.1)
 
-    def test_propagate_systematic(self):
-        prop = MCPropagation(30000,parallel_cores=1)
+    def test_propagate_systematic_1D(self):
+        prop = MCPropagation(30000)
 
         corr=(np.ones_like(x1err)+np.eye(len(x1err)))/2
         uf,ucorr = prop.propagate_systematic(function,xs,[x1err,None],
@@ -157,7 +160,8 @@ class TestMCPropagation(unittest.TestCase):
                                    corr_between=np.ones((2,2)))
         npt.assert_allclose(uf,yerr_corr,rtol=0.06)
 
-        #b
+    def test_propagate_systematic_2D(self):
+        prop = MCPropagation(30000)
         ufb,ucorrb = prop.propagate_systematic(functionb,xsb,xerrsb,return_corr=True)
         npt.assert_allclose(ucorrb,np.ones_like(ucorrb),atol=0.06)
         npt.assert_allclose(ufb,yerr_uncorrb,rtol=0.06)
@@ -173,7 +177,8 @@ class TestMCPropagation(unittest.TestCase):
         ufb = prop.propagate_systematic(functionb,xsb,xerrsb,corr_between=np.ones((2,2)))
         npt.assert_allclose(ufb,yerr_corrb,atol=0.03)
 
-        #c
+    def test_propagate_systematic_1D_3var(self):
+        prop = MCPropagation(30000)
         ufc,ucorrc = prop.propagate_systematic(functionc,xsc,xerrsc,return_corr=True)
         npt.assert_allclose(ucorrc,np.ones_like(ucorrc),atol=0.06)
         npt.assert_allclose(ufc,yerr_uncorrc,rtol=0.06)
@@ -181,6 +186,8 @@ class TestMCPropagation(unittest.TestCase):
         ufc = prop.propagate_systematic(functionc,xsc,xerrsc,corr_between=corr_c)
         npt.assert_allclose(ufc,yerr_corrc,rtol=0.06)
 
+    def test_propagate_systematic_3D_2out(self):
+        prop = MCPropagation(30000)
         ufd,ucorrd,corr_out = prop.propagate_systematic(functiond,xsd,xerrsd,return_corr=True,corr_axis=0,
                                                         output_vars=2)
         npt.assert_allclose(ucorrd[0],np.ones_like(ucorrd[0]),atol=0.06)
@@ -193,7 +200,7 @@ class TestMCPropagation(unittest.TestCase):
                                                         output_vars=2)
         npt.assert_allclose(ucorrd[0],np.ones_like(ucorrd[0]),atol=0.06)
 
-    def test_propagate_cov(self):
+    def test_propagate_cov_1D(self):
         prop = MCPropagation(20000)
 
         cov = [util.convert_corr_to_cov(np.eye(len(xerr.flatten())),xerr) for xerr in xerrs]
@@ -210,7 +217,9 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ucorr,np.eye(len(ucorr)),atol=0.06)
         npt.assert_allclose(uf,yerr_corr,rtol=0.06)
 
-        #b
+    def test_propagate_cov_2D(self):
+        prop = MCPropagation(20000)
+
         covb = [util.convert_corr_to_cov(np.eye(len(xerrb.flatten())),xerrb) for xerrb in xerrsb]
         ufb,ucorrb = prop.propagate_cov(functionb,xsb,covb,return_corr=True)
         npt.assert_allclose(ucorrb,np.eye(len(ucorrb)),atol=0.06)
@@ -226,7 +235,8 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ucorrb,np.eye(len(ucorrb)),atol=0.06)
         npt.assert_allclose(ufb,yerr_corrb,atol=0.03)
 
-        #c
+    def test_propagate_cov_1D_3var(self):
+        prop = MCPropagation(20000)
         covc = [util.convert_corr_to_cov(np.eye(len(xerrc.flatten())),xerrc) for xerrc in xerrsc]
         ufc,ucorrc = prop.propagate_cov(functionc,xsc,covc,return_corr=True)
         npt.assert_allclose(ucorrc,np.eye(len(ucorrc)),atol=0.06)
@@ -241,6 +251,23 @@ class TestMCPropagation(unittest.TestCase):
         ufc,ucorrc = prop.propagate_cov(functionc,xsc,covc,return_corr=True,corr_between=corr_c)
         npt.assert_allclose(ucorrc,np.eye(len(ucorrc)),atol=0.06)
         npt.assert_allclose(ufc,yerr_corrc,rtol=0.06)
+
+    def test_propagate_cov_3D_2out(self):
+        prop = MCPropagation(20000)
+
+        covd = [util.convert_corr_to_cov(np.eye(len(xerrd.flatten())),xerrd) for xerrd in xerrsd]
+        ufd,ucorrd,corr_out = prop.propagate_cov(functiond,xsd,covd,return_corr=True,corr_axis=0,
+                                                        output_vars=2)
+        npt.assert_allclose(ucorrd[0],np.eye(len(ucorrd[0])),atol=0.06)
+        npt.assert_allclose(ufd,yerr_uncorrd,rtol=0.06)
+
+
+        covd = [util.convert_corr_to_cov(np.ones((len(xerrd.flatten()),len(xerrd.flatten()))),xerrd) for xerrd in
+                xerrsd]
+        ufd,ucorrd,corr_out = prop.propagate_cov(functiond,xsd,covd,return_corr=True,corr_axis=0,
+                                                        output_vars=2)
+        npt.assert_allclose(ucorrd[1],np.ones_like(ucorrd[1]),atol=0.06)
+        npt.assert_allclose(ufd,yerr_uncorrd,rtol=0.06)
 
 if __name__ == '__main__':
     unittest.main()

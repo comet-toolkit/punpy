@@ -109,9 +109,9 @@ def nearestPD_cholesky(A,diff=0.001,corr=False,return_cholesky=True):
                     "Correlation matrices need to be at least positive "
                     "semi-definite.")
             else:
-                print(
-                    "One of the correlation matrices is not positive "
-                    "definite. It has been slightly changed (maximum difference of %s) to accomodate our method."%(maxdiff))
+                warnings.warn("One of the correlation matrices is not positive "
+                    "definite. It has been slightly changed (maximum difference "
+                    "of %s) to accomodate our method."%(maxdiff))
                 if return_cholesky:
                     return np.linalg.cholesky(A3)
                 else:
@@ -124,9 +124,9 @@ def nearestPD_cholesky(A,diff=0.001,corr=False,return_cholesky=True):
                     "definite. Covariance matrices need to be at least positive "
                     "semi-definite. Please check your covariance matrix.")
             else:
-                print(
-                    "One of the provided covariance matrix is not positive "
-                    "definite. It has been slightly changed (maximum difference of %s percent) to accomodate our method."%(maxdiff*100))
+                warnings.warn("One of the provided covariance matrix is not positive"
+                    "definite. It has been slightly changed (maximum difference of "
+                    "%s percent) to accomodate our method."%(maxdiff*100))
                 if return_cholesky:
                     return np.linalg.cholesky(A3)
                 else:
