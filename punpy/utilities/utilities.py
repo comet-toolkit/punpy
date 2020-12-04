@@ -12,53 +12,150 @@ __email__ = "pieter.de.vis@npl.co.uk"
 __status__ = "Development"
 
 
-def calculate_Jacobian(fun,x):
+def calculate_Jacobian(fun,x,Jx_diag=False):
     """
     Calculate the local Jacobian of function y=f(x) for a given value of x
 
-    :param fun: measurement function
+    :param fun: flattened measurement function
     :type fun: function
-    :param x: local values of input quantities
+    :param x: flattened local values of input quantities
     :type x: array
+    :param Jx_diag: Bool to indicate whether the Jacobian matrix can be described with semi-diagonal elements. With this we mean that the measurand has the same shape as each of the input quantities and the square jacobain between the measurand and each of the input quantities individually, only has diagonal elements. Defaults to False
+    :rtype Jx_diag: bool, optional
     :return: Jacobian
     :rtype: array
     """
     Jfun = nd.Jacobian(fun)
-    Jx = Jfun(x.flatten())
+
+    if Jx_diag:
+        y = fun(x)
+        Jfun = nd.Jacobian(fun)
+        Jx = np.zeros((len(x),len(y)))
+        for j in range(len(y)):
+            xj = np.zeros(int(len(x)/len(y)))
+            for i in range(len(xj)):
+                xj[i] = x[i*len(y)+j]
+            Jxj=Jfun(xj)
+            for i in range(len(xj)):
+                Jx[i*len(y)+j,j]=Jxj[0][i]
+    else:
+        Jx = Jfun(x)
+
     if len(Jx)!=len(fun(x).flatten()):
         warnings.warn("Dimensions of the Jacobian were flipped because its shape didn't match "
               "the shape of the output of the function. (probably because there was "
               "only 1 input qty)")
         Jx=Jx.T
 
-    #print("Jacobian calculation took:",time.time()-timeb,timeb-timea)
     return Jx
 
-def convert_corr_to_cov(corr, u):
+def calculate_flattened_corr(corrs,corr_between):
     """
-    Convert correlation matrix to covariance matrix
+    Combine correlation matrices for different input quantities, with a correlation
+    matrix that gives the correlation between the input quantities into a full
+    (flattened) correlation matrix combining the two.
 
-    :param corr: correlation matrix
-    :type corr: array
-    :param u: uncertainties
-    :type u: array
-    :return: covariance matrix
+    :param corrs: list of correlation matrices for each input quantity
+    :type corrs: list[array]
+    :param corr_between: correlation matrix between the input quantities
+    :type corr_between: array
+    :return: full correlation matrix combining the correlation matrices
     :rtype: array
     """
-    return u.reshape((-1, 1)) * corr * (u.reshape((1, -1)))
+    totcorrlen = 0
+    for i in range(len(corrs)):
+        totcorrlen += len(corrs[i])
+    totcorr = np.eye(totcorrlen)
+    for i in range(len(corrs)):
+        for j in range(len(corrs)):
+            totcorr[i*len(corrs[i]):(i+1)*len(corrs[i]),
+            j*len(corrs[j]):(j+1)*len(corrs[j])] = corr_between[i,j]*corrs[i]**0.5*\
+                                                   corrs[j]**0.5
+    return totcorr
 
-def convert_cov_to_corr(cov, u):
+def separate_flattened_corr(corr,ndim):
     """
-    Convert covariance matrix to correlation matrix
+    Separate a full (flattened) correlation matrix into a list of correlation matrices
+    for each output variable and a correlation matrix between the output variables.
 
-    :param corr: covariance matrix
+    :param corr: full correlation matrix
     :type corr: array
-    :param u: uncertainties
-    :type u: array
-    :return: correlation matrix
-    :rtype: array
+    :param ndim: number of output variables
+    :type ndim: int
+    :return: list of correlation matrices for each output variable, correlation matrix between the output variables
+    :type corrs: list[array]
+    :rtype: list[array], array
     """
-    return 1 / u.reshape((-1, 1)) * cov / (u.reshape((1, -1)))
+
+    corrs = np.empty(ndim,dtype=object)
+    for i in range(ndim):
+        corrs[i] = correlation_from_covariance(corr[int(i*len(corr)/ndim):
+                          int((i+1)*len(corr)/ndim),int(i*len(corr)/ndim):
+                                                    int((i+1)*len(corr)/ndim)])
+
+    corrs_between = np.empty((ndim,ndim))
+    for i in range(ndim):
+        for j in range(ndim):
+            corrs_between[i,j] = np.nanmean(corr[int(i*len(corr)/ndim):
+                                       int((i+1)*len(corr)/ndim),
+                                  int(j*len(corr)/ndim):
+                                  int((j+1)*len(corr)/ndim)]/corrs[i]**0.5/corrs[j]**0.5)
+
+    return corrs,corrs_between
+
+def select_repeated_x(x,u_x,param_fixed,i,repeat_axis,n_repeats):
+    """
+    Select one (index i) of multiple repeated entries and return the input quantities and uncertainties for that entry.
+
+    :param x: list of input quantities (usually numpy arrays)
+    :type x: list[array]
+    :param u_x: list of uncertainties/covariances on input quantities (usually numpy arrays)
+    :type u_x: list[array]
+    :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
+    :type param_fixed: list of bools, optional
+    :param i: index of the input quantity (in x)
+    :type i: int
+    :param repeat_axis: dimension along which the measurements are repeated
+    :type repeat_axis: int
+    :param n_repeats: number of repeated measurements
+    :type n_repeats: int
+    :return: list of input quantities, list of uncertainties for single measurement
+    :rtype: list[array]. list[array]
+    """
+    xb=np.zeros(len(x),dtype=object)
+    u_xb=np.zeros(len(u_x),dtype=object)
+    for j in range(len(x)):
+        selected=False
+        if param_fixed is not None:
+            if param_fixed[j] == True:
+                xb[j] = x[j]
+                u_xb[j] = u_x[j]
+                selected=True
+        if not selected:
+            if len(x[j].shape) > repeat_axis:
+                if (x[j].shape[repeat_axis]!=n_repeats):
+                    xb[j] = x[j]
+                    u_xb[j] = u_x[j]
+                elif repeat_axis == 0:
+                    xb[j]=x[j][i]
+                    u_xb[j] = u_x[j][i]
+                elif repeat_axis == 1:
+                    xb[j] = x[j][:,i]
+                    u_xb[j] = u_x[j][:,i]
+                elif repeat_axis == 2:
+                    xb[j] = x[j][:,:,i]
+                    u_xb[j] = u_x[j][:,:,i]
+                else:
+                    warnings.warn("The repeat axis is too large to be dealt with by the"
+                                  "current version of punpy.")
+            else:
+                if (len(x[j])==n_repeats):
+                    xb[j] = x[j][i]
+                    u_xb[j] = u_x[j][i]
+                else:
+                    xb[j] = x[j]
+                    u_xb[j] = u_x[j]
+    return xb, u_xb
 
 def nearestPD_cholesky(A,diff=0.001,corr=False,return_cholesky=True):
     """
@@ -148,8 +245,54 @@ def isPD(B):
         return False
 
 def correlation_from_covariance(covariance):
+    """
+    Convert covariance matrix to correlation matrix
+
+    :param covariance: Covariance matrix
+    :type covariance: array
+    :return: Correlation matrix
+    :rtype: array
+    """
     v = np.sqrt(np.diag(covariance))
     outer_v = np.outer(v, v)
     correlation = covariance / outer_v
     correlation[covariance == 0] = 0
     return correlation
+
+def uncertainty_from_covariance(covariance):
+    """
+    Convert covariance matrix to uncertainty
+
+    :param covariance: Covariance matrix
+    :type covariance: array
+    :return: uncertainties
+    :rtype: array
+    """
+    return np.sqrt(np.diag(covariance))
+
+
+def convert_corr_to_cov(corr, u):
+    """
+    Convert correlation matrix to covariance matrix
+
+    :param corr: correlation matrix
+    :type corr: array
+    :param u: uncertainties
+    :type u: array
+    :return: covariance matrix
+    :rtype: array
+    """
+    return u.reshape((-1, 1)) * corr * (u.reshape((1, -1)))
+
+def convert_cov_to_corr(cov, u):
+    """
+    Convert covariance matrix to correlation matrix
+
+    :param corr: covariance matrix
+    :type corr: array
+    :param u: uncertainties
+    :type u: array
+    :return: correlation matrix
+    :rtype: array
+    """
+    return 1 / u.reshape((-1, 1)) * cov / (u.reshape((1, -1)))

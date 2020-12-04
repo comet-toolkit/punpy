@@ -19,6 +19,8 @@ class MCPropagation:
 
         :param steps: number of MC iterations
         :type steps: int
+        :param parallel_cores: number of CPU to be used in parallel processing
+        :type parallel_cores: int
         """
 
         self.MCsteps = steps
@@ -69,7 +71,7 @@ class MCPropagation:
             n_repeats=yshape[repeat_axis]
             outs = np.empty(n_repeats,dtype=object)
             for i in range(n_repeats):
-                xb, u_xb = self.select_repeated_x(x,u_x,param_fixed,i,
+                xb, u_xb = util.select_repeated_x(x,u_x,param_fixed,i,
                                                   repeat_axis,n_repeats)
 
                 outs[i] = self.propagate_random(func,xb,u_xb,corr_x,param_fixed,
@@ -148,7 +150,7 @@ class MCPropagation:
             n_repeats=yshape[repeat_axis]
             outs = np.empty(n_repeats,dtype=object)
             for i in range(n_repeats):
-                xb,u_xb = self.select_repeated_x(x,u_x,param_fixed,i,repeat_axis,n_repeats)
+                xb,u_xb = util.select_repeated_x(x,u_x,param_fixed,i,repeat_axis,n_repeats)
                 outs[i] = self.propagate_systematic(func,xb,u_xb,corr_x,param_fixed,
                                                     corr_between,return_corr,
                                                     return_samples,repeat_dims,
@@ -221,7 +223,7 @@ class MCPropagation:
             n_repeats=yshape[repeat_axis]
             outs = np.empty(n_repeats,dtype=object)
             for i in range(n_repeats):
-                xb,_ = self.select_repeated_x(x,x,param_fixed,i,repeat_axis,n_repeats)
+                xb,_ = util.select_repeated_x(x,x,param_fixed,i,repeat_axis,n_repeats)
                 outs[i] = self.propagate_cov(func,xb,cov_x,param_fixed,corr_between,
                                                 return_corr,return_samples,repeat_dims,
                                                 corr_axis=corr_axis,
@@ -361,61 +363,6 @@ class MCPropagation:
 
 
         return yshape,u_x,repeat_axis,repeat_dims,corr_axis,fixed_corr
-
-
-    def select_repeated_x(self,x,u_x,param_fixed,i,repeat_axis,n_repeats):
-        """
-        Select one (index i) of multiple repeated entries and return the input quantities and uncertainties for that entry.
-
-        :param x: list of input quantities (usually numpy arrays)
-        :type x: list[array]
-        :param u_x: list of uncertainties/covariances on input quantities (usually numpy arrays)
-        :type u_x: list[array]
-        :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
-        :type param_fixed: list of bools, optional
-        :param i: index of the input quantity (in x)
-        :type i: int
-        :param repeat_axis: dimension along which the measurements are repeated
-        :type repeat_axis: int
-        :param n_repeats: number of repeated measurements
-        :type n_repeats: int
-        :return: list of input quantities, list of uncertainties for single measurement
-        :rtype: list[array]. list[array]
-        """
-        xb=np.zeros(len(x),dtype=object)
-        u_xb=np.zeros(len(u_x),dtype=object)
-        for j in range(len(x)):
-            selected=False
-            if param_fixed is not None:
-                if param_fixed[j] == True:
-                    xb[j] = x[j]
-                    u_xb[j] = u_x[j]
-                    selected=True
-            if not selected:
-                if len(x[j].shape) > repeat_axis:
-                    if (x[j].shape[repeat_axis]!=n_repeats):
-                        xb[j] = x[j]
-                        u_xb[j] = u_x[j]
-                    elif repeat_axis == 0 :
-                        xb[j]=x[j][i]
-                        u_xb[j] = u_x[j][i]
-                    elif repeat_axis == 1:
-                        xb[j] = x[j][:,i]
-                        u_xb[j] = u_x[j][:,i]
-                    elif repeat_axis == 2:
-                        xb[j] = x[j][:,:,i]
-                        u_xb[j] = u_x[j][:,:,i]
-                    else:
-                        warnings.warn("The repeat axis is too large to be dealt with by the"
-                                      "current version of punpy.")
-                else:
-                    if (len(x[j])==n_repeats):
-                        xb[j] = x[j][i]
-                        u_xb[j] = u_x[j][i]
-                    else:
-                        xb[j] = x[j]
-                        u_xb[j] = u_x[j]
-        return xb, u_xb
 
     def combine_repeated_outs(self,outs,yshape,n_repeats,lenx,repeat_axis,return_corr,return_samples,output_vars):
         """

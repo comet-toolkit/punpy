@@ -24,8 +24,8 @@ x2=np.ones(200)*30
 x1err=np.ones(200)
 x2err=2*np.ones(200)
 
-xs=np.array([x1,x2])
-xerrs=np.array([x1err,x2err])
+xs=[x1,x2]
+xerrs=[x1err,x2err]
 
 #below, the higher order Taylor expansion terms have been taken into account, and amount to 2.
 yerr_uncorr=802**0.5*np.ones(200)
@@ -70,8 +70,8 @@ x2d=np.ones((20,3,4))*30
 x1errd=np.ones((20,3,4))
 x2errd=2*np.ones((20,3,4))
 
-xsd=np.array([x1d,x2d])
-xerrsd=np.array([x1errd,x2errd])
+xsd=[x1d,x2d]
+xerrsd=[x1errd,x2errd]
 corr_d=np.ones((2,2))#np.array([[1,0.9999999,0.9999999],[0.99999999,1.,0.99999999],[0.9999999,0.9999999,1.]])
 
 yerr_uncorrd=[8**0.5*np.ones((20,3,4)),8**0.5*np.ones((20,3,4))]
