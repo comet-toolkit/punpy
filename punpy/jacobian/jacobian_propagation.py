@@ -15,7 +15,7 @@ __status__ = "Development"
 class JacobianPropagation:
     def __init__(self,parallel_cores=0):
         """
-        Initialise MC Propagator
+        Initialise Jacobian Propagator
 
         :param parallel_cores: number of CPU to be used in parallel processing
         :type parallel_cores: int
@@ -24,7 +24,7 @@ class JacobianPropagation:
         self.parallel_cores = parallel_cores
 
     def propagate_random(self,func,x,u_x,corr_x=None,param_fixed=None,corr_between=None,
-                         return_corr=False,repeat_dims=-99,corr_axis=-99,
+                         return_corr=False,return_Jacobian=False,repeat_dims=-99,corr_axis=-99,
                          fixed_corr_var=False,output_vars=1,Jx=None,Jx_diag=False):
         """
         Propagate random uncertainties through measurement function with n input quantities.
@@ -46,6 +46,8 @@ class JacobianPropagation:
         :type corr_between: array, optional
         :param return_corr: set to True to return correlation matrix of measurand, defaults to False
         :type return_corr: bool, optional
+        :param return_Jacobian: set to True to return Jacobian matrix, defaults to False
+        :type return_Jacobian: bool, optional
         :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
         :type repeat_dims: integer or list of 2 integers, optional
         :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
@@ -71,10 +73,14 @@ class JacobianPropagation:
                 for i in range(n_repeats):
                     xb,u_xb = util.select_repeated_x(x,u_x,param_fixed,i,repeat_axis,
                                                      n_repeats)
+                    if Jx is not None:
+                        Jxi=Jx[i]
+                    else:
+                        Jxi=Jx
                     inputs[i]=[func,xb,u_xb,corr_x,param_fixed,
-                                                    corr_between,return_corr,
+                                corr_between,return_corr,return_Jacobian,
                                                     repeat_dims,corr_axis,
-                                                    fixed_corr_var,output_vars,Jx]
+                                                    fixed_corr_var,output_vars,Jxi]
                 pool = Pool(self.parallel_cores)
                 outs=pool.starmap(self.propagate_random,inputs)
                 pool.close()
@@ -84,13 +90,17 @@ class JacobianPropagation:
                 for i in range(n_repeats):
                     xb,u_xb = util.select_repeated_x(x,u_x,param_fixed,i,repeat_axis,
                                                      n_repeats)
+                    if Jx is not None:
+                        Jxi=Jx[i]
+                    else:
+                        Jxi=Jx
                     outs[i] = self.propagate_random(func,xb,u_xb,corr_x,param_fixed,
-                                                    corr_between,return_corr,
+                                                    corr_between,return_corr,return_Jacobian,
                                                     repeat_dims,corr_axis,
-                                                    fixed_corr_var,output_vars,Jx)
+                                                    fixed_corr_var,output_vars,Jxi)
 
             return self.combine_repeated_outs(outs,yshape,n_repeats,repeat_axis,
-                                              return_corr,output_vars)
+                                              return_corr,return_Jacobian,output_vars)
 
         else:
             if Jx is None:
@@ -117,12 +127,12 @@ class JacobianPropagation:
             cov_x=util.convert_corr_to_cov(corr_x,u_xflat)
 
             return self.process_jacobian(Jx,cov_x,yshape,return_corr,
-                                         fixed_corr,output_vars)
+                                         fixed_corr,output_vars,return_Jacobian)
 
     def propagate_systematic(self,func,x,u_x,corr_x=None,param_fixed=None,
-                             corr_between=None,return_corr=False,repeat_dims=-99,
-                             corr_axis=-99,fixed_corr_var=False,output_vars=1,
-                             Jx=None,Jx_diag=False):
+                             corr_between=None,return_corr=False,return_Jacobian=False,
+                             repeat_dims=-99,corr_axis=-99,fixed_corr_var=False,
+                             output_vars=1,Jx=None,Jx_diag=False):
         """
         Propagate systematic uncertainties through measurement function with n input quantities.
         Input quantities can be floats, vectors (1d-array) or images (2d-array).
@@ -143,6 +153,8 @@ class JacobianPropagation:
         :type corr_between: array, optional
         :param return_corr: set to True to return correlation matrix of measurand, defaults to False
         :type return_corr: bool, optional
+        :param return_Jacobian: set to True to return Jacobian matrix, defaults to False
+        :type return_Jacobian: bool, optional
         :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
         :type repeat_dims: integer or list of 2 integers, optional
         :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
@@ -168,10 +180,14 @@ class JacobianPropagation:
                 for i in range(n_repeats):
                     xb,u_xb = util.select_repeated_x(x,u_x,param_fixed,i,repeat_axis,
                                                      n_repeats)
+                    if Jx is not None:
+                        Jxi=Jx[i]
+                    else:
+                        Jxi=Jx
                     inputs[i]=[func,xb,u_xb,corr_x,param_fixed,
-                                                    corr_between,return_corr,
+                                            corr_between,return_corr,return_Jacobian,
                                                     repeat_dims,corr_axis,
-                                                    fixed_corr_var,output_vars,Jx]
+                                                    fixed_corr_var,output_vars,Jxi]
                 pool = Pool(self.parallel_cores)
                 outs=pool.starmap(self.propagate_systematic,inputs)
                 pool.close()
@@ -181,12 +197,17 @@ class JacobianPropagation:
                 for i in range(n_repeats):
                     xb,u_xb = util.select_repeated_x(x,u_x,param_fixed,i,repeat_axis,
                                                      n_repeats)
+                    if Jx is not None:
+                        Jxi=Jx[i]
+                    else:
+                        Jxi=Jx
                     outs[i] = self.propagate_systematic(func,xb,u_xb,corr_x,param_fixed,
-                                                    corr_between,return_corr,repeat_dims,
-                                                    corr_axis,fixed_corr_var,output_vars,Jx)
+                                                    corr_between,return_corr,
+                                                    return_Jacobian,repeat_dims,
+                                                    corr_axis,fixed_corr_var,output_vars,Jxi)
 
             return self.combine_repeated_outs(outs,yshape,n_repeats,repeat_axis,
-                                              return_corr,output_vars)
+                                              return_corr,return_Jacobian,output_vars)
 
         else:
             if Jx is None:
@@ -213,10 +234,10 @@ class JacobianPropagation:
             cov_x = util.convert_corr_to_cov(corr_x,u_xflat)
 
             return self.process_jacobian(Jx,cov_x,yshape,return_corr,fixed_corr,
-                                         output_vars)
+                                         output_vars,return_Jacobian)
 
     def propagate_cov(self,func,x,cov_x,param_fixed=None,corr_between=None,
-                      return_corr=False,repeat_dims=-99,corr_axis=-99,
+                      return_corr=False,return_Jacobian=False,repeat_dims=-99,corr_axis=-99,
                       fixed_corr_var=False,output_vars=1,Jx=None,Jx_diag=False):
         """
         Propagate uncertainties with given covariance matrix through measurement function with n input quantities.
@@ -237,6 +258,8 @@ class JacobianPropagation:
         :type corr_between: array, optional
         :param return_corr: set to True to return correlation matrix of measurand, defaults to True
         :type return_corr: bool, optional
+        :param return_Jacobian: set to True to return Jacobian matrix, defaults to False
+        :type return_Jacobian: bool, optional
         :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
         :type repeat_dims: integer or list of 2 integers, optional
         :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
@@ -265,9 +288,13 @@ class JacobianPropagation:
                 for i in range(n_repeats):
                     xb,u_xb = util.select_repeated_x(x,u_x,param_fixed,i,repeat_axis,
                                                      n_repeats)
+                    if Jx is not None:
+                        Jxi=Jx[i]
+                    else:
+                        Jxi=Jx
                     inputs[i] = [func,xb,cov_x,param_fixed,
-                                                 corr_between,return_corr,repeat_dims,
-                                                 corr_axis,fixed_corr_var,output_vars,Jx]
+                                corr_between,return_corr,return_Jacobian,repeat_dims,
+                                                 corr_axis,fixed_corr_var,output_vars,Jxi]
                 pool = Pool(self.parallel_cores)
                 outs = pool.starmap(self.propagate_cov,inputs)
                 pool.close()
@@ -277,12 +304,16 @@ class JacobianPropagation:
                 for i in range(n_repeats):
                     xb,_ = util.select_repeated_x(x,u_x,param_fixed,i,repeat_axis,
                                                      n_repeats)
+                    if Jx is not None:
+                        Jxi=Jx[i]
+                    else:
+                        Jxi=Jx
                     outs[i] = self.propagate_cov(func,xb,cov_x,param_fixed,
-                                                 corr_between,return_corr,repeat_dims,
-                                                 corr_axis,fixed_corr_var,output_vars,Jx)
+                                                 corr_between,return_corr,return_Jacobian,repeat_dims,
+                                                 corr_axis,fixed_corr_var,output_vars,Jxi)
 
             return self.combine_repeated_outs(outs,yshape,n_repeats,repeat_axis,
-                                              return_corr,output_vars)
+                                              return_corr,return_Jacobian,output_vars)
 
         else:
             if Jx is None:
@@ -295,29 +326,40 @@ class JacobianPropagation:
             cov_x = util.convert_corr_to_cov(corr_x,u_xflat)
 
             return self.process_jacobian(Jx,cov_x,yshape,return_corr,fixed_corr,
-                                         output_vars)
+                                         output_vars,return_Jacobian)
 
-    def process_jacobian(self,J,covx,shape_y,return_corr,fixed_corr=None,output_vars=1):
+    def process_jacobian(self,J,covx,shape_y,return_corr,fixed_corr=None,output_vars=1,
+                         return_Jacobian=False):
         covy=np.dot(np.dot(J,covx),J.T)
         u_func=np.diag(covy)**0.5
         if fixed_corr is None:
             corr_y=util.convert_cov_to_corr(covy,u_func)
         else:
             corr_y=fixed_corr
-        if not return_corr:
-            if output_vars==1:
-                return u_func.reshape(shape_y)
-            else:
-                return u_func.reshape((output_vars,)+shape_y)
 
+        if output_vars==1:
+            u_func = u_func.reshape(shape_y)
+        else:
+            u_func = u_func.reshape((output_vars,)+shape_y)
+
+        if not return_corr:
+            if not return_Jacobian:
+                return u_func
+            else:
+                return u_func,J
         else:
             if output_vars==1:
-                return u_func.reshape(shape_y),corr_y
+                if not return_Jacobian:
+                    return u_func,corr_y
+                else:
+                    return u_func,corr_y,J
             else:
                 #create an empty arrays and then populate it with the correlation matrix for each output parameter individually
                 corr_ys,corr_out=util.separate_flattened_corr(corr_y,output_vars)
-
-                return u_func.reshape((output_vars,)+shape_y),corr_ys,corr_out
+                if not return_Jacobian:
+                    return u_func,corr_ys,corr_out
+                else:
+                    return u_func,corr_ys,corr_out,J
 
     def perform_checks(self,func,x,u_x,corr_x,repeat_dims,corr_axis,output_vars,
                        fixed_corr_var):
@@ -433,7 +475,7 @@ class JacobianPropagation:
         return fun,xflat,u_xflat,yshape,u_x,repeat_axis,repeat_dims,corr_axis,fixed_corr
 
     def combine_repeated_outs(self,outs,yshape,n_repeats,repeat_axis,return_corr,
-                              output_vars):
+                              return_Jacobian,output_vars):
         """
         Combine the outputs of the repeated measurements into one results array
 
@@ -443,14 +485,12 @@ class JacobianPropagation:
         :type yshape: tuple
         :param n_repeats: number of repeated measurements
         :type n_repeats: int
-        :param lenx: number of input quantities
-        :type lenx: int
         :param repeat_axis: dimension along which the measurements are repeated
         :type repeat_axis: int
         :param return_corr: set to True to return correlation matrix of measurand, defaults to True
         :type return_corr: bool, optional
-        :param return_samples: set to True to return generated samples, defaults to False
-        :type return_samples: bool, optional
+        :param return_Jacobian: set to True to return Jacobian, defaults to False
+        :type return_Jacobian: bool, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
         :type output_vars: integer, optional
         :return: combined outputs
@@ -531,5 +571,8 @@ class JacobianPropagation:
                                    axis=0)
                 returns[1+extra_index] = corr_out
                 extra_index += 1
+
+            if return_Jacobian:
+                returns[1+extra_index] = [outs[i][1+extra_index] for i in range(n_repeats)]
 
             return returns

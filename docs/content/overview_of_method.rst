@@ -35,7 +35,7 @@ For example::
 Propagating random and systematic uncertainties
 ################################################
     
-Once this kind of measurement function is defined, we can use the various punpy methods to propagate uncertainties though this measurement function. In order to do this, we first create a MCPropagation object::
+Once this kind of measurement function is defined, we can use the various punpy methods to propagate uncertainties though this measurement function. In order to do this, we first create a prop object::
 
    import punpy
 
@@ -60,7 +60,7 @@ However, this is not always the case. If the inputs to the measurement function 
 We can instead pass each MC sample individually tothe measurement function by setting the optional
 `parallel_cores` keyword to 1. At the end of this section we'll also see how to use this keyword for parallel processing.
 The Jacobian methods implement the law of propagation of uncertainties from the 
-GUM (Guide to the Expression of Uncertainty in Measurement).
+GUM (Guide to the Expression of Uncertainty in Measurement) by calculating the Jacobian and using this to propagate the uncertainties.
 
 Once a prop object has been made, a number of methods can then be used to propagate uncertainties, depending on the kind of uncertainties that need to be propagated.
 We start by showing how to propagating random and systematic uncertainties.
@@ -162,18 +162,9 @@ This keyword needs to be set to the correlation matrix between the input quantit
    uc_y, corr_y = prop.propagate_cov(measurement_function, [x1, x2, x3], 
                   [cov_x1, cov_x2, cov_x3], corr_between = corr_x1x2x3)
 
-Additional options
-##################
 
-It is also possible to return the generated samples by setting the optional `return_samples` keyword to True::
-
-   ur_y, samplesr_y, samplesr_x = prop.propagate_random(
-   measurement_function, [x1, x2, x3], [ur_x1, ur_x2, ur_x3],
-   corr_between=corr_x1x2x3, return_samples=True)
-
-   ub_y, corr_y, samplesr_y, samplesr_x = prop.propagate_systematic(
-   measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3], 
-   return_corr=True, return_samples=True)
+Multiple outputs
+################
 
 In some cases, the measurement function has multiple outputs::
 
@@ -190,6 +181,45 @@ These functions can still be handled by punpy, but require the `output_vars` key
 
 Note that now there is an additional output corr_out, which gives the correlation between the different output variables (in the above case a 2 by 2 matrix).
 Here the correlation coefficients between the 2 variables are averaged over all measurements. 
+
+
+Additional options
+##################
+
+For the MC method, it is also possible to return the generated samples by setting the optional `return_samples` keyword to True::
+	
+   prop = punpy.MCPropagation(10000)
+   ur_y, samplesr_y, samplesr_x = prop.propagate_random(
+   measurement_function, [x1, x2, x3], [ur_x1, ur_x2, ur_x3],
+   corr_between=corr_x1x2x3, return_samples=True)
+
+   ub_y, corr_y, samplesr_y, samplesr_x = prop.propagate_systematic(
+   measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3], 
+   return_corr=True, return_samples=True)
+
+For the Jacobian method, it is possible to additionally return the calculated Jacobian matrix by setting the `return_Jacobian` keyword to True.
+In addition, instead of calculating the Jacobian as part of the propagation, it is also possible to give a precomputed Jacobian matrix, by setting the `Jx` keyword.
+This allows to use the Jacobian matrix from a previous step or an analytical prescription, which results in much faster processing::
+
+   prop = punpy.JacobianPropagation()
+   ur_y, Jac_x = prop.propagate_random(
+   measurement_function, [x1, x2, x3], [ur_x1, ur_x2, ur_x3],
+   corr_between=corr_x1x2x3, return_Jacobian=True)
+
+   ub_y, corr_y = prop.propagate_systematic(
+   measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3], 
+   return_corr=True, Jx=Jac_x)
+
+It is not uncommon to have measurment functions that take a number of input quantities, where each input quantity is a vector or array.
+If the measurand and each of the input quantities all have the same shape, and the measurement function is applied independently to each 
+element in these arrays, then most of the elements in the Jacobian will be zero (all except the diagonal elements for each square jacobian
+matrix corresponding to each input quantity individually). Rather than calculating all these zeros, it is possible to set the `Jx_diag` keyword 
+to True which will automatically ignore all the off-diagonal elements and result in faster processing::
+
+   prop = punpy.JacobianPropagation()
+   ub_y, corr_y = prop.propagate_systematic(
+   measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3], 
+   return_corr=True, Jx_diag=True)
 
 In some cases, when there is only one correlation matrix contributing to the measurand (e.g. a complicated 
 measurement function where all but one of the input quantities are known with perfect precision, i.e. without uncertainty),
@@ -209,7 +239,7 @@ Punpy uses the multiprocessing module which comes standard with your python dist
 The gain by using parallel processing only really outweighs the overhead if the measurement function is relatively slow
 (of the order of 0.1 s or slower for one set of input quantities).
 
-Parallel processing can be done as follows::
+Parallel processing for MC can be done as follows::
 
    if __name__ == "__main__":
       prop = punpy.MCPropagation(10000,parallel_cores=4)
@@ -222,3 +252,14 @@ Note that the use of 'if __name__ == "__main__":' is required when using a Windo
 When processing in parallel, child processes are generated from the parent code, and the above statement is necessary in Windows to avoid the child processes to generate children themselves.
 Everything using the results of the multiprocessing needs to be inside the 'if __name__ == "__main__"'.
 However the measurement function itself needs to be outside this since the child processes need to find this.
+
+For the Jacobian method, it is also possible to use parallel processing, though only if the `repeat_dims` keyword is set.
+In this case each of the repeated measurements is processed in parallel::
+
+   if __name__ == "__main__":
+      prop = punpy.JacobianPropagation(parallel_cores=4)
+      ur_y = prop.propagate_random(measurement_function, [x1, x2, x3], 
+             [ur_x1, ur_x2, ur_x3],repeat_dims=0)
+      us_y = prop.propagate_systematic(measurement_function, [x1, x2, x3], 
+             [us_x1, us_x2, us_x3],repeat_dims=0)
+

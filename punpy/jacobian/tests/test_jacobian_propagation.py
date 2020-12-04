@@ -119,8 +119,8 @@ class TestMCPropagation(unittest.TestCase):
 
     def test_propagate_random_2D(self):
         prop = JacobianPropagation(parallel_cores=2)
-        ufb,ucorrb = prop.propagate_random(functionb,xsb,xerrsb,return_corr=True,
-                                           repeat_dims=1)
+        ufb,ucorrb,jac_x = prop.propagate_random(functionb,xsb,xerrsb,return_corr=True,
+                                           repeat_dims=1,return_Jacobian=True)
         npt.assert_allclose(ucorrb,np.eye(len(ucorrb)),atol=0.01)
         npt.assert_allclose(ufb,yerr_uncorrb,rtol=0.01)
 
@@ -128,7 +128,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufb,yerr_corrb,atol=0.03)
 
         ufb = prop.propagate_random(functionb,xsb,xerrsb,corr_between=np.ones((2,2)),
-                                                      repeat_dims=1)
+                                                      repeat_dims=1,Jx=jac_x)
         npt.assert_allclose(ufb,yerr_corrb,atol=0.03)
 
     def test_propagate_random_1D_3var(self):
@@ -186,7 +186,8 @@ class TestMCPropagation(unittest.TestCase):
 
     def test_propagate_systematic_2D(self):
         prop = JacobianPropagation()
-        ufb,ucorrb = prop.propagate_systematic(functionb,xsb,xerrsb,return_corr=True)
+        ufb,ucorrb,jac_x = prop.propagate_systematic(functionb,xsb,xerrsb,return_corr=True,
+                                               return_Jacobian=True)
         npt.assert_allclose(ucorrb,np.ones_like(ucorrb),atol=0.01)
         npt.assert_allclose(ufb,yerr_uncorrb,rtol=0.01)
 
@@ -196,11 +197,10 @@ class TestMCPropagation(unittest.TestCase):
 
         ufb,ucorrb = prop.propagate_systematic(functionb,xsb,xerrsb,return_corr=True,
                                                corr_axis=0)
-        print(ucorrb.shape)
         npt.assert_allclose(ucorrb,np.ones_like(ucorrb),atol=0.01)
 
         ufb = prop.propagate_systematic(functionb,xsb,xerrsb,
-                                        corr_between=np.ones((2,2)))
+                                        corr_between=np.ones((2,2)),Jx=jac_x)
         npt.assert_allclose(ufb,yerr_corrb,atol=0.03)
 
     def test_propagate_systematic_1D_3var(self):
