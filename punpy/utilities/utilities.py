@@ -12,7 +12,7 @@ __email__ = "pieter.de.vis@npl.co.uk"
 __status__ = "Development"
 
 
-def calculate_Jacobian(fun,x,Jx_diag=False):
+def calculate_Jacobian(fun, x, Jx_diag=False):
     """
     Calculate the local Jacobian of function y=f(x) for a given value of x
 
@@ -30,26 +30,29 @@ def calculate_Jacobian(fun,x,Jx_diag=False):
     if Jx_diag:
         y = fun(x)
         Jfun = nd.Jacobian(fun)
-        Jx = np.zeros((len(x),len(y)))
+        Jx = np.zeros((len(x), len(y)))
         for j in range(len(y)):
-            xj = np.zeros(int(len(x)/len(y)))
+            xj = np.zeros(int(len(x) / len(y)))
             for i in range(len(xj)):
-                xj[i] = x[i*len(y)+j]
-            Jxj=Jfun(xj)
+                xj[i] = x[i * len(y) + j]
+            Jxj = Jfun(xj)
             for i in range(len(xj)):
-                Jx[i*len(y)+j,j]=Jxj[0][i]
+                Jx[i * len(y) + j, j] = Jxj[0][i]
     else:
         Jx = Jfun(x)
 
-    if len(Jx)!=len(fun(x).flatten()):
-        warnings.warn("Dimensions of the Jacobian were flipped because its shape didn't match "
-              "the shape of the output of the function. (probably because there was "
-              "only 1 input qty)")
-        Jx=Jx.T
+    if len(Jx) != len(fun(x).flatten()):
+        warnings.warn(
+            "Dimensions of the Jacobian were flipped because its shape "
+            "didn't match the shape of the output of the function "
+            "(probably because there was only 1 input qty)."
+        )
+        Jx = Jx.T
 
     return Jx
 
-def calculate_flattened_corr(corrs,corr_between):
+
+def calculate_flattened_corr(corrs, corr_between):
     """
     Combine correlation matrices for different input quantities, with a correlation
     matrix that gives the correlation between the input quantities into a full
@@ -68,12 +71,17 @@ def calculate_flattened_corr(corrs,corr_between):
     totcorr = np.eye(totcorrlen)
     for i in range(len(corrs)):
         for j in range(len(corrs)):
-            totcorr[i*len(corrs[i]):(i+1)*len(corrs[i]),
-            j*len(corrs[j]):(j+1)*len(corrs[j])] = corr_between[i,j]*corrs[i]**0.5*\
-                                                   corrs[j]**0.5
+            ist = i * len(corrs[i])
+            iend = (i + 1) * len(corrs[i])
+            jst = j * len(corrs[j])
+            jend = (j + 1) * len(corrs[j])
+            totcorr[ist:iend, jst:jend] = (
+                corr_between[i, j] * corrs[i] ** 0.5 * corrs[j] ** 0.5
+            )
     return totcorr
 
-def separate_flattened_corr(corr,ndim):
+
+def separate_flattened_corr(corr, ndim):
     """
     Separate a full (flattened) correlation matrix into a list of correlation matrices
     for each output variable and a correlation matrix between the output variables.
@@ -87,23 +95,31 @@ def separate_flattened_corr(corr,ndim):
     :rtype: list[array], array
     """
 
-    corrs = np.empty(ndim,dtype=object)
+    corrs = np.empty(ndim, dtype=object)
     for i in range(ndim):
-        corrs[i] = correlation_from_covariance(corr[int(i*len(corr)/ndim):
-                          int((i+1)*len(corr)/ndim),int(i*len(corr)/ndim):
-                                                    int((i+1)*len(corr)/ndim)])
+        corrs[i] = correlation_from_covariance(
+            corr[
+                int(i * len(corr) / ndim) : int((i + 1) * len(corr) / ndim),
+                int(i * len(corr) / ndim) : int((i + 1) * len(corr) / ndim),
+            ]
+        )
 
-    corrs_between = np.empty((ndim,ndim))
+    corrs_between = np.empty((ndim, ndim))
     for i in range(ndim):
         for j in range(ndim):
-            corrs_between[i,j] = np.nanmean(corr[int(i*len(corr)/ndim):
-                                       int((i+1)*len(corr)/ndim),
-                                  int(j*len(corr)/ndim):
-                                  int((j+1)*len(corr)/ndim)]/corrs[i]**0.5/corrs[j]**0.5)
+            corrs_between[i, j] = np.nanmean(
+                corr[
+                    int(i * len(corr) / ndim) : int((i + 1) * len(corr) / ndim),
+                    int(j * len(corr) / ndim) : int((j + 1) * len(corr) / ndim),
+                ]
+                / corrs[i] ** 0.5
+                / corrs[j] ** 0.5
+            )
 
-    return corrs,corrs_between
+    return corrs, corrs_between
 
-def select_repeated_x(x,u_x,param_fixed,i,repeat_axis,n_repeats):
+
+def select_repeated_x(x, u_x, param_fixed, i, repeat_axis, n_repeats):
     """
     Select one (index i) of multiple repeated entries and return the input quantities and uncertainties for that entry.
 
@@ -122,34 +138,36 @@ def select_repeated_x(x,u_x,param_fixed,i,repeat_axis,n_repeats):
     :return: list of input quantities, list of uncertainties for single measurement
     :rtype: list[array]. list[array]
     """
-    xb=np.zeros(len(x),dtype=object)
-    u_xb=np.zeros(len(u_x),dtype=object)
+    xb = np.zeros(len(x), dtype=object)
+    u_xb = np.zeros(len(u_x), dtype=object)
     for j in range(len(x)):
-        selected=False
+        selected = False
         if param_fixed is not None:
             if param_fixed[j] == True:
                 xb[j] = x[j]
                 u_xb[j] = u_x[j]
-                selected=True
+                selected = True
         if not selected:
             if len(x[j].shape) > repeat_axis:
-                if (x[j].shape[repeat_axis]!=n_repeats):
+                if x[j].shape[repeat_axis] != n_repeats:
                     xb[j] = x[j]
                     u_xb[j] = u_x[j]
                 elif repeat_axis == 0:
-                    xb[j]=x[j][i]
+                    xb[j] = x[j][i]
                     u_xb[j] = u_x[j][i]
                 elif repeat_axis == 1:
-                    xb[j] = x[j][:,i]
-                    u_xb[j] = u_x[j][:,i]
+                    xb[j] = x[j][:, i]
+                    u_xb[j] = u_x[j][:, i]
                 elif repeat_axis == 2:
-                    xb[j] = x[j][:,:,i]
-                    u_xb[j] = u_x[j][:,:,i]
+                    xb[j] = x[j][:, :, i]
+                    u_xb[j] = u_x[j][:, :, i]
                 else:
-                    warnings.warn("The repeat axis is too large to be dealt with by the"
-                                  "current version of punpy.")
+                    warnings.warn(
+                        "The repeat axis is too large to be dealt with by the"
+                        "current version of punpy."
+                    )
             else:
-                if (len(x[j])==n_repeats):
+                if len(x[j]) == n_repeats:
                     xb[j] = x[j][i]
                     u_xb[j] = u_x[j][i]
                 else:
@@ -157,7 +175,8 @@ def select_repeated_x(x,u_x,param_fixed,i,repeat_axis,n_repeats):
                     u_xb[j] = u_x[j]
     return xb, u_xb
 
-def nearestPD_cholesky(A,diff=0.001,corr=False,return_cholesky=True):
+
+def nearestPD_cholesky(A, diff=0.001, corr=False, return_cholesky=True):
     """
     Find the nearest positive-definite matrix
 
@@ -175,14 +194,14 @@ def nearestPD_cholesky(A,diff=0.001,corr=False,return_cholesky=True):
     matrix" (1988): https://doi.org/10.1016/0024-3795(88)90223-6
     """
 
-    B = (A+A.T)/2
-    _,s,V = np.linalg.svd(B)
+    B = (A + A.T) / 2
+    _, s, V = np.linalg.svd(B)
 
-    H = np.dot(V.T,np.dot(np.diag(s),V))
+    H = np.dot(V.T, np.dot(np.diag(s), V))
 
-    A2 = (B+H)/2
+    A2 = (B + H) / 2
 
-    A3 = (A2+A2.T)/2
+    A3 = (A2 + A2.T) / 2
 
     try:
         return np.linalg.cholesky(A3)
@@ -194,40 +213,47 @@ def nearestPD_cholesky(A,diff=0.001,corr=False,return_cholesky=True):
         k = 1
         while not isPD(A3):
             mineig = np.min(np.real(np.linalg.eigvals(A3)))
-            A3 += I*(-mineig*k**2+spacing)
+            A3 += I * (-mineig * k ** 2 + spacing)
             k += 1
 
         if corr == True:
             A3 = correlation_from_covariance(A3)
-            maxdiff = np.max(np.abs(A-A3))
-            if maxdiff>diff:
+            maxdiff = np.max(np.abs(A - A3))
+            if maxdiff > diff:
                 raise ValueError(
                     "One of the correlation matrices is not postive definite. "
                     "Correlation matrices need to be at least positive "
-                    "semi-definite.")
+                    "semi-definite."
+                )
             else:
-                warnings.warn("One of the correlation matrices is not positive "
+                warnings.warn(
+                    "One of the correlation matrices is not positive "
                     "definite. It has been slightly changed (maximum difference "
-                    "of %s) to accomodate our method."%(maxdiff))
+                    "of %s) to accomodate our method." % (maxdiff)
+                )
                 if return_cholesky:
                     return np.linalg.cholesky(A3)
                 else:
                     return A3
         else:
-            maxdiff = np.max(np.abs(A-A3)/(A3+diff))
+            maxdiff = np.max(np.abs(A - A3) / (A3 + diff))
             if maxdiff > diff:
                 raise ValueError(
                     "One of the provided covariance matrices is not postive "
                     "definite. Covariance matrices need to be at least positive "
-                    "semi-definite. Please check your covariance matrix.")
+                    "semi-definite. Please check your covariance matrix."
+                )
             else:
-                warnings.warn("One of the provided covariance matrix is not positive"
+                warnings.warn(
+                    "One of the provided covariance matrix is not positive"
                     "definite. It has been slightly changed (maximum difference of "
-                    "%s percent) to accomodate our method."%(maxdiff*100))
+                    "%s percent) to accomodate our method." % (maxdiff * 100)
+                )
                 if return_cholesky:
                     return np.linalg.cholesky(A3)
                 else:
                     return A3
+
 
 def isPD(B):
     """
@@ -244,6 +270,7 @@ def isPD(B):
     except np.linalg.LinAlgError:
         return False
 
+
 def correlation_from_covariance(covariance):
     """
     Convert covariance matrix to correlation matrix
@@ -258,6 +285,7 @@ def correlation_from_covariance(covariance):
     correlation = covariance / outer_v
     correlation[covariance == 0] = 0
     return correlation
+
 
 def uncertainty_from_covariance(covariance):
     """
@@ -283,6 +311,7 @@ def convert_corr_to_cov(corr, u):
     :rtype: array
     """
     return u.reshape((-1, 1)) * corr * (u.reshape((1, -1)))
+
 
 def convert_cov_to_corr(cov, u):
     """
