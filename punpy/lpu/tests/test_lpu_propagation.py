@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 import punpy.utilities.utilities as util
-from punpy.jacobian.jacobian_propagation import JacobianPropagation
+from punpy.lpu.lpu_propagation import LPUPropagation
 
 """___Authorship___"""
 __author__ = "Pieter De Vis"
@@ -106,13 +106,13 @@ yerr_uncorrd = [8 ** 0.5 * np.ones((5, 3, 2)), 8 ** 0.5 * np.ones((5, 3, 2))]
 yerr_corrd = [np.zeros((5, 3, 2)), 16 ** 0.5 * np.ones((5, 3, 2))]
 
 
-class TestMCPropagation(unittest.TestCase):
+class TestLPUPropagation(unittest.TestCase):
     """
     Class for unit tests
     """
 
     def test_propagate_random_1D(self):
-        prop = JacobianPropagation()
+        prop = LPUPropagation()
         Jx = Jac_function(*xs)
         uf, ucorr = prop.propagate_random(function, xs, xerrs, return_corr=True, Jx=Jx)
         npt.assert_allclose(ucorr, np.eye(len(ucorr)), atol=0.01)
@@ -135,7 +135,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(uf, yerr_corr_1order, atol=0.01)
 
     def test_propagate_random_2D(self):
-        prop = JacobianPropagation(parallel_cores=2)
+        prop = LPUPropagation(parallel_cores=2)
         ufb, ucorrb, jac_x = prop.propagate_random(
             functionb,
             xsb,
@@ -163,7 +163,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufb, yerr_corrb, atol=0.03)
 
     def test_propagate_random_1D_3var(self):
-        prop = JacobianPropagation()
+        prop = LPUPropagation()
         Jx = Jac_functionc(*xsc)
 
         ufc, ucorrc = prop.propagate_random(
@@ -179,7 +179,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufc, yerr_corrc, rtol=0.01)
 
     def test_propagate_random_3D_2out(self):
-        prop = JacobianPropagation()
+        prop = LPUPropagation()
         ufd, ucorrd, corr_out = prop.propagate_random(
             functiond, xsd, xerrsd, return_corr=True, output_vars=2
         )
@@ -201,7 +201,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufd[1], yerr_corrd[1], rtol=0.01)
 
     def test_propagate_systematic_1D(self):
-        prop = JacobianPropagation()
+        prop = LPUPropagation()
         Jx = Jac_function(*xs)
         corr = (np.ones_like(x1err) + np.eye(len(x1err))) / 2
         uf, ucorr = prop.propagate_systematic(
@@ -227,7 +227,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(uf, yerr_corr_1order, atol=0.01)
 
     def test_propagate_systematic_2D(self):
-        prop = JacobianPropagation()
+        prop = LPUPropagation()
         ufb, ucorrb, jac_x = prop.propagate_systematic(
             functionb, xsb, xerrsb, return_corr=True, return_Jacobian=True
         )
@@ -250,7 +250,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufb, yerr_corrb, atol=0.03)
 
     def test_propagate_systematic_1D_3var(self):
-        prop = JacobianPropagation()
+        prop = LPUPropagation()
         Jx = Jac_functionc(*xsc)
 
         ufc, ucorrc = prop.propagate_systematic(
@@ -265,7 +265,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufc, yerr_corrc, rtol=0.01)
 
     def test_propagate_systematic_3D_2out(self):
-        prop = JacobianPropagation()
+        prop = LPUPropagation()
         ufd, ucorrd, corr_out = prop.propagate_systematic(
             functiond, xsd, xerrsd, return_corr=True, corr_axis=0, output_vars=2
         )
@@ -282,7 +282,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ucorrd[0], np.ones_like(ucorrd[0]), atol=0.01)
 
     def test_propagate_cov_1D(self):
-        prop = JacobianPropagation()
+        prop = LPUPropagation()
 
         cov = [
             util.convert_corr_to_cov(np.eye(len(xerr.flatten())), xerr)
@@ -312,7 +312,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(uf, yerr_corr_1order, atol=0.01)
 
     def test_propagate_cov_2D(self):
-        prop = JacobianPropagation()
+        prop = LPUPropagation()
 
         covb = [
             util.convert_corr_to_cov(np.eye(len(xerrb.flatten())), xerrb)
@@ -353,7 +353,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufb, yerr_corrb, atol=0.03)
 
     def test_propagate_cov_1D_3var(self):
-        prop = JacobianPropagation()
+        prop = LPUPropagation()
         Jx = Jac_functionc(*xsc)
 
         covc = [
@@ -386,7 +386,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufc, yerr_corrc, rtol=0.01)
 
     def test_propagate_cov_3D_2out(self):
-        prop = JacobianPropagation()
+        prop = LPUPropagation()
 
         covd = [
             util.convert_corr_to_cov(np.eye(len(xerrd.flatten())), xerrd)
@@ -411,7 +411,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufd, yerr_uncorrd, rtol=0.01)
 
     def test_propagate_syst_corr_2D(self):
-        prop = JacobianPropagation()
+        prop = LPUPropagation()
 
         corrb = [np.eye(len(xerrb[0].flatten())) for xerrb in xerrsb]
         ufb, ucorrb = prop.propagate_systematic(
@@ -463,7 +463,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.01)
 
     def test_propagate_syst_corr_3D_2out(self):
-        prop = JacobianPropagation()
+        prop = LPUPropagation()
 
         corrd = [np.eye(len(xerrd[:, 0, 0].flatten())) for xerrd in xerrsd]
         ufd, ucorrd, corr_out = prop.propagate_systematic(

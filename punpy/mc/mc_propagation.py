@@ -706,6 +706,7 @@ class MCPropagation:
             ]
             pool = Pool(self.parallel_cores)
             MC_y2 = np.array(pool.starmap(func, data2))
+            pool.close()
             del pool
             MC_y = np.moveaxis(MC_y2, 0, -1)
 

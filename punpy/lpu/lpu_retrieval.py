@@ -26,7 +26,7 @@ inds_cache = {}
 
 
 # lock = threading.Lock()
-class JacobianRetrieval:
+class LPURetrieval:
     def __init__(
         self,
         measurement_function,
@@ -37,6 +37,24 @@ class JacobianRetrieval:
         uplims=+np.inf,
         downlims=-np.inf,
     ):
+        """
+        Initialise Law of Propagation of Uncertainty retrieval
+
+        :param measurement_function:
+        :type measurement_function:
+        :param observed:
+        :type observed:
+        :param syst_uncertainty:
+        :type syst_uncertainty:
+        :param rand_uncertainty:
+        :type rand_uncertainty:
+        :param cov:
+        :type cov:
+        :param uplims:
+        :type uplims:
+        :param downlims:
+        :type downlims:
+        """
         self.measurement_function = measurement_function
         self.observed = observed
         self.rand_uncertainty = np.array([rand_uncertainty])

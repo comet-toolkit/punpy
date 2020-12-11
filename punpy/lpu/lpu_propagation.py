@@ -13,10 +13,10 @@ __email__ = "pieter.de.vis@npl.co.uk"
 __status__ = "Development"
 
 
-class JacobianPropagation:
+class LPUPropagation:
     def __init__(self, parallel_cores=0):
         """
-        Initialise Jacobian Propagator
+        Initialise Law of Propagation of Uncertainty Propagator
 
         :param parallel_cores: number of CPU to be used in parallel processing
         :type parallel_cores: int
@@ -452,7 +452,7 @@ class JacobianPropagation:
                 pool = Pool(self.parallel_cores)
                 outs = pool.starmap(self.propagate_cov, inputs)
                 pool.close()
-
+                del pool
             else:
                 outs = np.empty(n_repeats, dtype=object)
                 for i in range(n_repeats):

@@ -34,43 +34,6 @@ concepts.
 
 *Figure 1 - Diagram illustrating the different concepts of measured value and true value, uncertainty and error.*
  
-Within the GUM framework uncertainty analysis begins with understanding
-the measurement function. The measurement function establishes the
-mathematical relationship between all known input quantities (e.g.
-instrument counts) and the measurand itself (e.g. radiance). Generally,
-this may be written as
-
-.. math:: Y = f\left( X_{i},\ldots,\ X_{N} \right)
-
-where:
-
--  :math:`Y` is the measurand;
-
--  :math:`X_{i}` are the input quantities.
-
-Uncertainty analysis is then performed by considering in turn each of
-these different input quantities to the measurement function, this
-process is represented in Figure 2. Each input quantity may be
-influenced by one or more error effects which are described by an
-uncertainty distribution. These separate distributions may then be
-combined to determine the uncertainty of the measurand,
-:math:`u^{2}(Y)`, using the *Law of Propagation of Uncertainties* (GUM,
-2008),
-
-.. math:: u^{2}\left( Y \right) = \mathbf{\text{C\ S}}\left( \mathbf{X} \right)\mathbf{C}^{T}
-
-where:
-
--  :math:`\mathbf{C}` is the vector of sensitivity coefficients,
-   :math:`\partial Y/\partial X_{i}`;
-
--  :math:`\mathbf{S(X)}` is the error covariance matrix for the input
-   quantities.
-
-
-.. image:: images/image2.png
-
-*Figure 2 - Conceptual process of uncertainty propagation.*
 
 In a series of measurements (for example each pixel in a remote sensing
 Level 1 (L1) data product) it is vital to consider how the errors
@@ -105,6 +68,62 @@ correlation effects important to satellite data products, as follows:
    averaging."*
 
 .. [1] See: https://www.fiduceo.eu
+
+
+.. _LPU Method:
+Law of Propagation of Uncertainty Method
+########################
+
+Within the GUM framework uncertainty analysis begins with understanding
+the measurement function. The measurement function establishes the
+mathematical relationship between all known input quantities (e.g.
+instrument counts) and the measurand itself (e.g. radiance). Generally,
+this may be written as
+
+.. math:: Y = f\left( X_{i},\ldots,\ X_{N} \right)
+
+where:
+
+-  :math:`Y` is the measurand;
+
+-  :math:`X_{i}` are the input quantities.
+
+Uncertainty analysis is then performed by considering in turn each of
+these different input quantities to the measurement function, this
+process is represented in Figure 2. Each input quantity may be
+influenced by one or more error effects which are described by an
+uncertainty distribution. These separate distributions may then be
+combined to determine the uncertainty of the measurand,
+:math:`u^{2}(Y)`, using the *Law of Propagation of Uncertainties* (GUM,
+2008),
+
+.. math:: u^{2}\left( Y \right) = \mathbf{\text{C\ S}}\left( \mathbf{X} \right)\mathbf{C}^{T}
+
+where:
+
+-  :math:`\mathbf{C}` is the vector of sensitivity coefficients,
+   :math:`\partial Y/\partial X_{i}`;
+
+-  :math:`\mathbf{S(X)}` is the error covariance matrix for the input
+   quantities.
+
+This can be extended to a measurement function with a measurand vector (rather than scalar) :math:`\mathbf{Y}=(Y_{i},\ldots,\ Y_{N})`. 
+The uncertainties are then given by:
+
+.. math:: \mathbf{S(Y)}=\mathbf{J}\ \mathbf{S(X)} \mathbf{J}^T	
+
+where:
+
+-  :math:`\mathbf{J}` is the Jacobian matrix of sensitivity coefficients, :math:`J_{ni} = \partial Y_{n}/\partial X_{i}`;
+-  :math:`\mathbf{S(Y)}` is the error covariance matrix (n*n) for the measurand;
+-  :math:`\mathbf{S(X)}` is the error covariance matrix (i*i) for the input quantities.
+
+The error covariances matrices define the uncertainties (from the diagonal elements) as well as 
+the correlation between the different quantities (off-diagonal elements).
+
+.. image:: images/image2.png
+
+*Figure 2 - Conceptual process of uncertainty propagation.*
 
 
 .. _Monte Carlo Method:
@@ -159,10 +178,4 @@ with the decomposition matrix R to obtain the correlated samples :math:`\xi = (\
 The measurand pdf is then defined by processing each draw :math:`\xi_i` to Y:
 
 :math:`Y = f(\xi)`.
-
-
-.. _Jacobian Method:
-Jacobian Method
-########################
-In progress
 
