@@ -17,7 +17,7 @@ def read(filename):
 setup(
     #version=versioneer.get_version(),
     #cmdclass=versioneer.get_cmdclass(),
-    version='0.11',
+    version='0.12',
     name="punpy",
     url="https://gitlab.npl.co.uk/eco/eo/punpy",
     license="None",
@@ -28,11 +28,4 @@ setup(
     packages=find_packages(exclude=("tests",)),
     install_requires=["numpy", "emcee", "numdifftools"],
     extras_require={"dev": ["pre-commit", "tox", "sphinx", "sphinx_rtd_theme"]},
-    classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-    ],
 )
