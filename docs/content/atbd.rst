@@ -137,7 +137,7 @@ using a Monte Carlo method <https://www.bipm.org/utils/common/documents/jcgm/JCG
 Here we summarise the main steps and detail how these were implemented.
 The main stages consist of:
 
--  Formulation: Defining the measurand (output quantity Y), the input quantities :math:`X = (X1, . . . , XN )`, and the measurement function (as a model relating Y and X). One also needs to asign Probability Density Functions (PDF) of each of the input quantities, as well as define the correlation between them (through joint PDF).
+-  Formulation: Defining the measurand (output quantity Y), the input quantities :math:`X = (X_{i},\ldots,\ X_{N})`, and the measurement function (as a model relating Y and X). One also needs to asign Probability Density Functions (PDF) of each of the input quantities, as well as define the correlation between them (through joint PDF).
 
 -  Propagation: propagate the PDFs for the :math:`X_i` through the model to obtain the PDF for Y.
 
@@ -169,7 +169,7 @@ Cholesky decomposition:
 
 :math:`S(X)=R^T R`.
 
-When sampling from the joint pdf, one can first draw samples :math:`Z = (Z_1, ... , Z_N)` for the input quantities :math:`X_i` from the
+When sampling from the joint pdf, one can first draw samples :math:`Z = (Z_{i},\ldots,\ Z_{N})` for the input quantities :math:`X_i` from the
 independent PDF for the input quantities (i.e. as if they were uncorrelated). These samples :math:`Z_i` can then be combined 
 with the decomposition matrix R to obtain the correlated samples :math:`\xi = (\xi_1, ... , \xi_N)`:
 

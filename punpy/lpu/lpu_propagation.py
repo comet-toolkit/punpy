@@ -14,15 +14,18 @@ __status__ = "Development"
 
 
 class LPUPropagation:
-    def __init__(self, parallel_cores=0):
+    def __init__(self, parallel_cores=0, Jx_diag=False):
         """
         Initialise Law of Propagation of Uncertainty Propagator
 
         :param parallel_cores: number of CPU to be used in parallel processing
         :type parallel_cores: int
+        :param Jx_diag: Bool to indicate whether the Jacobian matrix can be described with semi-diagonal elements. With this we mean that the measurand has the same shape as each of the input quantities and the square jacobain between the measurand and each of the input quantities individually, only has diagonal elements. Defaults to False
+        :rtype Jx_diag: bool, optional
         """
 
         self.parallel_cores = parallel_cores
+        self.Jx_diag = Jx_diag
 
     def propagate_random(
         self,
@@ -39,7 +42,7 @@ class LPUPropagation:
         fixed_corr_var=False,
         output_vars=1,
         Jx=None,
-        Jx_diag=False,
+        Jx_diag=None,
     ):
         """
         Propagate random uncertainties through measurement function with n input quantities.
@@ -73,7 +76,7 @@ class LPUPropagation:
         :type output_vars: integer, optional
         :param Jx: Jacobian matrix, evaluated at x. This allows to give a precomputed jacobian matrix, which could potentially be calculated using analytical prescription. Defaults to None, in which case Jx is calculated numerically as part of the propagation.
         :rtype Jx: array, optional
-        :param Jx_diag: Bool to indicate whether the Jacobian matrix can be described with semi-diagonal elements. With this we mean that the measurand has the same shape as each of the input quantities and the square jacobain between the measurand and each of the input quantities individually, only has diagonal elements. Defaults to False
+        :param Jx_diag: Bool to indicate whether the Jacobian matrix can be described with semi-diagonal elements. With this we mean that the measurand has the same shape as each of the input quantities and the square jacobain between the measurand and each of the input quantities individually, only has diagonal elements. Defaults to None, in which case the object value is used.
         :rtype Jx_diag: bool, optional
         :return: uncertainties on measurand
         :rtype: array
@@ -88,8 +91,17 @@ class LPUPropagation:
             repeat_dims,
             corr_axis,
             fixed_corr,
+            Jx_diag,
         ) = self.perform_checks(
-            func, x, u_x, corr_x, repeat_dims, corr_axis, output_vars, fixed_corr_var
+            func,
+            x,
+            u_x,
+            corr_x,
+            repeat_dims,
+            corr_axis,
+            output_vars,
+            fixed_corr_var,
+            Jx_diag,
         )
 
         if repeat_axis >= 0:
@@ -118,6 +130,7 @@ class LPUPropagation:
                         fixed_corr_var,
                         output_vars,
                         Jxi,
+                        Jx_diag,
                     ]
                 pool = Pool(self.parallel_cores)
                 outs = pool.starmap(self.propagate_random, inputs)
@@ -147,6 +160,7 @@ class LPUPropagation:
                         fixed_corr_var,
                         output_vars,
                         Jxi,
+                        Jx_diag,
                     )
 
             return self.combine_repeated_outs(
@@ -202,7 +216,7 @@ class LPUPropagation:
         fixed_corr_var=False,
         output_vars=1,
         Jx=None,
-        Jx_diag=False,
+        Jx_diag=None,
     ):
         """
         Propagate systematic uncertainties through measurement function with n input quantities.
@@ -251,8 +265,17 @@ class LPUPropagation:
             repeat_dims,
             corr_axis,
             fixed_corr,
+            Jx_diag,
         ) = self.perform_checks(
-            func, x, u_x, corr_x, repeat_dims, corr_axis, output_vars, fixed_corr_var
+            func,
+            x,
+            u_x,
+            corr_x,
+            repeat_dims,
+            corr_axis,
+            output_vars,
+            fixed_corr_var,
+            Jx_diag,
         )
 
         if repeat_axis >= 0:
@@ -281,6 +304,7 @@ class LPUPropagation:
                         fixed_corr_var,
                         output_vars,
                         Jxi,
+                        Jx_diag,
                     ]
                 pool = Pool(self.parallel_cores)
                 outs = pool.starmap(self.propagate_systematic, inputs)
@@ -310,6 +334,7 @@ class LPUPropagation:
                         fixed_corr_var,
                         output_vars,
                         Jxi,
+                        Jx_diag,
                     )
 
             return self.combine_repeated_outs(
@@ -368,7 +393,7 @@ class LPUPropagation:
         fixed_corr_var=False,
         output_vars=1,
         Jx=None,
-        Jx_diag=False,
+        Jx_diag=None,
     ):
         """
         Propagate uncertainties with given covariance matrix through measurement function with n input quantities.
@@ -419,8 +444,17 @@ class LPUPropagation:
             repeat_dims,
             corr_axis,
             fixed_corr,
+            Jx_diag,
         ) = self.perform_checks(
-            func, x, u_x, corr_x, repeat_dims, corr_axis, output_vars, fixed_corr_var
+            func,
+            x,
+            u_x,
+            corr_x,
+            repeat_dims,
+            corr_axis,
+            output_vars,
+            fixed_corr_var,
+            Jx_diag,
         )
 
         if repeat_axis >= 0:
@@ -448,6 +482,7 @@ class LPUPropagation:
                         fixed_corr_var,
                         output_vars,
                         Jxi,
+                        Jx_diag,
                     ]
                 pool = Pool(self.parallel_cores)
                 outs = pool.starmap(self.propagate_cov, inputs)
@@ -476,6 +511,7 @@ class LPUPropagation:
                         fixed_corr_var,
                         output_vars,
                         Jxi,
+                        Jx_diag,
                     )
 
             return self.combine_repeated_outs(
@@ -544,7 +580,16 @@ class LPUPropagation:
                     return u_func, corr_ys, corr_out, J
 
     def perform_checks(
-        self, func, x, u_x, corr_x, repeat_dims, corr_axis, output_vars, fixed_corr_var
+        self,
+        func,
+        x,
+        u_x,
+        corr_x,
+        repeat_dims,
+        corr_axis,
+        output_vars,
+        fixed_corr_var,
+        Jx_diag,
     ):
         """
         Perform checks on the input parameters and set up the appropriate keywords for further processing
@@ -658,6 +703,9 @@ class LPUPropagation:
         xflat = np.concatenate([xi.flatten() for xi in x])
         u_xflat = np.concatenate([u_xi.flatten() for u_xi in u_x])
 
+        if Jx_diag is None:
+            Jx_diag = self.Jx_diag
+
         return (
             fun,
             xflat,
@@ -668,6 +716,7 @@ class LPUPropagation:
             repeat_dims,
             corr_axis,
             fixed_corr,
+            Jx_diag,
         )
 
     def combine_repeated_outs(

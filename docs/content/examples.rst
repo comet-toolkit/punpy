@@ -17,7 +17,7 @@ Imagine you are trying to calibrate some L0 data to L1 and you have:
 -  Random and systematic uncertainties on the gains;
 -  Random uncertainties on the dark signal.s
 
-After defining the data, the resulting uncertainty budget can then be calculated with punpy as::
+After defining the data, the resulting uncertainty budget can then be calculated with punpy using the MC methods as::
 
    import punpy
    import numpy as np
@@ -58,7 +58,7 @@ After defining the data, the resulting uncertainty budget can then be calculated
 
 We now have for each band the random uncertainties in L1, systematic uncertainties in L1, total uncertainty in L1 and the covariance matrix between bands.
 Here we have manually specified a diagonal correlation matrix (no correlation, np.eye) for the random component and a correlation matrix of ones (fully correlated, np.ones).
-It would also have been possible to use the keyword `return_corr` to get the measured correlation matrix. In the next example we set this keyword::
+It would also have been possible to use the keyword `return_corr` to get the measured correlation matrix. In the next example we use the LPU methods set the `return_corr` keyword::
 
    import punpy
    import numpy as np
@@ -245,7 +245,9 @@ transfer model cannot process 10000 model inputs at the same time. In this case 
 
    # your measurement function
    def calibrate_slow(L0,gains,dark):
-      time.sleep(0.1)
+      y2=np.repeat((L0-dark)*gains,1000)
+      y2=y2+np.random.random(len(y2))
+      y2=y2.sort()
       return (L0-dark)*gains
 
    # your data
@@ -276,6 +278,48 @@ transfer model cannot process 10000 model inputs at the same time. In this case 
    print(L1_us)
    print("propogate_random took: ",t2-t1," s")
 
+We compare this to the runtime for the LPU methods::
+
+   import punpy
+   import time
+   import numpy as np
+
+   # your measurement function
+   def calibrate_slow(L0,gains,dark):
+      y2=np.repeat((L0-dark)*gains,1000)
+      y2=y2+np.random.random(len(y2))
+      y2=y2.sort()
+      return (L0-dark)*gains
+
+   # your data
+   L0 = np.array([0.43,0.8,0.7,0.65,0.9])
+   dark = np.array([0.05,0.03,0.04,0.05,0.06])
+   gains = np.array([23,26,28,29,31])
+
+   # your uncertainties
+   L0_ur = L0*0.05  # 5% random uncertainty
+   L0_us = np.ones(5)*0.03  # systematic uncertainty of 0.03 
+                            # (common between bands)
+   gains_ur = np.array([0.5,0.7,0.6,0.4,0.1])  # random uncertainty
+   gains_us = np.array([0.1,0.2,0.1,0.4,0.3])  # systematic uncertainty 
+   # (different for each band but fully correlated)
+   dark_ur = np.array([0.01,0.002,0.006,0.002,0.015])  # random uncertainty
+   
+   prop=punpy.LPUPropagation(parallel_cores=1)
+   L1=calibrate_slow(L0,gains,dark)
+   t1=time.time()
+   L1_ur = prop.propagate_random(calibrate_slow,[L0,gains,dark],
+                                 [L0_ur,gains_ur,dark_ur])
+   t2=time.time()
+   L1_us = prop.propagate_systematic(calibrate_slow,[L0,gains,dark],
+                                     [L0_us,gains_us,np.zeros(5)])
+
+   print(L1)
+   print(L1_ur)
+   print(L1_us)
+   print("propogate_random took: ",t2-t1," s")
+
+We find that the LPU method is faster in this case. Though this depends on the number of MCsteps that is used in the MC method and the number of elements in the Jacobian (here 5*5).
 To speed up this slow process, it is also possible to use parallel processing. E.g. if we wanted to do parallel processing using 4 cores::
 
    import punpy
@@ -284,7 +328,9 @@ To speed up this slow process, it is also possible to use parallel processing. E
 
    # your measurement function
    def calibrate_slow(L0,gains,dark):
-      time.sleep(0.1)
+      y2=np.repeat((L0-dark)*gains,1000)
+      y2=y2+np.random.random(len(y2))
+      y2=y2.sort()
       return (L0-dark)*gains
 
    # your data
@@ -317,6 +363,50 @@ To speed up this slow process, it is also possible to use parallel processing. E
       print("propogate_random took: ",t2-t1," s")
 
 Propagate_random should now have taken a bit more than 25 s rather than the 100 s when processing them in serial (setting parallel_cores=1).
+Here, there is no point to do parallel processing for the LPU methods because these methods can only be run in parallel when the `repeat_dims` keyword is set (see next section).
+However it is only possible to speed up the LPU methods in this case. Since all of the input quantities are of the same shape as the measurand, 
+and the measurement function works on each measurement independently (The calibrations of different wavelengths don't affect eachother), we know that the Jacobian
+will only have diagonal elements. This means we can set the `Jx_diag` keyword to True (either when creating the object, or for an individual propagation method)::
+
+
+   import punpy
+   import time
+   import numpy as np
+
+   # your measurement function
+   def calibrate_slow(L0,gains,dark):
+      y2=np.repeat((L0-dark)*gains,1000)
+      y2=y2+np.random.random(len(y2))
+      y2=y2.sort()
+      return (L0-dark)*gains
+
+   # your data
+   L0 = np.array([0.43,0.8,0.7,0.65,0.9])
+   dark = np.array([0.05,0.03,0.04,0.05,0.06])
+   gains = np.array([23,26,28,29,31])
+
+   # your uncertainties
+   L0_ur = L0*0.05  # 5% random uncertainty
+   L0_us = np.ones(5)*0.03  # systematic uncertainty of 0.03 
+                            # (common between bands)
+   gains_ur = np.array([0.5,0.7,0.6,0.4,0.1])  # random uncertainty
+   gains_us = np.array([0.1,0.2,0.1,0.4,0.3])  # systematic uncertainty 
+   # (different for each band but fully correlated)
+   dark_ur = np.array([0.01,0.002,0.006,0.002,0.015])  # random uncertainty
+   
+   prop=punpy.LPUPropagation(parallel_cores=1,Jx_diag=True)
+   L1=calibrate_slow(L0,gains,dark)
+   t1=time.time()
+   L1_ur = prop.propagate_random(calibrate_slow,[L0,gains,dark],
+                                 [L0_ur,gains_ur,dark_ur])
+   t2=time.time()
+   L1_us = prop.propagate_systematic(calibrate_slow,[L0,gains,dark],
+                                     [L0_us,gains_us,np.zeros(5)])
+
+   print(L1)
+   print(L1_ur)
+   print(L1_us)
+   print("propogate_random took: ",t2-t1," s")
 
 2D input quantities and measurand
 ###################################

@@ -46,12 +46,12 @@ Once this kind of measurement function is defined, we can use the various punpy 
    # higher dimensional arrays as argument:
    prop=punpy.MCPropagation(10000,parallel_cores=1)
 
-   # Alternatively it is possible to use Jacobian methods to 
+   # Alternatively it is possible to use LPU methods to 
    # propagate uncertainties
-   prop=punpy.JacobianPropagation()
+   prop=punpy.LPUPropagation()
 
 In order to do propagate uncertainties, punpy uses Monte Carlo (MC) methods (see Section :ref:`Monte Carlo Method`) 
-or Jacobian methods (see Section :ref:`Jacobian Method`). MC methods generate MC samples from the input 
+or Law of Propagation of Uncertainties (LPU) methods (see Section :ref:`LPU Method`). MC methods generate MC samples from the input 
 quantities (which can be individually correlated or not), and then propagate these samples through the
 measurement function. This is typically done by passing an array consisting of all MC steps of an
 input quantity instead of the input quantity themselve for each of the input quantities. Here it is assumed
@@ -59,7 +59,7 @@ the measurement function can deal with these higher dimensional arrays by just p
 However, this is not always the case. If the inputs to the measurement function are less flexible,
 We can instead pass each MC sample individually tothe measurement function by setting the optional
 `parallel_cores` keyword to 1. At the end of this section we'll also see how to use this keyword for parallel processing.
-The Jacobian methods implement the law of propagation of uncertainties from the 
+The LPU methods implement the law of propagation of uncertainties from the 
 GUM (Guide to the Expression of Uncertainty in Measurement) by calculating the Jacobian and using this to propagate the uncertainties.
 
 Once a prop object has been made, a number of methods can then be used to propagate uncertainties, depending on the kind of uncertainties that need to be propagated.
@@ -197,11 +197,11 @@ For the MC method, it is also possible to return the generated samples by settin
    measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3], 
    return_corr=True, return_samples=True)
 
-For the Jacobian method, it is possible to additionally return the calculated Jacobian matrix by setting the `return_Jacobian` keyword to True.
+For the LPU method, it is possible to additionally return the calculated Jacobian matrix by setting the `return_Jacobian` keyword to True.
 In addition, instead of calculating the Jacobian as part of the propagation, it is also possible to give a precomputed Jacobian matrix, by setting the `Jx` keyword.
 This allows to use the Jacobian matrix from a previous step or an analytical prescription, which results in much faster processing::
 
-   prop = punpy.JacobianPropagation()
+   prop = punpy.LPUPropagation()
    ur_y, Jac_x = prop.propagate_random(
    measurement_function, [x1, x2, x3], [ur_x1, ur_x2, ur_x3],
    corr_between=corr_x1x2x3, return_Jacobian=True)
@@ -212,11 +212,11 @@ This allows to use the Jacobian matrix from a previous step or an analytical pre
 
 It is not uncommon to have measurment functions that take a number of input quantities, where each input quantity is a vector or array.
 If the measurand and each of the input quantities all have the same shape, and the measurement function is applied independently to each 
-element in these arrays, then most of the elements in the Jacobian will be zero (all except the diagonal elements for each square jacobian
+element in these arrays, then most of the elements in the Jacobian will be zero (all except the diagonal elements for each square Jacobian
 matrix corresponding to each input quantity individually). Rather than calculating all these zeros, it is possible to set the `Jx_diag` keyword 
 to True which will automatically ignore all the off-diagonal elements and result in faster processing::
 
-   prop = punpy.JacobianPropagation()
+   prop = punpy.LPUPropagation()
    ub_y, corr_y = prop.propagate_systematic(
    measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3], 
    return_corr=True, Jx_diag=True)
@@ -226,7 +226,12 @@ measurement function where all but one of the input quantities are known with pe
 it can be beneficial to just copy this correlation matrix to the measurand rather than calculating it (since copying is faster
 and does not introduce MC noise). When the `fixed_corr_var` is set to True, punpy automatically detects if there is only one 
 term of uncertainty, and if so copies the relevant correlation matrix to the output instead of calculating it. If `fixed_corr_var`
-is set to an integer, the correlation matrix corresponding to that dimension is copied instead. 
+is set to an integer, the correlation matrix corresponding to that dimension is copied instead::
+
+   prop = punpy.MCPropagation(10000)
+   ur_y = prop.propagate_random(
+   measurement_function, [x1, x2, x3], [ur_x1, ur_x2, ur_x3],
+   corr_between=corr_x1x2x3, fixed_corr_var=True)
 
 Processing the MC samples in parallel
 ######################################
@@ -253,11 +258,11 @@ When processing in parallel, child processes are generated from the parent code,
 Everything using the results of the multiprocessing needs to be inside the 'if __name__ == "__main__"'.
 However the measurement function itself needs to be outside this since the child processes need to find this.
 
-For the Jacobian method, it is also possible to use parallel processing, though only if the `repeat_dims` keyword is set.
+For the LPU method, it is also possible to use parallel processing, though only if the `repeat_dims` keyword is set.
 In this case each of the repeated measurements is processed in parallel::
 
    if __name__ == "__main__":
-      prop = punpy.JacobianPropagation(parallel_cores=4)
+      prop = punpy.LPUPropagation(parallel_cores=4)
       ur_y = prop.propagate_random(measurement_function, [x1, x2, x3], 
              [ur_x1, ur_x2, ur_x3],repeat_dims=0)
       us_y = prop.propagate_systematic(measurement_function, [x1, x2, x3], 

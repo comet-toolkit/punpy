@@ -15,6 +15,7 @@ Punpy has the following dependencies:
 
 * Python (3.7 or above)
 * `numpy <https://numpy.org>`_
+* `scipy <https://scipy.org>`_
 * `emcee <https://emcee.readthedocs.io/en/stable/>`_
 * `numdifftools <https://numdifftools.readthedocs.io/en/latest/>`_
 
