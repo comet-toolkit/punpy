@@ -17,7 +17,7 @@ def read(filename):
 setup(
     #version=versioneer.get_version(),
     #cmdclass=versioneer.get_cmdclass(),
-    version='0.12',
+    version='0.13',
     name="punpy",
     url="https://gitlab.npl.co.uk/eco/eo/punpy",
     license="None",

@@ -481,12 +481,16 @@ class MCPropagation:
         shapewarning = False
         for i in range(len(x)):
             if hasattr(x[i], "__len__"):
-                if (
-                    x[i].shape != yshape
-                    and self.parallel_cores == 0
-                    and not param_fixed[i]
-                ):
-                    shapewarning = True
+                if param_fixed is not None:
+                    if (
+                        x[i].shape != yshape
+                        and self.parallel_cores == 0
+                        and not param_fixed[i]
+                    ):
+                        shapewarning = True
+                else:
+                    if x[i].shape != yshape and self.parallel_cores == 0:
+                        shapewarning = True
             elif self.parallel_cores == 0:
                 shapewarning = True
 

@@ -12,7 +12,7 @@ __email__ = "pieter.de.vis@npl.co.uk"
 __status__ = "Development"
 
 
-def calculate_Jacobian(fun, x, Jx_diag=False):
+def calculate_Jacobian(fun, x, Jx_diag=False, step=None):
     """
     Calculate the local Jacobian of function y=f(x) for a given value of x
 
@@ -25,7 +25,7 @@ def calculate_Jacobian(fun, x, Jx_diag=False):
     :return: Jacobian
     :rtype: array
     """
-    Jfun = nd.Jacobian(fun)
+    Jfun = nd.Jacobian(fun, step=step)
 
     if Jx_diag:
         y = fun(x)
@@ -71,13 +71,14 @@ def calculate_flattened_corr(corrs, corr_between):
     totcorr = np.eye(totcorrlen)
     for i in range(len(corrs)):
         for j in range(len(corrs)):
-            ist = i * len(corrs[i])
-            iend = (i + 1) * len(corrs[i])
-            jst = j * len(corrs[j])
-            jend = (j + 1) * len(corrs[j])
-            totcorr[ist:iend, jst:jend] = (
-                corr_between[i, j] * corrs[i] ** 0.5 * corrs[j] ** 0.5
-            )
+            if corr_between[i, j] > 0:
+                ist = i * len(corrs[i])
+                iend = (i + 1) * len(corrs[i])
+                jst = j * len(corrs[j])
+                jend = (j + 1) * len(corrs[j])
+                totcorr[ist:iend, jst:jend] = (
+                    corr_between[i, j] * corrs[i] ** 0.5 * corrs[j] ** 0.5
+                )
     return totcorr
 
 

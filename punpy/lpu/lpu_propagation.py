@@ -14,7 +14,7 @@ __status__ = "Development"
 
 
 class LPUPropagation:
-    def __init__(self, parallel_cores=0, Jx_diag=False):
+    def __init__(self, parallel_cores=0, Jx_diag=False, step=None):
         """
         Initialise Law of Propagation of Uncertainty Propagator
 
@@ -26,6 +26,7 @@ class LPUPropagation:
 
         self.parallel_cores = parallel_cores
         self.Jx_diag = Jx_diag
+        self.step = step
 
     def propagate_random(
         self,
@@ -155,7 +156,7 @@ class LPUPropagation:
 
         else:
             if Jx is None:
-                Jx = util.calculate_Jacobian(fun, xflat, Jx_diag)
+                Jx = util.calculate_Jacobian(fun, xflat, Jx_diag, self.step)
 
             if corr_between is None:
                 corr_between = np.eye(len(x))
@@ -314,7 +315,7 @@ class LPUPropagation:
 
         else:
             if Jx is None:
-                Jx = util.calculate_Jacobian(fun, xflat, Jx_diag)
+                Jx = util.calculate_Jacobian(fun, xflat, Jx_diag, self.step)
 
             if corr_between is None:
                 corr_between = np.eye(len(x))
@@ -474,7 +475,7 @@ class LPUPropagation:
 
         else:
             if Jx is None:
-                Jx = util.calculate_Jacobian(fun, xflat, Jx_diag)
+                Jx = util.calculate_Jacobian(fun, xflat, Jx_diag, self.step)
 
             if corr_between is None:
                 corr_between = np.eye(len(x))
@@ -584,10 +585,37 @@ class LPUPropagation:
         :rtype: tuple, list[array], int, int, int, array
         """
 
-        if output_vars == 1:
-            fun = lambda c: func(*c.reshape(len(x), -1))
+        xshapes = [xi.shape for xi in x]
+        if Jx_diag or xshapes.count(xshapes[0]) == len(xshapes):
+            if output_vars == 1:
+                fun = lambda c: func(*c.reshape(len(x), -1))
+            else:
+                fun = lambda c: np.concatenate(func(*c.reshape(len(x), -1)))
         else:
-            fun = lambda c: np.concatenate(func(*c.reshape(len(x), -1)))
+
+            clims = [0]
+            for i in range(len(x)):
+                size = 1
+                for dim in xshapes[i]:
+                    size *= dim
+                clims = np.append(clims, clims[i] + size)
+
+            if output_vars == 1:
+                fun = lambda c: func(
+                    *[
+                        c[clims[i] : clims[i + 1]].reshape(x[i].shape)
+                        for i in range(len(x))
+                    ]
+                )
+            else:
+                fun = lambda c: np.concatenate(
+                    func(
+                        *[
+                            c[clims[i] : clims[i + 1]].reshape(x[i].shape)
+                            for i in range(len(x))
+                        ]
+                    )
+                )
 
         # find the shape
         if output_vars == 1:
