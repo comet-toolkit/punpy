@@ -81,20 +81,28 @@ class MCPropagation:
         (
             yshape,
             u_x,
-            repeat_axis,
+            n_repeats,
+            repeat_shape,
             repeat_dims,
             corr_axis,
             fixed_corr,
         ) = self.perform_checks(
-            func, x, u_x, corr_x, repeat_dims, corr_axis, output_vars, fixed_corr_var
+            func,
+            x,
+            u_x,
+            corr_x,
+            repeat_dims,
+            corr_axis,
+            output_vars,
+            fixed_corr_var,
+            param_fixed,
         )
 
-        if repeat_axis >= 0:
-            n_repeats = yshape[repeat_axis]
+        if n_repeats > 0:
             outs = np.empty(n_repeats, dtype=object)
             for i in range(n_repeats):
                 xb, u_xb = util.select_repeated_x(
-                    x, u_x, param_fixed, i, repeat_axis, n_repeats
+                    x, u_x, param_fixed, i, repeat_dims, repeat_shape
                 )
 
                 outs[i] = self.propagate_random(
@@ -106,7 +114,7 @@ class MCPropagation:
                     corr_between,
                     return_corr,
                     return_samples,
-                    repeat_dims,
+                    -99,
                     corr_axis=corr_axis,
                     output_vars=output_vars,
                     fixed_corr_var=fixed_corr_var,
@@ -116,9 +124,10 @@ class MCPropagation:
             return self.combine_repeated_outs(
                 outs,
                 yshape,
-                n_repeats,
                 len(x),
-                repeat_axis,
+                n_repeats,
+                repeat_shape,
+                repeat_dims,
                 return_corr,
                 return_samples,
                 output_vars,
@@ -204,21 +213,30 @@ class MCPropagation:
         (
             yshape,
             u_x,
-            repeat_axis,
+            n_repeats,
+            repeat_shape,
             repeat_dims,
             corr_axis,
             fixed_corr,
         ) = self.perform_checks(
-            func, x, u_x, corr_x, repeat_dims, corr_axis, output_vars, fixed_corr_var
+            func,
+            x,
+            u_x,
+            corr_x,
+            repeat_dims,
+            corr_axis,
+            output_vars,
+            fixed_corr_var,
+            param_fixed,
         )
 
-        if repeat_axis >= 0:
-            n_repeats = yshape[repeat_axis]
+        if n_repeats > 0:
             outs = np.empty(n_repeats, dtype=object)
             for i in range(n_repeats):
                 xb, u_xb = util.select_repeated_x(
-                    x, u_x, param_fixed, i, repeat_axis, n_repeats
+                    x, u_x, param_fixed, i, repeat_dims, repeat_shape
                 )
+
                 outs[i] = self.propagate_systematic(
                     func,
                     xb,
@@ -228,7 +246,7 @@ class MCPropagation:
                     corr_between,
                     return_corr,
                     return_samples,
-                    repeat_dims,
+                    -99,
                     corr_axis=corr_axis,
                     fixed_corr_var=fixed_corr_var,
                     output_vars=output_vars,
@@ -238,9 +256,10 @@ class MCPropagation:
             return self.combine_repeated_outs(
                 outs,
                 yshape,
-                n_repeats,
                 len(x),
-                repeat_axis,
+                n_repeats,
+                repeat_shape,
+                repeat_dims,
                 return_corr,
                 return_samples,
                 output_vars,
@@ -324,20 +343,28 @@ class MCPropagation:
         (
             yshape,
             u_x,
-            repeat_axis,
+            n_repeats,
+            repeat_shape,
             repeat_dims,
             corr_axis,
             fixed_corr,
         ) = self.perform_checks(
-            func, x, cov_x, None, repeat_dims, corr_axis, output_vars, fixed_corr_var
+            func,
+            x,
+            cov_x,
+            None,
+            repeat_dims,
+            corr_axis,
+            output_vars,
+            fixed_corr_var,
+            param_fixed,
         )
 
-        if repeat_axis >= 0:
-            n_repeats = yshape[repeat_axis]
+        if n_repeats > 0:
             outs = np.empty(n_repeats, dtype=object)
             for i in range(n_repeats):
                 xb, _ = util.select_repeated_x(
-                    x, x, param_fixed, i, repeat_axis, n_repeats
+                    x, x, param_fixed, i, repeat_dims, repeat_shape
                 )
                 outs[i] = self.propagate_cov(
                     func,
@@ -347,21 +374,24 @@ class MCPropagation:
                     corr_between,
                     return_corr,
                     return_samples,
-                    repeat_dims,
+                    -99,
                     corr_axis=corr_axis,
                     output_vars=output_vars,
                     PD_corr=False,
                 )
+
             return self.combine_repeated_outs(
                 outs,
                 yshape,
-                n_repeats,
                 len(x),
-                repeat_axis,
+                n_repeats,
+                repeat_shape,
+                repeat_dims,
                 return_corr,
                 return_samples,
                 output_vars,
             )
+
         else:
             MC_data = np.empty(len(x), dtype=np.ndarray)
             for i in range(len(x)):
@@ -406,7 +436,16 @@ class MCPropagation:
         )
 
     def perform_checks(
-        self, func, x, u_x, corr_x, repeat_dims, corr_axis, output_vars, fixed_corr_var
+        self,
+        func,
+        x,
+        u_x,
+        corr_x,
+        repeat_dims,
+        corr_axis,
+        output_vars,
+        fixed_corr_var,
+        param_fixed,
     ):
         """
         Perform checks on the input parameters and set up the appropriate keywords for further processing
@@ -427,6 +466,8 @@ class MCPropagation:
         :type output_vars: integer, optional
         :param fixed_corr_var: set to integer to copy the correlation matrix of the dimiension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
         :type fixed_corr_var: bool or integer, optional
+        :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
+        :type param_fixed: list of bools, optional
         :return: yshape,u_x,repeat_axis,repeat_dims,corr_axis,fixed_corr
         :rtype: tuple, list[array], int, int, int, array
         """
@@ -440,7 +481,11 @@ class MCPropagation:
         shapewarning = False
         for i in range(len(x)):
             if hasattr(x[i], "__len__"):
-                if x[i].shape != yshape and self.parallel_cores == 0:
+                if (
+                    x[i].shape != yshape
+                    and self.parallel_cores == 0
+                    and not param_fixed[i]
+                ):
                     shapewarning = True
             elif self.parallel_cores == 0:
                 shapewarning = True
@@ -498,30 +543,44 @@ class MCPropagation:
 
         # Set up repeat_axis and repeat_dims for proper use in recursive function.
         if isinstance(repeat_dims, int):
-            repeat_axis = repeat_dims
-            repeat_dims = -99
-        else:
-            repeat_axis = repeat_dims[0]
-            repeat_dims = repeat_dims[1]
-            if repeat_axis < repeat_dims:
-                repeat_dims -= 1
+            repeat_dims = [repeat_dims]
 
-        if repeat_axis >= 0:
-            if corr_axis > repeat_axis:
+        if len(repeat_dims) == 1:
+            if repeat_dims[0] >= 0:
+                n_repeats = yshape[repeat_dims[0]]
+                if corr_axis > repeat_dims[0]:
+                    corr_axis -= 1
+                elif corr_axis == repeat_dims[0]:
+                    print("corr_axis and repeat_axis keywords should not be the same.")
+                    exit()
+            else:
+                n_repeats = 0
+            repeat_shape = (n_repeats,)  # repeat_dims = -99
+        else:
+            repeat_dims = -np.sort(-np.array(repeat_dims))
+            n_repeats = yshape[repeat_dims[0]] * yshape[repeat_dims[1]]
+            repeat_shape = (yshape[repeat_dims[0]], yshape[repeat_dims[1]])
+            if corr_axis > repeat_dims[0]:
                 corr_axis -= 1
-            elif corr_axis == repeat_axis:
+            elif corr_axis == repeat_dims[0]:
+                print("corr_axis and repeat_axis keywords should not be the same.")
+                exit()
+            if corr_axis > repeat_dims[1]:
+                corr_axis -= 1
+            elif corr_axis == repeat_dims[1]:
                 print("corr_axis and repeat_axis keywords should not be the same.")
                 exit()
 
-        return yshape, u_x, repeat_axis, repeat_dims, corr_axis, fixed_corr
+        return yshape, u_x, n_repeats, repeat_shape, repeat_dims, corr_axis, fixed_corr
 
     def combine_repeated_outs(
         self,
         outs,
         yshape,
-        n_repeats,
         lenx,
-        repeat_axis,
+        n_repeats,
+        repeat_shape,
+        repeat_dims,
         return_corr,
         return_samples,
         output_vars,
@@ -533,83 +592,70 @@ class MCPropagation:
         :type outs: list[array]
         :param yshape: shape of the measurand
         :type yshape: tuple
-        :param n_repeats: number of repeated measurements
-        :type n_repeats: int
         :param lenx: number of input quantities
         :type lenx: int
-        :param repeat_axis: dimension along which the measurements are repeated
-        :type repeat_axis: int
+        :param n_repeats: number of repeated measurements
+        :type n_repeats: int
+        :param repeat_shape: shape along which the measurements are repeated
+        :type repeat_shape: tuple
+        :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
+        :type repeat_dims: integer or list of 2 integers, optional
         :param return_corr: set to True to return correlation matrix of measurand, defaults to True
         :type return_corr: bool, optional
-        :param return_samples: set to True to return generated samples, defaults to False
-        :type return_samples: bool, optional
+        :param return_Jacobian: set to True to return Jacobian, defaults to False
+        :type return_Jacobian: bool, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
         :type output_vars: integer, optional
         :return: combined outputs
         :rtype: list[array]
         """
-        if not return_corr and not return_samples:
-            if output_vars == 1:
-                u_func = np.zeros(yshape)
-                if repeat_axis == 0:
-                    for i in range(len(outs)):
-                        u_func[i] = outs[i]
-                elif repeat_axis == 1:
-                    for i in range(len(outs)):
-                        if len(outs[i].shape) > 1:
-                            if outs[i].shape[1] == 1:
-                                u_func[:, i] = outs[i][:, 0]
-                            else:
-                                u_func[:, i] = outs[i]
-                        else:
-                            u_func[:, i] = outs[i]
 
-                elif repeat_axis == 2:
-                    for i in range(len(outs)):
-                        u_func[:, :, i] = outs[i]
+        if not return_corr and output_vars == 1 and not return_samples:
+            u_func = np.array([outs[i] for i in range(n_repeats)])
+
+        elif output_vars == 1:
+            u_func = np.array([outs[i][0] for i in range(n_repeats)])
+
+        else:
+            u_func = np.array(
+                [
+                    [outs[i][0][ii] for i in range(n_repeats)]
+                    for ii in range(output_vars)
+                ]
+            )
+
+        print(u_func.shape, u_func)
+
+        if len(repeat_dims) == 1:
+            if output_vars == 1:
+                u_func = np.moveaxis(u_func, 0, repeat_dims[0])
             else:
-                u_func = np.zeros((output_vars,) + yshape)
-                if repeat_axis == 0:
-                    for i in range(len(outs)):
-                        u_func[:, i] = outs[i]
-                elif repeat_axis == 1:
-                    for i in range(len(outs)):
-                        u_func[:, :, i] = np.array(outs[i])
-                elif repeat_axis == 2:
-                    for i in range(len(outs)):
-                        u_func[:, :, :, i] = outs[i]
-            return u_func
+                u_func = np.moveaxis(u_func, 1, repeat_dims[0] + 1)
 
         else:
             if output_vars == 1:
-                u_func = np.zeros(yshape)
-                if repeat_axis == 0:
-                    for i in range(len(outs)):
-                        u_func[i] = outs[i][0]
-                elif repeat_axis == 1:
-                    for i in range(len(outs)):
-                        if len(outs[i][0].shape) > 1:
-                            if outs[i][0].shape[1] == 1:
-                                u_func[:, i] = outs[i][0][:, 0]
-                            else:
-                                u_func[:, i] = outs[i][0]
-                        else:
-                            u_func[:, i] = outs[i][0]
-                elif repeat_axis == 2:
-                    for i in range(len(outs)):
-                        u_func[:, :, i] = outs[i][0]
+                u_func = u_func.reshape(repeat_shape + (-1,))
+                u_func = np.moveaxis(u_func, 0, repeat_dims[0])
+                u_func = np.moveaxis(u_func, 0, repeat_dims[1])
             else:
-                u_func = np.zeros((output_vars,) + yshape)
-                if repeat_axis == 0:
-                    for i in range(len(outs)):
-                        u_func[:, i] = outs[i][0]
-                elif repeat_axis == 1:
-                    for i in range(len(outs)):
-                        u_func[:, :, i] = outs[i][0]
-                elif repeat_axis == 2:
-                    for i in range(len(outs)):
-                        u_func[:, :, :, i] = outs[i][0]
+                u_func = u_func.reshape((output_vars,) + repeat_shape + (-1,))
+                u_func = np.moveaxis(u_func, 1, repeat_dims[0] + 1)
+                u_func = np.moveaxis(u_func, 1, repeat_dims[1] + 1)
 
+        if (output_vars == 1 and u_func.shape != yshape) or (
+            output_vars > 1 and u_func[0].shape != yshape
+        ):
+            print(u_func.shape, yshape)
+            raise ValueError(
+                "The shape of the uncertainties does not match the shape"
+                "of the measurand. This is likely a problem with combining"
+                "repeated measurements (repeat_dims keyword)."
+            )
+
+        if not return_corr and output_vars == 1 and not return_samples:
+            return u_func
+
+        else:
             returns = np.empty(len(outs[0]), dtype=object)
             returns[0] = u_func
             extra_index = 0

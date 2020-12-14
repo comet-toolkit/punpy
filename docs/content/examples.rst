@@ -245,7 +245,7 @@ transfer model cannot process 10000 model inputs at the same time. In this case 
 
    # your measurement function
    def calibrate_slow(L0,gains,dark):
-      y2=np.repeat((L0-dark)*gains,1000)
+      y2=np.repeat((L0-dark)*gains,30000)
       y2=y2+np.random.random(len(y2))
       y2=y2.sort()
       return (L0-dark)*gains
@@ -286,7 +286,7 @@ We compare this to the runtime for the LPU methods::
 
    # your measurement function
    def calibrate_slow(L0,gains,dark):
-      y2=np.repeat((L0-dark)*gains,1000)
+      y2=np.repeat((L0-dark)*gains,30000)
       y2=y2+np.random.random(len(y2))
       y2=y2.sort()
       return (L0-dark)*gains
@@ -328,7 +328,7 @@ To speed up this slow process, it is also possible to use parallel processing. E
 
    # your measurement function
    def calibrate_slow(L0,gains,dark):
-      y2=np.repeat((L0-dark)*gains,1000)
+      y2=np.repeat((L0-dark)*gains,30000)
       y2=y2+np.random.random(len(y2))
       y2=y2.sort()
       return (L0-dark)*gains
@@ -348,7 +348,7 @@ To speed up this slow process, it is also possible to use parallel processing. E
    dark_ur = np.array([0.01,0.002,0.006,0.002,0.015])  # random uncertainty
    
    if __name__ == "__main__":
-      prop=punpy.MCPropagation(1000,parallel_cores=4)
+      prop=punpy.MCPropagation(1000,parallel_cores=6)
       L1=calibrate_slow(L0,gains,dark)
       t1=time.time()
       L1_ur = prop.propagate_random(calibrate_slow,[L0,gains,dark],
@@ -362,12 +362,12 @@ To speed up this slow process, it is also possible to use parallel processing. E
       print(L1_us)
       print("propogate_random took: ",t2-t1," s")
 
-Propagate_random should now have taken a bit more than 25 s rather than the 100 s when processing them in serial (setting parallel_cores=1).
+By using 6 cores, Propagate_random should now be faster than the LPU method and significantly faster than when processing them in serial (setting parallel_cores=1).
 Here, there is no point to do parallel processing for the LPU methods because these methods can only be run in parallel when the `repeat_dims` keyword is set (see next section).
 However it is only possible to speed up the LPU methods in this case. Since all of the input quantities are of the same shape as the measurand, 
 and the measurement function works on each measurement independently (The calibrations of different wavelengths don't affect eachother), we know that the Jacobian
-will only have diagonal elements. This means we can set the `Jx_diag` keyword to True (either when creating the object, or for an individual propagation method)::
-
+will only have diagonal elements. This means we can set the `Jx_diag` keyword to True (either when creating the object, or for an individual propagation method). 
+This significantly speeds up the calculation as the off-diagonal elements of the Jacobian don't need to be calculated::
 
    import punpy
    import time
@@ -375,7 +375,7 @@ will only have diagonal elements. This means we can set the `Jx_diag` keyword to
 
    # your measurement function
    def calibrate_slow(L0,gains,dark):
-      y2=np.repeat((L0-dark)*gains,1000)
+      y2=np.repeat((L0-dark)*gains,30000)
       y2=y2+np.random.random(len(y2))
       y2=y2.sort()
       return (L0-dark)*gains
@@ -520,7 +520,7 @@ example the wavelength axis). If this is the case, this axis can be indicated by
    print(L1_corr_s)
 
 This method works well, but if instead of only (10,5) matrices we get larger matrices 
-(e.g. 100 repeated measurements with 100 wavelengths), this becomes quite memory intensive 
+(e.g. 100 repeated measurements with 100 wavelengths), this becomes quite memory intensive when using the MC methods
 (especially since punpy would generate samples with 10000 MCsteps in our example).
 Instead when doing propagate_random, or propagate_systematic, is possible to split the calculation along the 
 repeated measurements dimension, because we know the correlation between repeated measurements (not correlated
@@ -576,6 +576,132 @@ for random, fully correlated for systematic). This can be done by setting the `r
    print(L1_us)
 
 This way the code uses less memory and as a result is typically faster.
+There is also an important benefit setting `repeat_dims` when using LPU methods.
+Without setting the `repeat_dims` keyword, the Jacobian that needs to be calculated has 50*50 elements.
+When setting the `repeat_dims` keyword, the Jacobian is calculated for each repeated measurement individually,
+which means that will be 10*5*5 (10 repeats of Jacobain over 5 wavelengths). This means that there are 10 times less
+elements calculated than the case without `repeat_dims`. This significantly speeds up the calculation.
+This means there is not possible to account for how the different repeat measurements affect eachother.
+However, the assumption with repeated measurments is that they can be separated, and that the correlation between them is known
+anyway, so this is not a problem. We find that the following example is much faster then running the same without the `repeat_dims` keyword set::
+
+    import numpy as np
+    import punpy
+    import time
+
+    # your measurement function
+    def calibrate_slow(L0,gains,dark):
+        y2=np.repeat((L0-dark)*gains,3000)
+        y2=y2+np.random.random(len(y2))
+        y2=y2.sort()
+        return (L0-dark)*gains
+
+    # your data
+    L0 = np.array([[0.43,0.80,0.70,0.65,0.90],
+                [0.41,0.82,0.73,0.64,0.93],
+                [0.45,0.79,0.71,0.66,0.98],
+                [0.42,0.83,0.69,0.64,0.88],
+                [0.47,0.75,0.70,0.65,0.78],
+                [0.45,0.86,0.72,0.66,0.86],
+                [0.40,0.87,0.67,0.66,0.94],
+                [0.39,0.80,0.70,0.65,0.87],
+                [0.43,0.76,0.67,0.64,0.98],
+                [0.42,0.78,0.69,0.65,0.93]])
+    dark = np.random.rand(10,5)*0.05
+    gains = np.tile(np.array([23,26,28,29,31]),(10,1)) # same gains as before, but repeated 10 times so that shapes match
+
+    # your uncertainties
+    L0_ur = np.array([[0.02, 0.04, 0.02, 0.01, 0.06],
+                    [0.02, 0.04, 0.02, 0.01, 0.06],
+                    [0.02, 0.04, 0.02, 0.01, 0.06],
+                    [0.02, 0.04, 0.02, 0.01, 0.06],
+                    [0.02, 0.04, 0.02, 0.01, 0.06],
+                    [0.02, 0.04, 0.02, 0.01, 0.06],
+                    [0.02, 0.04, 0.02, 0.01, 0.06],
+                    [0.02, 0.04, 0.02, 0.01, 0.06],
+                    [0.02, 0.04, 0.02, 0.01, 0.06],
+                    [0.02, 0.04, 0.02, 0.01, 0.06]])
+    gains_ur = 0.02*gains  # 2% random uncertainty
+    gains_us = 0.03*gains  # 3% systematic uncertainty
+    dark_ur = np.ones((10,5))*0.02  # random uncertainty of 0.02
+
+    if __name__ == "__main__":
+
+        prop=punpy.LPUPropagation()
+        L1=calibrate_slow(L0,gains,dark)
+        t1=time.time()
+
+        L1_ur,L1_corr_r=prop.propagate_random(calibrate_slow,[L0,gains,dark],
+                        [L0_ur,gains_ur,dark_ur],
+                        return_corr=True,corr_axis=1,repeat_dims=0)
+
+        t2=time.time()
+
+        print(L1)
+        print(L1_ur)
+        print("propogate_random took: ",t2-t1," s")
+
+
+There is another important benefit to setting the `repeat_dims` keyword when using the LPU methods.
+In this case it is possible to use parallel processing, in which case each repeated measurements is processed in parallel.
+This again speeds up the process::
+
+    import numpy as np
+    import punpy
+    import time
+
+    # your measurement function
+    def calibrate_slow(L0,gains,dark):
+        y2=np.repeat((L0-dark)*gains,3000)
+        y2=y2+np.random.random(len(y2))
+        y2=y2.sort()
+        return (L0-dark)*gains
+
+    # your data
+    L0 = np.array([[0.43,0.80,0.70,0.65,0.90],
+                [0.41,0.82,0.73,0.64,0.93],
+                [0.45,0.79,0.71,0.66,0.98],
+                [0.42,0.83,0.69,0.64,0.88],
+                [0.47,0.75,0.70,0.65,0.78],
+                [0.45,0.86,0.72,0.66,0.86],
+                [0.40,0.87,0.67,0.66,0.94],
+                [0.39,0.80,0.70,0.65,0.87],
+                [0.43,0.76,0.67,0.64,0.98],
+                [0.42,0.78,0.69,0.65,0.93]])
+    dark = np.random.rand(10,5)*0.05
+    gains = np.tile(np.array([23,26,28,29,31]),(10,1)) # same gains as before, but repeated 10 times so that shapes match
+
+    # your uncertainties
+    L0_ur = np.array([[0.02, 0.04, 0.02, 0.01, 0.06],
+                    [0.02, 0.04, 0.02, 0.01, 0.06],
+                    [0.02, 0.04, 0.02, 0.01, 0.06],
+                    [0.02, 0.04, 0.02, 0.01, 0.06],
+                    [0.02, 0.04, 0.02, 0.01, 0.06],
+                    [0.02, 0.04, 0.02, 0.01, 0.06],
+                    [0.02, 0.04, 0.02, 0.01, 0.06],
+                    [0.02, 0.04, 0.02, 0.01, 0.06],
+                    [0.02, 0.04, 0.02, 0.01, 0.06],
+                    [0.02, 0.04, 0.02, 0.01, 0.06]])
+    gains_ur = 0.02*gains  # 2% random uncertainty
+    gains_us = 0.03*gains  # 3% systematic uncertainty
+    dark_ur = np.ones((10,5))*0.02  # random uncertainty of 0.02
+
+    if __name__ == "__main__":
+
+        prop=punpy.LPUPropagation(parallel_cores=4)
+        L1=calibrate_slow(L0,gains,dark)
+        t1=time.time()
+
+        L1_ur,L1_corr_r=prop.propagate_random(calibrate_slow,[L0,gains,dark],
+                        [L0_ur,gains_ur,dark_ur],
+                        return_corr=True,corr_axis=1,repeat_dims=0)
+
+        t2=time.time()
+
+        print(L1)
+        print(L1_ur)
+        print("propogate_random took: ",t2-t1," s")
+
 There is another useful option that allows some input quantities to have repeated axis, whereas other ones do not.
 This also results in not all input quantities needing to have the same shape. For example, if we had 10 repeated measurements for L0,
 but only one set of gains, and one dark measurement. In that case the keyword `param_fixed` would be set to False for L0 and True for 
@@ -603,7 +729,7 @@ gains and dark, as in the examples below::
    gains = np.array([23,26,28,29,31]) # same gains as before, but repeated 10 times so that shapes match
 
    # your uncertainties
-   L0_ur = np.array([0.02, 0.04, 0.02, 0.01, 0.06],
+   L0_ur = np.array([[0.02, 0.04, 0.02, 0.01, 0.06],
                      [0.02, 0.04, 0.02, 0.01, 0.06],
                      [0.02, 0.04, 0.02, 0.01, 0.06],
                      [0.02, 0.04, 0.02, 0.01, 0.06],
@@ -671,7 +797,7 @@ In the below example we could thus have set "rand" in propagate_random to None w
    gains = np.array([23,26,28,29,31]) # same gains as before, but repeated 10 times so that shapes match
 
    # your uncertainties
-   L0_ur = np.array([0.02, 0.04, 0.02, 0.01, 0.06],
+   L0_ur = np.array([[0.02, 0.04, 0.02, 0.01, 0.06],
                      [0.02, 0.04, 0.02, 0.01, 0.06],
                      [0.02, 0.04, 0.02, 0.01, 0.06],
                      [0.02, 0.04, 0.02, 0.01, 0.06],
@@ -707,6 +833,7 @@ In the below example we could thus have set "rand" in propagate_random to None w
    print(L1)
    print(L1_ur)
    print(L1_us)
+
 
 The combination of these different options allow us to propagate uncertainties with nearly any shape or correlation.
 
@@ -819,3 +946,59 @@ This will give similar uncertainties to the above, but will use more memory and 
    print(L1)
    print(L1_ur)
    print(L1_us)
+
+And it is still possible to use the LPU methods (with or without repeat_dims)::
+
+
+   import numpy as np
+   import punpy
+
+   # your measurement function
+   def calibrate(L0,gains,dark):
+      return (L0-dark)*gains
+
+   # your data
+   L0 = np.array([[[0.43,0.80,0.70,0.65,0.90],
+                  [0.41,0.82,0.73,0.64,0.93],
+                  [0.45,0.79,0.71,0.66,0.98]],
+                  [[0.42,0.83,0.69,0.64,0.88],
+                  [0.47,0.75,0.70,0.65,0.78],
+                  [0.45,0.86,0.72,0.66,0.86]],
+                  [[0.40,0.87,0.67,0.66,0.94],
+                  [0.39,0.80,0.70,0.65,0.87],
+                  [0.42,0.78,0.69,0.65,0.93]]])
+   dark = np.random.rand(5)*0.05
+   gains = np.array([23,26,28,29,31]) # same gains as before, but repeated 10 times so that shapes match
+
+   # your uncertainties
+   L0_ur = np.array([[[0.02, 0.04, 0.02, 0.01, 0.06],
+                     [0.02, 0.04, 0.02, 0.01, 0.06],
+                     [0.02, 0.04, 0.02, 0.01, 0.06]],
+                     [[0.02, 0.04, 0.02, 0.01, 0.06],
+                     [0.02, 0.04, 0.02, 0.01, 0.06],
+                     [0.02, 0.04, 0.02, 0.01, 0.06]],
+                     [[0.02, 0.04, 0.02, 0.01, 0.06],
+                     [0.02, 0.04, 0.02, 0.01, 0.06],
+                     [0.02, 0.04, 0.02, 0.01, 0.06]]])
+
+   L0_corr=np.array(
+   [[1.        , 0.69107369, 0.5976143 , 0.44946657, 0.16265001],
+   [0.69107369, 1.        , 0.56639386, 0.5990423 , 0.20232566],
+   [0.5976143 , 0.56639386, 1.        , 0.48349378, 0.17496355],
+   [0.44946657, 0.5990423 , 0.48349378, 1.        , 0.13159034],
+   [0.16265001, 0.20232566, 0.17496355, 0.13159034, 1.        ]])
+
+   gains_ur = 0.02*gains  # 2% random uncertainty
+   gains_us = 0.03*gains  # 3% systematic uncertainty 
+   dark_ur = np.ones(5)*0.02  # random uncertainty of 0.02
+
+   if __name__ == "__main__":
+        prop=punpy.LPUPropagation(parallel_cores=4)
+        L1=calibrate(L0,gains,dark)
+        L1_ur,L1_corr_r=prop.propagate_random(calibrate,[L0,gains,dark],[L0_ur,gains_ur,dark_ur],corr_x=[L0_corr,None,"rand"],param_fixed=[False,True,True],return_corr=True,repeat_dims=[0,1],corr_axis=2)
+        L1_us,L1_corr_s=prop.propagate_systematic(calibrate,[L0,gains,dark],[None,gains_us,None],corr_x=[L0_corr,None,"rand"],param_fixed=[False,True,True],return_corr=True,repeat_dims=[0,1],corr_axis=2)
+   
+        print(L1)
+        print(L1_ur)
+        print(L1_us)
+

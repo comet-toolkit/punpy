@@ -87,8 +87,9 @@ class LPUPropagation:
             u_xflat,
             yshape,
             u_x,
-            repeat_axis,
             repeat_dims,
+            n_repeats,
+            repeat_shape,
             corr_axis,
             fixed_corr,
             Jx_diag,
@@ -102,36 +103,36 @@ class LPUPropagation:
             output_vars,
             fixed_corr_var,
             Jx_diag,
+            param_fixed,
         )
 
-        if repeat_axis >= 0:
-            n_repeats = yshape[repeat_axis]
+        if n_repeats > 0:
+            inputs = np.empty(n_repeats, dtype=object)
+            for i in range(n_repeats):
+                xb, u_xb = util.select_repeated_x(
+                    x, u_x, param_fixed, i, repeat_dims, repeat_shape
+                )
+                if Jx is not None:
+                    Jxi = Jx[i]
+                else:
+                    Jxi = Jx
+                inputs[i] = [
+                    func,
+                    xb,
+                    u_xb,
+                    corr_x,
+                    None,
+                    corr_between,
+                    return_corr,
+                    return_Jacobian,
+                    -99,
+                    corr_axis,
+                    fixed_corr_var,
+                    output_vars,
+                    Jxi,
+                    Jx_diag,
+                ]
             if self.parallel_cores > 1:
-                inputs = np.empty(n_repeats, dtype=object)
-                for i in range(n_repeats):
-                    xb, u_xb = util.select_repeated_x(
-                        x, u_x, param_fixed, i, repeat_axis, n_repeats
-                    )
-                    if Jx is not None:
-                        Jxi = Jx[i]
-                    else:
-                        Jxi = Jx
-                    inputs[i] = [
-                        func,
-                        xb,
-                        u_xb,
-                        corr_x,
-                        param_fixed,
-                        corr_between,
-                        return_corr,
-                        return_Jacobian,
-                        repeat_dims,
-                        corr_axis,
-                        fixed_corr_var,
-                        output_vars,
-                        Jxi,
-                        Jx_diag,
-                    ]
                 pool = Pool(self.parallel_cores)
                 outs = pool.starmap(self.propagate_random, inputs)
                 pool.close()
@@ -139,35 +140,14 @@ class LPUPropagation:
             else:
                 outs = np.empty(n_repeats, dtype=object)
                 for i in range(n_repeats):
-                    xb, u_xb = util.select_repeated_x(
-                        x, u_x, param_fixed, i, repeat_axis, n_repeats
-                    )
-                    if Jx is not None:
-                        Jxi = Jx[i]
-                    else:
-                        Jxi = Jx
-                    outs[i] = self.propagate_random(
-                        func,
-                        xb,
-                        u_xb,
-                        corr_x,
-                        param_fixed,
-                        corr_between,
-                        return_corr,
-                        return_Jacobian,
-                        repeat_dims,
-                        corr_axis,
-                        fixed_corr_var,
-                        output_vars,
-                        Jxi,
-                        Jx_diag,
-                    )
+                    outs[i] = self.propagate_random(*inputs[i])
 
             return self.combine_repeated_outs(
                 outs,
                 yshape,
                 n_repeats,
-                repeat_axis,
+                repeat_shape,
+                repeat_dims,
                 return_corr,
                 return_Jacobian,
                 output_vars,
@@ -181,10 +161,7 @@ class LPUPropagation:
                 corr_between = np.eye(len(x))
 
             if corr_x is None:
-                if corr_axis >= 0:
-                    corrs = [np.eye(xi.shape[corr_axis]) for xi in x]
-                else:
-                    corrs = [np.eye(len(xi.flatten())) for xi in x]
+                corrs = [np.eye(len(xi.flatten())) for xi in x]
             else:
                 corrs = np.empty(len(x), dtype=object)
                 for i in range(len(x)):
@@ -198,7 +175,14 @@ class LPUPropagation:
             cov_x = util.convert_corr_to_cov(corr_x, u_xflat)
 
             return self.process_jacobian(
-                Jx, cov_x, yshape, return_corr, fixed_corr, output_vars, return_Jacobian
+                Jx,
+                cov_x,
+                yshape,
+                return_corr,
+                corr_axis,
+                fixed_corr,
+                output_vars,
+                return_Jacobian,
             )
 
     def propagate_systematic(
@@ -261,8 +245,9 @@ class LPUPropagation:
             u_xflat,
             yshape,
             u_x,
-            repeat_axis,
             repeat_dims,
+            n_repeats,
+            repeat_shape,
             corr_axis,
             fixed_corr,
             Jx_diag,
@@ -276,36 +261,37 @@ class LPUPropagation:
             output_vars,
             fixed_corr_var,
             Jx_diag,
+            param_fixed,
         )
 
-        if repeat_axis >= 0:
-            n_repeats = yshape[repeat_axis]
+        if n_repeats > 0:
+            inputs = np.empty(n_repeats, dtype=object)
+            for i in range(n_repeats):
+                xb, u_xb = util.select_repeated_x(
+                    x, u_x, param_fixed, i, repeat_dims, repeat_shape
+                )
+                if Jx is not None:
+                    Jxi = Jx[i]
+                else:
+                    Jxi = Jx
+                inputs[i] = [
+                    func,
+                    xb,
+                    u_xb,
+                    corr_x,
+                    None,
+                    corr_between,
+                    return_corr,
+                    return_Jacobian,
+                    -99,
+                    corr_axis,
+                    fixed_corr_var,
+                    output_vars,
+                    Jxi,
+                    Jx_diag,
+                ]
+
             if self.parallel_cores > 1:
-                inputs = np.empty(n_repeats, dtype=object)
-                for i in range(n_repeats):
-                    xb, u_xb = util.select_repeated_x(
-                        x, u_x, param_fixed, i, repeat_axis, n_repeats
-                    )
-                    if Jx is not None:
-                        Jxi = Jx[i]
-                    else:
-                        Jxi = Jx
-                    inputs[i] = [
-                        func,
-                        xb,
-                        u_xb,
-                        corr_x,
-                        param_fixed,
-                        corr_between,
-                        return_corr,
-                        return_Jacobian,
-                        repeat_dims,
-                        corr_axis,
-                        fixed_corr_var,
-                        output_vars,
-                        Jxi,
-                        Jx_diag,
-                    ]
                 pool = Pool(self.parallel_cores)
                 outs = pool.starmap(self.propagate_systematic, inputs)
                 pool.close()
@@ -313,35 +299,14 @@ class LPUPropagation:
             else:
                 outs = np.empty(n_repeats, dtype=object)
                 for i in range(n_repeats):
-                    xb, u_xb = util.select_repeated_x(
-                        x, u_x, param_fixed, i, repeat_axis, n_repeats
-                    )
-                    if Jx is not None:
-                        Jxi = Jx[i]
-                    else:
-                        Jxi = Jx
-                    outs[i] = self.propagate_systematic(
-                        func,
-                        xb,
-                        u_xb,
-                        corr_x,
-                        param_fixed,
-                        corr_between,
-                        return_corr,
-                        return_Jacobian,
-                        repeat_dims,
-                        corr_axis,
-                        fixed_corr_var,
-                        output_vars,
-                        Jxi,
-                        Jx_diag,
-                    )
+                    outs[i] = self.propagate_systematic(*inputs[i])
 
             return self.combine_repeated_outs(
                 outs,
                 yshape,
                 n_repeats,
-                repeat_axis,
+                repeat_shape,
+                repeat_dims,
                 return_corr,
                 return_Jacobian,
                 output_vars,
@@ -355,14 +320,7 @@ class LPUPropagation:
                 corr_between = np.eye(len(x))
 
             if corr_x is None:
-                if corr_axis >= 0:
-                    corrs = [
-                        np.ones((len(xi.flatten()), len(xi.flatten()))) for xi in x
-                    ]
-                else:
-                    corrs = [
-                        np.ones((len(xi.flatten()), len(xi.flatten()))) for xi in x
-                    ]
+                corrs = [np.ones((len(xi.flatten()), len(xi.flatten()))) for xi in x]
             else:
                 corrs = np.empty(len(x), dtype=object)
                 for i in range(len(x)):
@@ -376,7 +334,14 @@ class LPUPropagation:
             cov_x = util.convert_corr_to_cov(corr_x, u_xflat)
 
             return self.process_jacobian(
-                Jx, cov_x, yshape, return_corr, fixed_corr, output_vars, return_Jacobian
+                Jx,
+                cov_x,
+                yshape,
+                return_corr,
+                corr_axis,
+                fixed_corr,
+                output_vars,
+                return_Jacobian,
             )
 
     def propagate_cov(
@@ -440,8 +405,9 @@ class LPUPropagation:
             u_xflat,
             yshape,
             u_x,
-            repeat_axis,
             repeat_dims,
+            n_repeats,
+            repeat_shape,
             corr_axis,
             fixed_corr,
             Jx_diag,
@@ -455,70 +421,52 @@ class LPUPropagation:
             output_vars,
             fixed_corr_var,
             Jx_diag,
+            param_fixed,
         )
 
-        if repeat_axis >= 0:
-            n_repeats = yshape[repeat_axis]
+        if n_repeats > 0:
+            inputs = np.empty(n_repeats, dtype=object)
+            for i in range(n_repeats):
+                xb, u_xb = util.select_repeated_x(
+                    x, u_x, param_fixed, i, repeat_dims, repeat_shape
+                )
+                if Jx is not None:
+                    Jxi = Jx[i]
+                else:
+                    Jxi = Jx
+
+                inputs[i] = [
+                    func,
+                    xb,
+                    cov_x,
+                    None,
+                    corr_between,
+                    return_corr,
+                    return_Jacobian,
+                    -99,
+                    corr_axis,
+                    fixed_corr_var,
+                    output_vars,
+                    Jxi,
+                    Jx_diag,
+                ]
+
             if self.parallel_cores > 1:
-                inputs = np.empty(n_repeats, dtype=object)
-                for i in range(n_repeats):
-                    xb, u_xb = util.select_repeated_x(
-                        x, u_x, param_fixed, i, repeat_axis, n_repeats
-                    )
-                    if Jx is not None:
-                        Jxi = Jx[i]
-                    else:
-                        Jxi = Jx
-                    inputs[i] = [
-                        func,
-                        xb,
-                        cov_x,
-                        param_fixed,
-                        corr_between,
-                        return_corr,
-                        return_Jacobian,
-                        repeat_dims,
-                        corr_axis,
-                        fixed_corr_var,
-                        output_vars,
-                        Jxi,
-                        Jx_diag,
-                    ]
                 pool = Pool(self.parallel_cores)
                 outs = pool.starmap(self.propagate_cov, inputs)
                 pool.close()
-                del pool
+
             else:
                 outs = np.empty(n_repeats, dtype=object)
                 for i in range(n_repeats):
-                    xb, _ = util.select_repeated_x(
-                        x, u_x, param_fixed, i, repeat_axis, n_repeats
-                    )
-                    if Jx is not None:
-                        Jxi = Jx[i]
-                    else:
-                        Jxi = Jx
-                    outs[i] = self.propagate_cov(
-                        func,
-                        xb,
-                        cov_x,
-                        param_fixed,
-                        corr_between,
-                        return_corr,
-                        return_Jacobian,
-                        repeat_dims,
-                        corr_axis,
-                        fixed_corr_var,
-                        output_vars,
-                        Jxi,
-                        Jx_diag,
-                    )
+                    outs[i] = self.propagate_cov(*inputs[i])
 
             return self.combine_repeated_outs(
                 outs,
                 yshape,
                 n_repeats,
-                repeat_axis,
+                repeat_shape,
+                repeat_dims,
                 return_corr,
                 return_Jacobian,
                 output_vars,
@@ -535,7 +483,14 @@ class LPUPropagation:
             cov_x = util.convert_corr_to_cov(corr_x, u_xflat)
 
             return self.process_jacobian(
-                Jx, cov_x, yshape, return_corr, fixed_corr, output_vars, return_Jacobian
+                Jx,
+                cov_x,
+                yshape,
+                return_corr,
+                corr_axis,
+                fixed_corr,
+                output_vars,
+                return_Jacobian,
             )
 
     def process_jacobian(
@@ -544,6 +499,7 @@ class LPUPropagation:
         covx,
         shape_y,
         return_corr,
+        corr_axis,
         fixed_corr=None,
         output_vars=1,
         return_Jacobian=False,
@@ -554,6 +510,17 @@ class LPUPropagation:
             corr_y = util.convert_cov_to_corr(covy, u_func)
         else:
             corr_y = fixed_corr
+        if corr_axis >= 0:
+            lencorr = shape_y[corr_axis] * output_vars
+            corr_y = np.average(
+                [
+                    corr_y[
+                        i * lencorr : (i + 1) * lencorr, i * lencorr : (i + 1) * lencorr
+                    ]
+                    for i in range(int(len(corr_y) / lencorr))
+                ],
+                axis=0,
+            )
 
         if output_vars == 1:
             u_func = u_func.reshape(shape_y)
@@ -590,6 +557,7 @@ class LPUPropagation:
         output_vars,
         fixed_corr_var,
         Jx_diag,
+        param_fixed,
     ):
         """
         Perform checks on the input parameters and set up the appropriate keywords for further processing
@@ -610,6 +578,8 @@ class LPUPropagation:
         :type output_vars: integer, optional
         :param fixed_corr_var: set to integer to copy the correlation matrix of the dimiension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
         :type fixed_corr_var: bool or integer, optional
+        :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
+        :type param_fixed: list of bools, optional
         :return: yshape,u_x,repeat_axis,repeat_dims,corr_axis,fixed_corr
         :rtype: tuple, list[array], int, int, int, array
         """
@@ -685,18 +655,36 @@ class LPUPropagation:
 
         # Set up repeat_axis and repeat_dims for proper use in recursive function.
         if isinstance(repeat_dims, int):
-            repeat_axis = repeat_dims
-            repeat_dims = -99
-        else:
-            repeat_axis = repeat_dims[0]
-            repeat_dims = repeat_dims[1]
-            if repeat_axis < repeat_dims:
-                repeat_dims -= 1
+            repeat_dims = [repeat_dims]
 
-        if repeat_axis >= 0:
-            if corr_axis > repeat_axis:
+        if len(repeat_dims) == 1:
+            if repeat_dims[0] >= 0:
+                n_repeats = yshape[repeat_dims[0]]
+                if corr_axis > repeat_dims[0]:
+                    corr_axis -= 1
+                elif corr_axis == repeat_dims[0]:
+                    print("corr_axis and repeat_axis keywords should not be the same.")
+                    exit()
+            else:
+                n_repeats = 0
+                if param_fixed is not None:
+                    print("param_fixed should not be set unless repeat_dims is set.")
+                    exit()
+
+            repeat_shape = (n_repeats,)
+            # repeat_dims = -99
+        else:
+            repeat_dims = -np.sort(-np.array(repeat_dims))
+            n_repeats = yshape[repeat_dims[0]] * yshape[repeat_dims[1]]
+            repeat_shape = (yshape[repeat_dims[0]], yshape[repeat_dims[1]])
+            if corr_axis > repeat_dims[0]:
                 corr_axis -= 1
-            elif corr_axis == repeat_axis:
+            elif corr_axis == repeat_dims[0]:
+                print("corr_axis and repeat_axis keywords should not be the same.")
+                exit()
+            if corr_axis > repeat_dims[1]:
+                corr_axis -= 1
+            elif corr_axis == repeat_dims[1]:
                 print("corr_axis and repeat_axis keywords should not be the same.")
                 exit()
 
@@ -712,8 +700,9 @@ class LPUPropagation:
             u_xflat,
             yshape,
             u_x,
-            repeat_axis,
             repeat_dims,
+            n_repeats,
+            repeat_shape,
             corr_axis,
             fixed_corr,
             Jx_diag,
@@ -724,7 +713,8 @@ class LPUPropagation:
         outs,
         yshape,
         n_repeats,
-        repeat_axis,
+        repeat_shape,
+        repeat_dims,
         return_corr,
         return_Jacobian,
         output_vars,
@@ -738,8 +728,10 @@ class LPUPropagation:
         :type yshape: tuple
         :param n_repeats: number of repeated measurements
         :type n_repeats: int
-        :param repeat_axis: dimension along which the measurements are repeated
-        :type repeat_axis: int
+        :param repeat_shape: shape along which the measurements are repeated
+        :type repeat_shape: tuple
+        :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
+        :type repeat_dims: integer or list of 2 integers, optional
         :param return_corr: set to True to return correlation matrix of measurand, defaults to True
         :type return_corr: bool, optional
         :param return_Jacobian: set to True to return Jacobian, defaults to False
@@ -749,68 +741,51 @@ class LPUPropagation:
         :return: combined outputs
         :rtype: list[array]
         """
-        if not return_corr:
-            if output_vars == 1:
-                u_func = np.zeros(yshape)
-                if repeat_axis == 0:
-                    for i in range(len(outs)):
-                        u_func[i] = outs[i]
-                elif repeat_axis == 1:
-                    for i in range(len(outs)):
-                        if len(outs[i].shape) > 1:
-                            if outs[i].shape[1] == 1:
-                                u_func[:, i] = outs[i][:, 0]
-                            else:
-                                u_func[:, i] = outs[i]
-                        else:
-                            u_func[:, i] = outs[i]
 
-                elif repeat_axis == 2:
-                    for i in range(len(outs)):
-                        u_func[:, :, i] = outs[i]
+        if not return_corr and output_vars == 1 and not return_Jacobian:
+            u_func = np.array([outs[i] for i in range(n_repeats)])
+
+        elif output_vars == 1:
+            u_func = np.array([outs[i][0] for i in range(n_repeats)])
+
+        else:
+            u_func = np.array(
+                [
+                    [outs[i][0][ii] for i in range(n_repeats)]
+                    for ii in range(output_vars)
+                ]
+            )
+
+        if len(repeat_dims) == 1:
+            if output_vars == 1:
+                u_func = np.moveaxis(u_func, 0, repeat_dims[0])
             else:
-                u_func = np.zeros((output_vars,) + yshape)
-                if repeat_axis == 0:
-                    for i in range(len(outs)):
-                        u_func[:, i] = outs[i]
-                elif repeat_axis == 1:
-                    for i in range(len(outs)):
-                        u_func[:, :, i] = np.array(outs[i])
-                elif repeat_axis == 2:
-                    for i in range(len(outs)):
-                        u_func[:, :, :, i] = outs[i]
-            return u_func
+                u_func = np.moveaxis(u_func, 1, repeat_dims[0] + 1)
 
         else:
             if output_vars == 1:
-                u_func = np.zeros(yshape)
-                if repeat_axis == 0:
-                    for i in range(len(outs)):
-                        u_func[i] = outs[i][0]
-                elif repeat_axis == 1:
-                    for i in range(len(outs)):
-                        if len(outs[i][0].shape) > 1:
-                            if outs[i][0].shape[1] == 1:
-                                u_func[:, i] = outs[i][0][:, 0]
-                            else:
-                                u_func[:, i] = outs[i][0]
-                        else:
-                            u_func[:, i] = outs[i][0]
-                elif repeat_axis == 2:
-                    for i in range(len(outs)):
-                        u_func[:, :, i] = outs[i][0]
+                u_func = u_func.reshape(repeat_shape + (-1,))
+                u_func = np.moveaxis(u_func, 0, repeat_dims[0])
+                u_func = np.moveaxis(u_func, 0, repeat_dims[1])
             else:
-                u_func = np.zeros((output_vars,) + yshape)
-                if repeat_axis == 0:
-                    for i in range(len(outs)):
-                        u_func[:, i] = outs[i][0]
-                elif repeat_axis == 1:
-                    for i in range(len(outs)):
-                        u_func[:, :, i] = outs[i][0]
-                elif repeat_axis == 2:
-                    for i in range(len(outs)):
-                        u_func[:, :, :, i] = outs[i][0]
+                u_func = u_func.reshape((output_vars,) + repeat_shape + (-1,))
+                u_func = np.moveaxis(u_func, 1, repeat_dims[0] + 1)
+                u_func = np.moveaxis(u_func, 1, repeat_dims[1] + 1)
 
+        if (output_vars == 1 and u_func.shape != yshape) or (
+            output_vars > 1 and u_func[0].shape != yshape
+        ):
+            print(u_func.shape, yshape)
+            raise ValueError(
+                "The shape of the uncertainties does not match the shape"
+                "of the measurand. This is likely a problem with combining"
+                "repeated measurements (repeat_dims keyword)."
+            )
+
+        if not return_corr and output_vars == 1 and not return_Jacobian:
+            return u_func
+
+        else:
             returns = np.empty(len(outs[0]), dtype=object)
             returns[0] = u_func
             extra_index = 0

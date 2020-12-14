@@ -119,7 +119,7 @@ def separate_flattened_corr(corr, ndim):
     return corrs, corrs_between
 
 
-def select_repeated_x(x, u_x, param_fixed, i, repeat_axis, n_repeats):
+def select_repeated_x(x, u_x, param_fixed, i, repeat_dims, repeat_shape):
     """
     Select one (index i) of multiple repeated entries and return the input quantities and uncertainties for that entry.
 
@@ -129,12 +129,12 @@ def select_repeated_x(x, u_x, param_fixed, i, repeat_axis, n_repeats):
     :type u_x: list[array]
     :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
     :type param_fixed: list of bools, optional
-    :param i: index of the input quantity (in x)
+    :param i: index of the repeated measurement
     :type i: int
-    :param repeat_axis: dimension along which the measurements are repeated
-    :type repeat_axis: int
-    :param n_repeats: number of repeated measurements
-    :type n_repeats: int
+    :param repeat_dims: dimension along which the measurements are repeated
+    :type repeat_dims: int
+    :param repeat_shape: shape of measurements along which to select repeats
+    :type repeat_shape: tuple
     :return: list of input quantities, list of uncertainties for single measurement
     :rtype: list[array]. list[array]
     """
@@ -148,31 +148,31 @@ def select_repeated_x(x, u_x, param_fixed, i, repeat_axis, n_repeats):
                 u_xb[j] = u_x[j]
                 selected = True
         if not selected:
-            if len(x[j].shape) > repeat_axis:
-                if x[j].shape[repeat_axis] != n_repeats:
-                    xb[j] = x[j]
-                    u_xb[j] = u_x[j]
-                elif repeat_axis == 0:
-                    xb[j] = x[j][i]
-                    u_xb[j] = u_x[j][i]
-                elif repeat_axis == 1:
-                    xb[j] = x[j][:, i]
-                    u_xb[j] = u_x[j][:, i]
-                elif repeat_axis == 2:
-                    xb[j] = x[j][:, :, i]
-                    u_xb[j] = u_x[j][:, :, i]
+            index = list(np.ndindex(repeat_shape))[i]
+            xb[j] = x[j]
+            u_xb[j] = u_x[j]
+            for idim in range(len(repeat_dims)):
+                repeat_axis = repeat_dims[idim]
+                ii = index[idim]
+                if len(xb[j].shape) > repeat_axis:
+                    if repeat_axis == 0:
+                        xb[j] = xb[j][ii]
+                        u_xb[j] = u_xb[j][ii]
+                    elif repeat_axis == 1:
+                        xb[j] = xb[j][:, ii]
+                        u_xb[j] = u_xb[j][:, ii]
+                    elif repeat_axis == 2:
+                        xb[j] = xb[j][:, :, ii]
+                        u_xb[j] = u_xb[j][:, :, ii]
+                    else:
+                        warnings.warn(
+                            "The repeat axis is too large to be dealt with by the"
+                            "current version of punpy."
+                        )
                 else:
-                    warnings.warn(
-                        "The repeat axis is too large to be dealt with by the"
-                        "current version of punpy."
-                    )
-            else:
-                if len(x[j]) == n_repeats:
-                    xb[j] = x[j][i]
-                    u_xb[j] = u_x[j][i]
-                else:
-                    xb[j] = x[j]
-                    u_xb[j] = u_x[j]
+                    xb[j] = xb[j][ii]
+                    u_xb[j] = u_xb[j][ii]
+
     return xb, u_xb
 
 
