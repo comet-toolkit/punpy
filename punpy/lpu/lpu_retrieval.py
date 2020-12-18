@@ -36,6 +36,7 @@ class LPURetrieval:
         cov=None,
         uplims=+np.inf,
         downlims=-np.inf,
+        Jx=None,
     ):
         """
         Initialise Law of Propagation of Uncertainty retrieval
@@ -64,13 +65,14 @@ class LPURetrieval:
         else:
             self.invcov = np.linalg.inv(np.ascontiguousarray(cov))
             # print(observed,cov,self.invcov)
-
+        self.Jx=Jx
         self.uplims = np.array(uplims)
         self.downlims = np.array(downlims)
 
     def run_retrieval(self, theta_0, return_corr=True):
         res = minimize(self.find_chisum, theta_0)
-        Jx = util.calculate_Jacobian(self.measurement_function, res.x)
+        if self.Jx is None:
+            Jx = util.calculate_Jacobian(self.measurement_function, res.x)
         # print("wer",res.x,theta_0,Jx,util.calculate_Jacobian(self.measurement_function,theta_0))
 
         return tuple(res.x) + tuple(self.process_inverse_jacobian(Jx, return_corr))

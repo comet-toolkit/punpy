@@ -31,10 +31,12 @@ def calculate_Jacobian(fun, x, Jx_diag=False, step=None):
         y = fun(x)
         Jfun = nd.Jacobian(fun)
         Jx = np.zeros((len(x), len(y)))
+        print(Jx.shape)
         for j in range(len(y)):
             xj = np.zeros(int(len(x) / len(y)))
             for i in range(len(xj)):
                 xj[i] = x[i * len(y) + j]
+            print(xj.shape,xj)
             Jxj = Jfun(xj)
             for i in range(len(xj)):
                 Jx[i * len(y) + j, j] = Jxj[0][i]

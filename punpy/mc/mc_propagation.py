@@ -613,12 +613,19 @@ class MCPropagation:
         :return: combined outputs
         :rtype: list[array]
         """
-
         if not return_corr and output_vars == 1 and not return_samples:
             u_func = np.array([outs[i] for i in range(n_repeats)])
 
-        elif output_vars == 1:
+        elif (output_vars == 1):
             u_func = np.array([outs[i][0] for i in range(n_repeats)])
+
+        elif (output_vars > 1 and not return_corr and not return_samples):
+            u_func = np.array(
+                [
+                    [outs[i][ii] for i in range(n_repeats)]
+                    for ii in range(output_vars)
+                ]
+            )
 
         else:
             u_func = np.array(
@@ -627,8 +634,6 @@ class MCPropagation:
                     for ii in range(output_vars)
                 ]
             )
-
-        print(u_func.shape, u_func)
 
         if len(repeat_dims) == 1:
             if output_vars == 1:
@@ -656,7 +661,7 @@ class MCPropagation:
                 "repeated measurements (repeat_dims keyword)."
             )
 
-        if not return_corr and output_vars == 1 and not return_samples:
+        if not return_corr and not return_samples:
             return u_func
 
         else:

@@ -221,7 +221,17 @@ to True which will automatically ignore all the off-diagonal elements and result
    measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3], 
    return_corr=True, Jx_diag=True)
 
-In some cases, when there is only one correlation matrix contributing to the measurand (e.g. a complicated 
+For the LPU methods, the numdifftools package is used to calculate the Jacobian. This package automatically determines the stepsize in the numerical
+differentiation, unless a manual stepsize is set. For some measurement functions, it can be necessary to set a manual stepsize (because of the limited 
+range of the input quantities, or because one of the input quantities has to remain sorted, or ...). It is possible to set the stepsize to be passed to 
+the numdifftools jacobian method by setting the `step` keyword when creating the propagation object:
+
+   prop = punpy.LPUPropagation(step=0.01)
+   ub_y, corr_y = prop.propagate_systematic(
+   measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3], 
+   return_corr=True)
+
+For both methods there are some cases, when there is only one correlation matrix contributing to the measurand (e.g. a complicated 
 measurement function where all but one of the input quantities are known with perfect precision, i.e. without uncertainty),
 it can be beneficial to just copy this correlation matrix to the measurand rather than calculating it (since copying is faster
 and does not introduce MC noise). When the `fixed_corr_var` is set to True, punpy automatically detects if there is only one 
@@ -232,6 +242,8 @@ is set to an integer, the correlation matrix corresponding to that dimension is 
    ur_y = prop.propagate_random(
    measurement_function, [x1, x2, x3], [ur_x1, ur_x2, ur_x3],
    corr_between=corr_x1x2x3, fixed_corr_var=True)
+
+
 
 Processing the MC samples in parallel
 ######################################

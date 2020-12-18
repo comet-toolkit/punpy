@@ -586,7 +586,7 @@ class LPUPropagation:
         """
 
         xshapes = [xi.shape for xi in x]
-        if Jx_diag or xshapes.count(xshapes[0]) == len(xshapes):
+        if (xshapes.count(xshapes[0]) == len(xshapes)) and repeat_dims==-99:
             if output_vars == 1:
                 fun = lambda c: func(*c.reshape(len(x), -1))
             else:
@@ -599,7 +599,6 @@ class LPUPropagation:
                 for dim in xshapes[i]:
                     size *= dim
                 clims = np.append(clims, clims[i] + size)
-
             if output_vars == 1:
                 fun = lambda c: func(
                     *[
@@ -810,7 +809,7 @@ class LPUPropagation:
                 "repeated measurements (repeat_dims keyword)."
             )
 
-        if not return_corr and output_vars == 1 and not return_Jacobian:
+        if not return_corr and not return_Jacobian:
             return u_func
 
         else:
@@ -822,12 +821,12 @@ class LPUPropagation:
                 returns[1] = corr
                 extra_index += 1
 
-            if output_vars > 1:
-                corr_out = np.mean(
-                    [outs[i][1 + extra_index] for i in range(n_repeats)], axis=0
-                )
-                returns[1 + extra_index] = corr_out
-                extra_index += 1
+                if output_vars > 1:
+                    corr_out = np.mean(
+                        [outs[i][1 + extra_index] for i in range(n_repeats)], axis=0
+                    )
+                    returns[1 + extra_index] = corr_out
+                    extra_index += 1
 
             if return_Jacobian:
                 returns[1 + extra_index] = [
