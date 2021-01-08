@@ -3,13 +3,12 @@
 """___Built-In Modules___"""
 
 """___Third-Party Modules___"""
-import numpy as np
-import emcee
-from multiprocessing import Pool
-import time
-import punpy.utilities.utilities as util
 import os
+
+import numpy as np
 from scipy.optimize import minimize
+
+import punpy.utilities.utilities as util
 
 os.environ["OMP_NUM_THREADS"] = "1"
 
@@ -65,7 +64,7 @@ class LPURetrieval:
         else:
             self.invcov = np.linalg.inv(np.ascontiguousarray(cov))
             # print(observed,cov,self.invcov)
-        self.Jx=Jx
+        self.Jx = Jx
         self.uplims = np.array(uplims)
         self.downlims = np.array(downlims)
 
@@ -73,18 +72,20 @@ class LPURetrieval:
         res = minimize(self.find_chisum, theta_0)
         if self.Jx is None:
             Jx = util.calculate_Jacobian(self.measurement_function, res.x)
+        else:
+            Jx = self.Jx
         # print("wer",res.x,theta_0,Jx,util.calculate_Jacobian(self.measurement_function,theta_0))
 
         return tuple(res.x) + tuple(self.process_inverse_jacobian(Jx, return_corr))
 
     def process_inverse_jacobian(self, J, return_corr=True):
-        print(
-            self.invcov,
-            J.T,
-            np.dot(J.T, self.invcov),
-            np.dot(np.dot(J.T, self.invcov), J),
-            np.linalg.inv(np.dot(np.dot(J.T, self.invcov), J)),
-        )
+        # print(
+        #     self.invcov,
+        #     J.T,
+        #     np.dot(J.T, self.invcov),
+        #     np.dot(np.dot(J.T, self.invcov), J),
+        #     np.linalg.inv(np.dot(np.dot(J.T, self.invcov), J)),
+        # )
         covx = np.linalg.inv(np.dot(np.dot(J.T, self.invcov), J))
         u_func = np.diag(covx) ** 0.5
         corr_x = util.convert_cov_to_corr(covx, u_func)

@@ -1,8 +1,9 @@
 """Use Monte Carlo to propagate uncertainties"""
 
-import numpy as np
-import numdifftools as nd
 import warnings
+
+import numdifftools as nd
+import numpy as np
 
 """___Authorship___"""
 __author__ = "Pieter De Vis"
@@ -36,7 +37,7 @@ def calculate_Jacobian(fun, x, Jx_diag=False, step=None):
             xj = np.zeros(int(len(x) / len(y)))
             for i in range(len(xj)):
                 xj[i] = x[i * len(y) + j]
-            print(xj.shape,xj)
+            print(xj.shape, xj)
             Jxj = Jfun(xj)
             for i in range(len(xj)):
                 Jx[i * len(y) + j, j] = Jxj[0][i]

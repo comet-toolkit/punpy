@@ -4,7 +4,6 @@ import re
 
 from setuptools import find_packages
 from setuptools import setup
-import versioneer
 
 
 def read(filename):
@@ -17,7 +16,7 @@ def read(filename):
 setup(
     #version=versioneer.get_version(),
     #cmdclass=versioneer.get_cmdclass(),
-    version='0.14',
+    version='0.15',
     name="punpy",
     url="https://gitlab.npl.co.uk/eco/eo/punpy",
     license="None",

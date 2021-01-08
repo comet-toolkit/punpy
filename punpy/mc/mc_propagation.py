@@ -1,8 +1,10 @@
 """Use Monte Carlo to propagate uncertainties"""
 
-import numpy as np
-from multiprocessing import Pool
 import warnings
+from multiprocessing import Pool
+
+import numpy as np
+
 import punpy.utilities.utilities as util
 
 """___Authorship___"""
@@ -616,15 +618,12 @@ class MCPropagation:
         if not return_corr and output_vars == 1 and not return_samples:
             u_func = np.array([outs[i] for i in range(n_repeats)])
 
-        elif (output_vars == 1):
+        elif output_vars == 1:
             u_func = np.array([outs[i][0] for i in range(n_repeats)])
 
-        elif (output_vars > 1 and not return_corr and not return_samples):
+        elif output_vars > 1 and not return_corr and not return_samples:
             u_func = np.array(
-                [
-                    [outs[i][ii] for i in range(n_repeats)]
-                    for ii in range(output_vars)
-                ]
+                [[outs[i][ii] for i in range(n_repeats)] for ii in range(output_vars)]
             )
 
         else:

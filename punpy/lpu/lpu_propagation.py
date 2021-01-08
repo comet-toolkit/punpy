@@ -1,8 +1,9 @@
 """Use Monte Carlo to propagate uncertainties"""
 
-import numpy as np
 from multiprocessing import Pool
-import numdifftools as nd
+
+import numpy as np
+
 import punpy.utilities.utilities as util
 
 """___Authorship___"""
@@ -586,7 +587,7 @@ class LPUPropagation:
         """
 
         xshapes = [xi.shape for xi in x]
-        if (xshapes.count(xshapes[0]) == len(xshapes)) and repeat_dims==-99:
+        if (xshapes.count(xshapes[0]) == len(xshapes)) and repeat_dims == -99:
             if output_vars == 1:
                 fun = lambda c: func(*c.reshape(len(x), -1))
             else:
