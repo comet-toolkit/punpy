@@ -3,11 +3,11 @@
 """___Built-In Modules___"""
 
 """___Third-Party Modules___"""
-import numpy as np
-import emcee
-from multiprocessing import Pool
-import time
 import os
+from multiprocessing import Pool
+
+import emcee
+import numpy as np
 
 os.environ["OMP_NUM_THREADS"] = "1"
 
@@ -97,25 +97,6 @@ class MCMCRetrieval:
                 return np.dot(np.dot(diff.T, self.invcov), diff)
         else:
             return np.inf
-
-    # def upper_triangular_to_symmetric(self,ut):
-    #     n = ut.shape[0]
-    #     try:
-    #         inds = inds_cache[n]
-    #     except KeyError:
-    #         inds = np.tri(n, k=-1, dtype=np.bool)
-    #         inds_cache[n] = inds
-    #     ut[inds] = ut.T[inds]
-
-    # def fast_positive_definite_inverse(self,m):
-    #     cholesky, info = lapack.dpotrf(m)
-    #     if info != 0:
-    #         raise ValueError('dpotrf failed on input {}'.format(m))
-    #     inv, info = lapack.dpotri(cholesky)
-    #     if info != 0:
-    #         raise ValueError('dpotri failed on input {}'.format(cholesky))
-    #     self.upper_triangular_to_symmetric(inv)
-    #     return inv
 
     def lnlike(self, theta):
         # print(theta,self.find_chisum(theta))
