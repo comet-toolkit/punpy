@@ -81,7 +81,7 @@ class MCPropagation:
         :rtype: array
         """
         (
-            yshape,
+            yshapes,
             u_x,
             n_repeats,
             repeat_shape,
@@ -99,14 +99,12 @@ class MCPropagation:
             fixed_corr_var,
             param_fixed,
         )
-
         if n_repeats > 0:
             outs = np.empty(n_repeats, dtype=object)
             for i in range(n_repeats):
                 xb, u_xb = util.select_repeated_x(
                     x, u_x, param_fixed, i, repeat_dims, repeat_shape
                 )
-
                 outs[i] = self.propagate_random(
                     func,
                     xb,
@@ -125,7 +123,7 @@ class MCPropagation:
 
             return self.combine_repeated_outs(
                 outs,
-                yshape,
+                yshapes,
                 len(x),
                 n_repeats,
                 repeat_shape,
@@ -155,6 +153,7 @@ class MCPropagation:
                 MC_data,
                 return_corr,
                 return_samples,
+                yshapes,
                 corr_axis,
                 fixed_corr,
                 PD_corr,
@@ -213,7 +212,7 @@ class MCPropagation:
         :rtype: array
         """
         (
-            yshape,
+            yshapes,
             u_x,
             n_repeats,
             repeat_shape,
@@ -257,7 +256,7 @@ class MCPropagation:
 
             return self.combine_repeated_outs(
                 outs,
-                yshape,
+                yshapes,
                 len(x),
                 n_repeats,
                 repeat_shape,
@@ -287,6 +286,7 @@ class MCPropagation:
                 MC_data,
                 return_corr,
                 return_samples,
+                yshapes,
                 corr_axis,
                 fixed_corr,
                 PD_corr,
@@ -343,7 +343,7 @@ class MCPropagation:
         :rtype: array
         """
         (
-            yshape,
+            yshapes,
             u_x,
             n_repeats,
             repeat_shape,
@@ -384,7 +384,7 @@ class MCPropagation:
 
             return self.combine_repeated_outs(
                 outs,
-                yshape,
+                yshapes,
                 len(x),
                 n_repeats,
                 repeat_shape,
@@ -431,6 +431,7 @@ class MCPropagation:
             MC_data,
             return_corr,
             return_samples,
+            yshapes,
             corr_axis,
             fixed_corr,
             PD_corr,
@@ -477,8 +478,10 @@ class MCPropagation:
         # find the shape
         if output_vars == 1:
             yshape = np.array(func(*x)).shape
+            yshapes = [np.array(func(*x)).shape]
         else:
             yshape = np.array(func(*x)[0]).shape
+            yshapes = [np.array(func(*x)[i]).shape for i in range(output_vars)]
 
         shapewarning = False
         for i in range(len(x)):
@@ -577,12 +580,12 @@ class MCPropagation:
                 print("corr_axis and repeat_axis keywords should not be the same.")
                 exit()
 
-        return yshape, u_x, n_repeats, repeat_shape, repeat_dims, corr_axis, fixed_corr
+        return yshapes, u_x, n_repeats, repeat_shape, repeat_dims, corr_axis, fixed_corr
 
     def combine_repeated_outs(
         self,
         outs,
-        yshape,
+        yshapes,
         lenx,
         n_repeats,
         repeat_shape,
@@ -596,8 +599,8 @@ class MCPropagation:
 
         :param outs: list of outputs of the repeated measurements
         :type outs: list[array]
-        :param yshape: shape of the measurand
-        :type yshape: tuple
+        :param yshapes: shape of the measurand
+        :type yshapes: tuple
         :param lenx: number of input quantities
         :type lenx: int
         :param n_repeats: number of repeated measurements
@@ -638,7 +641,24 @@ class MCPropagation:
             if output_vars == 1:
                 u_func = np.moveaxis(u_func, 0, repeat_dims[0])
             else:
-                u_func = np.moveaxis(u_func, 1, repeat_dims[0] + 1)
+                if all([yshapes[i]==yshapes[0] for i in range(len(yshapes))]):
+                    u_func = np.moveaxis(u_func, 1, repeat_dims[0] + 1)
+                else:
+                    u_funcb=u_func[:]
+                    u_func=np.empty(output_vars,dtype=object)
+                    for i in range(output_vars):
+                        u_func[i]=np.empty(yshapes[i])
+                        if len(yshapes[i]) == 0:
+                            u_func[i]= u_funcb[i]
+                        elif len(yshapes[i]) == 1:
+                            for ii in range(yshapes[i][0]):
+                                u_func[i][ii] = u_funcb[i][ii]
+                        elif len(yshapes[i]) == 2:
+                            for ii in range(yshapes[i][0]):
+                                for iii in range(yshapes[i][1]):
+                                        u_func[i][ii,iii] = u_funcb[i][iii][ii]
+                        else:
+                            print("this shape is not supported")
 
         else:
             if output_vars == 1:
@@ -650,10 +670,10 @@ class MCPropagation:
                 u_func = np.moveaxis(u_func, 1, repeat_dims[0] + 1)
                 u_func = np.moveaxis(u_func, 1, repeat_dims[1] + 1)
 
-        if (output_vars == 1 and u_func.shape != yshape) or (
-            output_vars > 1 and u_func[0].shape != yshape
+        if (output_vars == 1 and u_func.shape != yshapes[0]) or (
+            output_vars > 1 and u_func[0].shape != yshapes[0]
         ):
-            print(u_func.shape, yshape)
+            print(u_func.shape, yshapes[0])
             raise ValueError(
                 "The shape of the uncertainties does not match the shape"
                 "of the measurand. This is likely a problem with combining"
@@ -669,28 +689,33 @@ class MCPropagation:
             extra_index = 0
             if return_corr:
                 corr = np.mean([outs[i][1] for i in range(n_repeats)], axis=0)
-                if output_vars > 1:
-                    for j in range(output_vars):
-                        if not util.isPD(corr[j]):
-                            corr[j] = util.nearestPD_cholesky(
-                                corr[j], corr=True, return_cholesky=False
+                if all([yshapes[i]==yshapes[0] for i in range(len(yshapes))]):
+                    if output_vars > 1:
+                        for j in range(output_vars):
+                            if not util.isPD(corr[j]):
+                                corr[j] = util.nearestPD_cholesky(
+                                    corr[j], corr=True, return_cholesky=False
+                                )
+                    else:
+                        if not util.isPD(corr):
+                            corr = util.nearestPD_cholesky(
+                                corr, corr=True, return_cholesky=False
                             )
-                else:
-                    if not util.isPD(corr):
-                        corr = util.nearestPD_cholesky(
-                            corr, corr=True, return_cholesky=False
-                        )
+
                 returns[1] = corr
                 extra_index += 1
 
             if output_vars > 1:
-                corr_out = np.mean(
-                    [outs[i][1 + extra_index] for i in range(n_repeats)], axis=0
-                )
-                if not util.isPD(corr_out):
-                    corr_out = util.nearestPD_cholesky(
-                        corr_out, corr=True, return_cholesky=False
+                if all([yshapes[i]==yshapes[0] for i in range(len(yshapes))]):
+                    corr_out = np.mean(
+                        [outs[i][1 + extra_index] for i in range(n_repeats)], axis=0
                     )
+                    if not util.isPD(corr_out):
+                        corr_out = util.nearestPD_cholesky(
+                            corr_out, corr=True, return_cholesky=False
+                        )
+                else:
+                    corr_out=None
                 returns[1 + extra_index] = corr_out
                 extra_index += 1
 
@@ -712,6 +737,7 @@ class MCPropagation:
         data,
         return_corr,
         return_samples,
+        yshapes,
         corr_axis=-99,
         fixed_corr=None,
         PD_corr=True,
@@ -742,15 +768,39 @@ class MCPropagation:
         """
         if self.parallel_cores == 0:
             MC_y = np.array(func(*data))
+
         elif self.parallel_cores == 1:
             # In order to Process the MC iterations separately, the array with the input quantities has to be reordered
             # so that it has the same length (i.e. the first dimension) as the number of MCsteps.
             # First we move the axis with the same length as self.MCsteps from the last dimension to the fist dimension
             data2 = [np.moveaxis(dat, -1, 0) for dat in data]
-            # The function can then be applied to each of these MCsteps
-            MC_y2 = list(map(func, *data2))
-            # We then reorder to bring it back to the original shape
-            MC_y = np.moveaxis(MC_y2, 0, -1)
+            if output_vars==1 or all([yshapes[i]==yshapes[0] for i in range(len(yshapes))]):
+                # The function can then be applied to each of these MCsteps
+                MC_y2 = np.array(list(map(func,*data2)))
+
+                # We then reorder to bring it back to the original shape
+                MC_y = np.moveaxis(MC_y2, 0, -1)
+
+            else:
+                MC_y = np.empty(output_vars,dtype=object)
+                MC_y2 = np.array(list(map(func,*data2)))
+
+                for i in range(output_vars):
+                    MC_y[i]=np.empty(yshapes[i]+(self.MCsteps,))
+                    if len(yshapes[i])==0:
+                        for j in range(self.MCsteps):
+                            MC_y[i][j]=MC_y2[j,i]
+                    elif len(yshapes[i])==1:
+                        for ii in range(yshapes[i][0]):
+                            for j in range(self.MCsteps):
+                                MC_y[i][ii,j] =MC_y2[j,i][ii]
+                    elif len(yshapes[i])==2:
+                        for ii in range(yshapes[i][0]):
+                            for iii in range(yshapes[i][1]):
+                                for j in range(self.MCsteps):
+                                    MC_y[i][ii,iii,j] =MC_y2[j,i][ii,iii]
+                    else:
+                        print("this shape is not supported")
 
         else:
             # We again need to reorder the input quantities samples in order to be able to pass them to p.starmap
@@ -762,10 +812,21 @@ class MCPropagation:
             MC_y2 = np.array(pool.starmap(func, data2))
             pool.close()
             del pool
-            MC_y = np.moveaxis(MC_y2, 0, -1)
+            if output_vars == 1:
+                MC_y = np.moveaxis(MC_y2,0,-1)
+            else:
+                MC_y = np.empty(output_vars,dtype=object)
+                for i in range(output_vars):
+                    MC_y[i] = np.moveaxis(MC_y2[i],0,-1)
 
-        u_func = np.std(MC_y, axis=-1)
-
+        # if hasattr(MC_y[0,0], '__len__'):
+        #     print(yshape,np.array(MC_y[0,0]).shape,np.array(MC_y[1,0]).shape,np.array(MC_y[2,0]).shape,np.array(MC_y[3,0]).shape)
+        if output_vars == 1:
+            u_func = np.std(MC_y, axis=-1)
+        else:
+            u_func = np.empty(output_vars,dtype=object)
+            for i in range(output_vars):
+                u_func[i] = np.std(np.array(MC_y[i]), axis=-1)
         if not return_corr:
             if return_samples:
                 return u_func, MC_y, data
@@ -803,9 +864,14 @@ class MCPropagation:
                     else:
                         corr_ys[i] = fixed_corr
                 # calculate correlation matrix between the different outputs produced by the measurement function.
-                corr_out = np.corrcoef(MC_y.reshape((output_vars, -1))).astype(
-                    "float32"
-                )
+                if all([yshapes[i]==yshapes[0] for i in range(len(yshapes))]):
+                    corr_out = np.corrcoef(MC_y.reshape((output_vars, -1))).astype(
+                        "float32"
+                    )
+                else:
+                    corr_out = None# np.corrcoef([[np.mean(MC_y[i][:,j]) for j in range(self.MCsteps)] for i in range(output_vars)]).astype(
+                       # "float32")
+
                 if PD_corr:
                     if not util.isPD(corr_out):
                         corr_out = util.nearestPD_cholesky(
