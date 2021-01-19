@@ -3,11 +3,12 @@ Tests for mc propagation class
 """
 
 import unittest
+
 import numpy as np
 import numpy.testing as npt
+
 import punpy.utilities.utilities as util
 from punpy.mc.mc_propagation import MCPropagation
-import time
 
 """___Authorship___"""
 __author__ = "Pieter De Vis"
@@ -84,7 +85,7 @@ corr_d = np.ones(
     (2, 2)
 )  # np.array([[1,0.9999999,0.9999999],[0.99999999,1.,0.99999999],[0.9999999,0.9999999,1.]])
 
-yerr_uncorrd = [8 ** 0.5 * np.ones((20, 3, 4)), 8 ** 0.5 * np.ones((20, 3, 4))]
+yerr_uncorrd = [np.array(8 ** 0.5 * np.ones((20, 3, 4))), np.array(8 ** 0.5 * np.ones((20, 3, 4)))]
 yerr_corrd = [np.zeros((20, 3, 4)), 16 ** 0.5 * np.ones((20, 3, 4))]
 
 
@@ -159,7 +160,8 @@ class TestMCPropagation(unittest.TestCase):
             functiond, xsd, xerrsd, return_corr=True, output_vars=2
         )
         npt.assert_allclose(ucorrd[0], np.eye(len(ucorrd[0])), atol=0.06)
-        npt.assert_allclose(ufd, yerr_uncorrd, rtol=0.06)
+        npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
+        npt.assert_allclose(ufd[1], yerr_uncorrd[1], rtol=0.06)
 
         ufd, ucorrd, corr_out, yvalues, xvalues = prop.propagate_random(
             functiond,
@@ -186,7 +188,8 @@ class TestMCPropagation(unittest.TestCase):
             return_samples=True,
             output_vars=2,
         )
-        npt.assert_allclose(ufd, yerr_corrd, atol=0.1)
+        npt.assert_allclose(ufd[0], yerr_corrd[0], atol=0.1)
+        npt.assert_allclose(ufd[1], yerr_corrd[1], atol=0.1)
 
     def test_propagate_systematic_1D(self):
         prop = MCPropagation(30000)
@@ -369,7 +372,8 @@ class TestMCPropagation(unittest.TestCase):
             functiond, xsd, covd, return_corr=True, corr_axis=0, output_vars=2
         )
         npt.assert_allclose(ucorrd[0], np.eye(len(ucorrd[0])), atol=0.06)
-        npt.assert_allclose(ufd, yerr_uncorrd, rtol=0.06)
+        npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
+        npt.assert_allclose(ufd[1], yerr_uncorrd[1], rtol=0.06)
 
         covd = [
             util.convert_corr_to_cov(
@@ -381,7 +385,8 @@ class TestMCPropagation(unittest.TestCase):
             functiond, xsd, covd, return_corr=True, corr_axis=0, output_vars=2
         )
         npt.assert_allclose(ucorrd[1], np.ones_like(ucorrd[1]), atol=0.06)
-        npt.assert_allclose(ufd, yerr_uncorrd, rtol=0.06)
+        npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
+        npt.assert_allclose(ufd[1], yerr_uncorrd[1], rtol=0.06)
 
     def test_propagate_syst_corr_2D(self):
         prop = MCPropagation(20000)

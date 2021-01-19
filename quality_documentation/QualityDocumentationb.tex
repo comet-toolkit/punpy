@@ -31,7 +31,7 @@
   \endgroup
 }
 
-\input{CookiecutterMacros}
+
 \begin{document}
 
 \pagenumbering{roman}
@@ -52,14 +52,13 @@
 \graphicspath{{uml/}{latex/}}
 
 \section{Introduction}\label{introduction}
-This the quality documentation for the \packagename\ software package.
-\packagedescription\ The \packagename\ package is hosted on \package_url.
 
-The quality documentation consists of the following elements:
+This the quality documentation for the punpy software package.
+The punpy module is a Python software package to propagate random, structured and systematic uncertainties through a given measurement function. Quality documentation typically consists of the following elements:
 \begin{itemize}
-\item User requirements: Included as Section 2 in `\packagename\_requirements.docx' (a separate document in this folder).
+\item User requirements: Included as Section 2 in `punpy\_requirements.docx' (a separate document in this folder).
 
-\item Functional requirements: Included as Section 3 in `\packagename\_requirements.docx' (a separate document in this folder).
+\item Functional requirements: Included as Section 3 in `punpy\_requirements.docx' (a separate document in this folder).
 
 \item Software design: Described using UML diagrams in Section \ref{design}.
 
@@ -70,7 +69,7 @@ The quality documentation consists of the following elements:
 \item A table showing each of the tests that was run, how long they took, and what output was captured during testing.
 \item A test coverage report, showing how many lines of the software were covered by the combined tests.
 \end{itemize}
-\item User Manual: The \packagename documentation is included as Appendix \ref{UserManual}. This includes:
+\item User Manual: The punpy documentation is included as Appendix \ref{UserManual}. This includes:
 \begin{itemize}
 \item Installation guidelines.
 \item Overview of methods.
@@ -108,6 +107,6 @@ The software design is specified using the following UML diagrams\footnote{These
 \label{UserManual}
 \def\maketitle{}
 \def\tableofcontents{}
-\input{./latex/\packagename.tex}
+\input{./latex/punpy.tex}
 
 \end{document}
