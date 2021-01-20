@@ -195,14 +195,14 @@ pdf_compile:
   image:  charlesbaynham/ctanfull
   artifacts:
     paths:
-    - punpy.pdf
+    - user_manual.pdf
     expose_as: "Manual"
     name: ${CI_COMMIT_REF_SLUG}_manual.pdf
   script:
     - ls
     - cd quality_documentation/latex
     - make
-    - cp punpy.pdf ../../punpy.pdf
+    - cp user_manual.pdf ../../user_manual.pdf
 
 pdf_compile_all:
   needs: ["pdf_make","test_report"]
