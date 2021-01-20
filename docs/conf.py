@@ -12,14 +12,16 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import os
+import sys
+
 # If extensions (or modules to document with autodoc) are in another
 # directory, add these directories to sys.path here. If the directory is
 # relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
 #
 import punpy
-import os
-import sys
+
 sys.path.insert(0, os.path.abspath('..'))
 
 project_title = "punpy".replace("_", " ").title()
@@ -138,7 +140,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass
 # [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'punpy.tex',
+    (master_doc, 'user_manual.tex',
      '{} Documentation'.format(project_title),
      'Pieter De Vis', 'manual'),
 ]
