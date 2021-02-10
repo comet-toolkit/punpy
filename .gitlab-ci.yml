@@ -2,13 +2,13 @@
 image: "python:3.8"
 
 stages:
+  - Static Analysis
   - Readthedocs Documentation
   - Build latex Documentation
   - Publish latex Documentation
   - Test
   #- Full test
   - Publish test report
-  - Static Analysis
   - Combine quality documentation
 
 
