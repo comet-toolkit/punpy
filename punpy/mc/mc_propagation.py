@@ -99,6 +99,7 @@ class MCPropagation:
             fixed_corr_var,
             param_fixed,
         )
+
         if n_repeats > 0:
             outs = np.empty(n_repeats, dtype=object)
             for i in range(n_repeats):
