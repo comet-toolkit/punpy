@@ -53,14 +53,17 @@
 \graphicspath{{uml/}{latex/}}
 
 \section{Introduction}\label{introduction}
+
 This the quality documentation for the \packagename\ software package.
 \packagedescription\ The \packagename\ package is hosted on \packageurl.
 
-The quality documentation consists of the following elements:
+The Quality documentation consists of the following elements:
 \begin{itemize}
 \item User requirements: Included as Section 2 in `\packagename\_requirements.docx' (a separate document in this folder).
 
 \item Functional requirements: Included as Section 3 in `\packagename\_requirements.docx' (a separate document in this folder).
+
+\item SIL assesment: The Software Integrity Level (SIL) is determined from assessments of the criticality of usage and the complexity of the program in Section \ref{SIL-assessment} of this document.
 
 \item Software design: Described using UML diagrams in Section \ref{design}.
 
@@ -80,6 +83,9 @@ The quality documentation consists of the following elements:
 \item Sphinx automated API documentation from docstrings in python code.
 \end{itemize}
 \end{itemize}
+
+\clearpage
+\input{base/\sil}
 
 \clearpage
 \section{Software design}\label{design}
