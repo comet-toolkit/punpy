@@ -85,7 +85,10 @@ corr_d = np.ones(
     (2, 2)
 )  # np.array([[1,0.9999999,0.9999999],[0.99999999,1.,0.99999999],[0.9999999,0.9999999,1.]])
 
-yerr_uncorrd = [np.array(8 ** 0.5 * np.ones((20, 3, 4))), np.array(8 ** 0.5 * np.ones((20, 3, 4)))]
+yerr_uncorrd = [
+    np.array(8 ** 0.5 * np.ones((20, 3, 4))),
+    np.array(8 ** 0.5 * np.ones((20, 3, 4))),
+]
 yerr_corrd = [np.zeros((20, 3, 4)), 16 ** 0.5 * np.ones((20, 3, 4))]
 
 

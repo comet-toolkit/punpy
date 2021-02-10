@@ -330,12 +330,13 @@ def convert_cov_to_corr(cov, u):
     """
     return 1 / u.reshape((-1, 1)) * cov / (u.reshape((1, -1)))
 
-  # def fast_positive_definite_inverse(self,m):
-    #     cholesky, info = lapack.dpotrf(m)
-    #     if info != 0:
-    #         raise ValueError('dpotrf failed on input {}'.format(m))
-    #     inv, info = lapack.dpotri(cholesky)
-    #     if info != 0:
-    #         raise ValueError('dpotri failed on input {}'.format(cholesky))
-    #     self.upper_triangular_to_symmetric(inv)
-    #     return inv
+
+# def fast_positive_definite_inverse(self,m):
+#     cholesky, info = lapack.dpotrf(m)
+#     if info != 0:
+#         raise ValueError('dpotrf failed on input {}'.format(m))
+#     inv, info = lapack.dpotri(cholesky)
+#     if info != 0:
+#         raise ValueError('dpotri failed on input {}'.format(cholesky))
+#     self.upper_triangular_to_symmetric(inv)
+#     return inv

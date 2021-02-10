@@ -2,15 +2,14 @@
 image: "python:3.8"
 
 stages:
-  - Build Documentation
-  - Publish Documentation
-  - Static Analysis
+  - Readthedocs Documentation
+  - Build latex Documentation
+  - Publish latex Documentation
   - Test
-  - Full test
+  #- Full test
   - Publish test report
-  - Publish Pages
-  # - Count pdf pages
-  - Combine Documentation
+  - Static Analysis
+  - Combine quality documentation
 
 
 ### Setup cache ###
@@ -99,20 +98,26 @@ mypy:
       junit: cov_report.xml
     expire_in: 1 hour
 
-# tox-3.6:
-#     extends: ".tox"
-#     stage: "Test"
-#     image: "python:3.6"
+tox-3.6:
+  extends: ".tox"
+  stage: "Test"
+  image: "python:3.6"
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: always
 
 tox-3.7:
-    extends: ".tox"
-    stage: "Test"
-    image: "python:3.7"
+  extends: ".tox"
+  stage: "Test"
+  image: "python:3.7"
 
-# tox-3.8:
-#     extends: ".tox"
-#     stage: "Test"
-#     image: "python:3.8"
+tox-3.8:
+  extends: ".tox"
+  stage: "Test"
+  image: "python:3.8"
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: always
   
 # tox_slowtests:
 #     extends: .py_venv
@@ -163,7 +168,7 @@ test_report:
 # Upload the documentation to pages if it's a tagged commit
 pages:
   extends: .py_venv
-  stage: Publish Pages
+  stage: Readthedocs Documentation
   needs: []
   script:
     - sphinx-build docs public -b html
@@ -180,7 +185,7 @@ pages:
   
 pdf_make:  
   extends: .py_venv
-  stage: Build Documentation
+  stage: Build latex Documentation
   needs: []
   script:
     - sphinx-build docs latex -b latex
@@ -195,7 +200,7 @@ pdf_make:
 
 pdf_compile:
   needs: ["pdf_make"]
-  stage: Publish Documentation
+  stage: Publish latex Documentation
   image:  charlesbaynham/ctanfull
   artifacts:
     paths:
@@ -213,7 +218,7 @@ pdf_compile:
 
 pdf_compile_all:
   needs: ["pdf_make","test_report"]
-  stage: Combine Documentation
+  stage: Combine quality documentation
   image:  charlesbaynham/ctanfull
   artifacts:
     paths:
