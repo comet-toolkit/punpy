@@ -113,6 +113,7 @@ class TestMCPropagation(unittest.TestCase):
         uf, ucorr, yvalues, xvalues = prop.propagate_random(
             function, xs, xerrs, return_corr=True, return_samples=True
         )
+
         npt.assert_allclose(uf, yerr_uncorr, rtol=0.06)
 
         uf, yvalues, xvalues = prop.propagate_random(
