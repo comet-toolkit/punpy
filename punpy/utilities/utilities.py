@@ -4,6 +4,7 @@ import warnings
 
 import numdifftools as nd
 import numpy as np
+from numba import jit
 
 """___Authorship___"""
 __author__ = "Pieter De Vis"
@@ -180,7 +181,140 @@ def select_repeated_x(x, u_x, param_fixed, i, repeat_dims, repeat_shape):
     return xb, u_xb
 
 
+
+def nearestPD_cholesky_short(A, diff=0.001, corr=False, return_cholesky=True):
+    """
+    Find the nearest positive-definite matrix
+
+    :param A: correlation matrix or covariance matrix
+    :type A: array
+    :return: nearest positive-definite matrix
+    :rtype: array
+    """
+    A2= (A + A.T) / 2
+    i=1
+    while not isPD(A2):
+        A2+=0.00001*np.diag(A)*2**i
+        i+=1
+
+    if corr == True:
+        A2 = correlation_from_covariance(A2)
+        maxdiff = np.max(np.abs(A - A2))
+        if maxdiff > diff:
+            raise ValueError(
+                "One of the correlation matrices is not postive definite. "
+                "Correlation matrices need to be at least positive "
+                "semi-definite."
+            )
+        else:
+            warnings.warn(
+                "One of the correlation matrices is not positive "
+                "definite. It has been slightly changed (maximum difference "
+                "of %s) to accomodate our method." % (maxdiff)
+            )
+            if return_cholesky:
+                return np.linalg.cholesky(A2)
+            else:
+                return A2
+    else:
+        maxdiff = np.max(np.abs(A - A2) / (A2 + diff))
+        if maxdiff > diff:
+            raise ValueError(
+                "One of the provided covariance matrices is not postive "
+                "definite. Covariance matrices need to be at least positive "
+                "semi-definite. Please check your covariance matrix."
+            )
+        else:
+            warnings.warn(
+                "One of the provided covariance matrix is not positive"
+                "definite. It has been slightly changed (maximum difference of "
+                "%s percent) to accomodate our method." % (maxdiff * 100)
+            )
+            if return_cholesky:
+                return np.linalg.cholesky(A2)
+            else:
+                return A2
+
+
+@jit()
 def nearestPD_cholesky(A, diff=0.001, corr=False, return_cholesky=True):
+    """
+    Find the nearest positive-definite matrix
+
+    :param A: correlation matrix or covariance matrix
+    :type A: array
+    :return: nearest positive-definite matrix
+    :rtype: array
+
+    Copied and adapted from [1] under BSD license.
+    A Python/Numpy port of John D'Errico's `nearestSPD` MATLAB code [2], which
+    credits [3].
+    [1] https://gist.github.com/fasiha/fdb5cec2054e6f1c6ae35476045a0bbd
+    [2] https://www.mathworks.com/matlabcentral/fileexchange/42885-nearestspd
+    [3] N.J. Higham, "Computing a nearest symmetric positive semidefinite
+    matrix" (1988): https://doi.org/10.1016/0024-3795(88)90223-6
+    """
+
+    B = (A + A.T) / 2
+    # _, s, V = np.linalg.svd(B)
+    #
+    # H = np.dot(V.T, np.dot(np.diag(s), V))
+    #
+    # A2 = (B + H) / 2
+    #
+    # A3 = (A2 + A2.T) / 2
+    A3=B
+
+    spacing = np.spacing(np.linalg.norm(A))
+    I = np.eye(A.shape[0])
+    A3+=I*spacing
+    k = 1
+    while not isPD(A3):
+        mineig = np.min(np.real(np.linalg.eigvals(A3)))
+        print(k,spacing,mineig)
+        A3 += I * (-mineig * k ** 2 + spacing)
+        k += 1
+
+    if corr == True:
+        A3 = correlation_from_covariance(A3)
+        maxdiff = np.max(np.abs(A - A3))
+        if maxdiff > diff:
+            raise ValueError(
+                "One of the correlation matrices is not postive definite. "
+                "Correlation matrices need to be at least positive "
+                "semi-definite."
+            )
+        else:
+            warnings.warn(
+                "One of the correlation matrices is not positive "
+                "definite. It has been slightly changed (maximum difference "
+                "of %s) to accomodate our method." % (maxdiff)
+            )
+            if return_cholesky:
+                return np.linalg.cholesky(A3)
+            else:
+                return A3
+    else:
+        maxdiff = np.max(np.abs(A - A3) / (A3 + diff))
+        if maxdiff > diff:
+            raise ValueError(
+                "One of the provided covariance matrices is not postive "
+                "definite. Covariance matrices need to be at least positive "
+                "semi-definite. Please check your covariance matrix."
+            )
+        else:
+            warnings.warn(
+                "One of the provided covariance matrix is not positive"
+                "definite. It has been slightly changed (maximum difference of "
+                "%s percent) to accomodate our method." % (maxdiff * 100)
+            )
+            if return_cholesky:
+                return np.linalg.cholesky(A3)
+            else:
+                return A3
+
+
+def nearestPD_cholesky_long(A, diff=0.001, corr=False, return_cholesky=True):
     """
     Find the nearest positive-definite matrix
 

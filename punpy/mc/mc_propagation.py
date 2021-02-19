@@ -293,7 +293,7 @@ class MCPropagation:
                 PD_corr,
                 output_vars,
             )
-
+            
     def propagate_cov(
         self,
         func,
@@ -583,6 +583,7 @@ class MCPropagation:
 
         return yshapes, u_x, n_repeats, repeat_shape, repeat_dims, corr_axis, fixed_corr
 
+
     def combine_repeated_outs(
         self,
         outs,
@@ -731,6 +732,7 @@ class MCPropagation:
                 ]
 
             return returns
+
 
     def process_samples(
         self,
@@ -885,6 +887,7 @@ class MCPropagation:
                 else:
                     return u_func, corr_ys, corr_out
 
+
     def calculate_corr(self, MC_y, corr_axis=-99):
         """
         Calculate the correlation matrix between the MC-generated samples of output quantities.
@@ -954,6 +957,7 @@ class MCPropagation:
 
         return corr_y
 
+
     def generate_samples_correlated(self, x, u_x, corr_x, i):
         """
         Generate correlated MC samples of input quantity with given uncertainties and correlation matrix.
@@ -994,6 +998,7 @@ class MCPropagation:
 
         return MC_data
 
+
     def generate_samples_random(self, param, u_param):
         """
         Generate MC samples of input quantity with random (Gaussian) uncertainties.
@@ -1027,6 +1032,7 @@ class MCPropagation:
         else:
             print("parameter shape not supported")
             exit()
+
 
     def generate_samples_systematic(self, param, u_param):
         """
@@ -1066,6 +1072,7 @@ class MCPropagation:
             print("parameter shape not supported")
             exit()
 
+
     def generate_samples_cov(self, param, cov_param):
         """
         Generate correlated MC samples of input quantity with a given covariance matrix.
@@ -1087,6 +1094,7 @@ class MCPropagation:
             np.dot(L, np.random.normal(size=(len(param), self.MCsteps)))
             + param[:, None]
         )
+
 
     def correlate_samples_corr(self, samples, corr):
         """

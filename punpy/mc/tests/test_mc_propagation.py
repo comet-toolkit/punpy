@@ -229,13 +229,11 @@ class TestMCPropagation(unittest.TestCase):
         ufb, ucorrb = prop.propagate_systematic(
             functionb, xsb, xerrsb, return_corr=True, repeat_dims=1
         )
-        print(ucorrb.shape)
         npt.assert_allclose(ucorrb, np.ones_like(ucorrb), atol=0.06)
 
         ufb, ucorrb = prop.propagate_systematic(
             functionb, xsb, xerrsb, return_corr=True, corr_axis=0
         )
-        print(ucorrb.shape)
         npt.assert_allclose(ucorrb, np.ones_like(ucorrb), atol=0.06)
 
         ufb = prop.propagate_systematic(
