@@ -4,7 +4,6 @@ import warnings
 
 import numdifftools as nd
 import numpy as np
-from numba import jit
 
 """___Authorship___"""
 __author__ = "Pieter De Vis"
