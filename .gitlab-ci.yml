@@ -94,8 +94,6 @@ mypy:
     paths:
       - test_report/
       - test_report/cov_report
-    reports:
-      junit: cov_report.xml
     expire_in: 1 hour
 
 tox-3.6:

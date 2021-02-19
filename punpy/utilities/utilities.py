@@ -235,7 +235,7 @@ def nearestPD_cholesky_short(A, diff=0.001, corr=False, return_cholesky=True):
                 return A2
 
 
-@jit()
+
 def nearestPD_cholesky(A, diff=0.001, corr=False, return_cholesky=True):
     """
     Find the nearest positive-definite matrix
