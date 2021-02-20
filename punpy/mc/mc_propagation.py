@@ -15,6 +15,7 @@ __email__ = "pieter.de.vis@npl.co.uk"
 __status__ = "Development"
 
 
+
 class MCPropagation:
     def __init__(self, steps, parallel_cores=0):
         """
