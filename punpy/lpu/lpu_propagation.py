@@ -803,7 +803,7 @@ class LPUPropagation:
         if (output_vars == 1 and u_func.shape != yshape) or (
             output_vars > 1 and u_func[0].shape != yshape
         ):
-            print(u_func.shape, yshape)
+            # print(u_func.shape, yshape)
             raise ValueError(
                 "The shape of the uncertainties does not match the shape"
                 "of the measurand. This is likely a problem with combining"

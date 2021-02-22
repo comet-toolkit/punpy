@@ -32,12 +32,12 @@ def calculate_Jacobian(fun, x, Jx_diag=False, step=None):
         y = fun(x)
         Jfun = nd.Jacobian(fun)
         Jx = np.zeros((len(x), len(y)))
-        print(Jx.shape)
+        # print(Jx.shape)
         for j in range(len(y)):
             xj = np.zeros(int(len(x) / len(y)))
             for i in range(len(xj)):
                 xj[i] = x[i * len(y) + j]
-            print(xj.shape, xj)
+            # print(xj.shape, xj)
             Jxj = Jfun(xj)
             for i in range(len(xj)):
                 Jx[i * len(y) + j, j] = Jxj[0][i]
@@ -180,7 +180,6 @@ def select_repeated_x(x, u_x, param_fixed, i, repeat_dims, repeat_shape):
     return xb, u_xb
 
 
-
 def nearestPD_cholesky_short(A, diff=0.001, corr=False, return_cholesky=True):
     """
     Find the nearest positive-definite matrix
@@ -190,11 +189,11 @@ def nearestPD_cholesky_short(A, diff=0.001, corr=False, return_cholesky=True):
     :return: nearest positive-definite matrix
     :rtype: array
     """
-    A2= (A + A.T) / 2
-    i=1
+    A2 = (A + A.T) / 2
+    i = 1
     while not isPD(A2):
-        A2+=0.00001*np.diag(A)*2**i
-        i+=1
+        A2 += 0.00001 * np.diag(A) * 2 ** i
+        i += 1
 
     if corr == True:
         A2 = correlation_from_covariance(A2)
@@ -235,7 +234,6 @@ def nearestPD_cholesky_short(A, diff=0.001, corr=False, return_cholesky=True):
                 return A2
 
 
-
 def nearestPD_cholesky(A, diff=0.001, corr=False, return_cholesky=True):
     """
     Find the nearest positive-definite matrix
@@ -262,15 +260,15 @@ def nearestPD_cholesky(A, diff=0.001, corr=False, return_cholesky=True):
     # A2 = (B + H) / 2
     #
     # A3 = (A2 + A2.T) / 2
-    A3=B
+    A3 = B
 
     spacing = np.spacing(np.linalg.norm(A))
     I = np.eye(A.shape[0])
-    A3+=I*spacing
+    A3 += I * spacing
     k = 1
     while not isPD(A3):
         mineig = np.min(np.real(np.linalg.eigvals(A3)))
-        print(k,spacing,mineig)
+        # print(k,spacing,mineig)
         A3 += I * (-mineig * k ** 2 + spacing)
         k += 1
 

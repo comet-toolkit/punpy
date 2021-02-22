@@ -293,7 +293,7 @@ class MCPropagation:
                 PD_corr,
                 output_vars,
             )
-            
+
     def propagate_cov(
         self,
         func,
