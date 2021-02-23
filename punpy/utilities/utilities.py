@@ -272,7 +272,6 @@ def nearestPD_cholesky(A, diff=0.001, corr=False, return_cholesky=True):
         A3 += I * (-mineig * k ** 2 + spacing)
         k += 1
 
-
     if corr == True:
         A3 = correlation_from_covariance(A3)
         maxdiff = np.max(np.abs(A - A3))
