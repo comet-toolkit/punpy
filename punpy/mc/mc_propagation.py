@@ -16,7 +16,7 @@ __status__ = "Development"
 
 
 class MCPropagation:
-    def __init__(self, steps, parallel_cores=0):
+    def __init__(self, steps, parallel_cores=0, dtype=None):
         """
         Initialise MC Propagator
 
@@ -28,6 +28,9 @@ class MCPropagation:
 
         self.MCsteps = steps
         self.parallel_cores = parallel_cores
+        self.dtype = dtype
+        if parallel_cores>1:
+            self.pool = Pool(self.parallel_cores)
 
     def propagate_random(
         self,
@@ -81,8 +84,7 @@ class MCPropagation:
         :rtype: array
         """
         (
-            yshapes,
-            u_x,
+            yshapes,x,u_x,corr_x,
             n_repeats,
             repeat_shape,
             repeat_dims,
@@ -214,7 +216,9 @@ class MCPropagation:
         """
         (
             yshapes,
+            x,
             u_x,
+            corr_x,
             n_repeats,
             repeat_shape,
             repeat_dims,
@@ -344,8 +348,7 @@ class MCPropagation:
         :rtype: array
         """
         (
-            yshapes,
-            u_x,
+            yshapes,x,u_x,corr_x,
             n_repeats,
             repeat_shape,
             repeat_dims,
@@ -476,6 +479,10 @@ class MCPropagation:
         :rtype: tuple, list[array], int, int, int, array
         """
 
+        # Set up repeat_axis and repeat_dims for proper use in recursive function.
+        if isinstance(repeat_dims,int):
+            repeat_dims = [repeat_dims]
+
         # find the shape
         if output_vars == 1:
             yshape = np.array(func(*x)).shape
@@ -486,7 +493,7 @@ class MCPropagation:
 
         shapewarning = False
         for i in range(len(x)):
-            if hasattr(x[i], "__len__"):
+            if hasattr(x[i], "__shape__"):
                 if param_fixed is not None:
                     if (
                         x[i].shape != yshape
@@ -497,8 +504,11 @@ class MCPropagation:
                 else:
                     if x[i].shape != yshape and self.parallel_cores == 0:
                         shapewarning = True
-            elif self.parallel_cores == 0:
-                shapewarning = True
+            else:
+                if self.dtype is not None:
+                    x[i]=np.array(x[i],dtype=self.dtype)
+                if self.parallel_cores == 0:
+                    shapewarning = True
 
         if shapewarning:
             warnings.warn(
@@ -521,6 +531,17 @@ class MCPropagation:
                     u_x[i] = np.zeros(x[i].shape)
                 else:
                     u_x[i] = 0.0
+
+            if u_x is not None:
+                if u_x[i] is not None:
+                    if self.dtype is not None:
+                        u_x[i] = np.array(u_x[i],dtype=self.dtype)
+
+            if corr_x is not None:
+                if corr_x[i] is not None:
+                    if self.dtype is not None:
+                        corr_x[i]= np.array(corr_x[i],dtype=self.dtype)
+
             if np.sum(u_x[i]) != 0 and fixed_corr_var == True:
                 count += 1
                 var = i
@@ -551,9 +572,7 @@ class MCPropagation:
         else:
             fixed_corr = None
 
-        # Set up repeat_axis and repeat_dims for proper use in recursive function.
-        if isinstance(repeat_dims, int):
-            repeat_dims = [repeat_dims]
+
 
         if len(repeat_dims) == 1:
             if repeat_dims[0] >= 0:
@@ -581,7 +600,7 @@ class MCPropagation:
                 print("corr_axis and repeat_axis keywords should not be the same.")
                 exit()
 
-        return yshapes, u_x, n_repeats, repeat_shape, repeat_dims, corr_axis, fixed_corr
+        return yshapes, x, u_x, corr_x, n_repeats, repeat_shape, repeat_dims, corr_axis, fixed_corr
 
     def combine_repeated_outs(
         self,
@@ -774,7 +793,11 @@ class MCPropagation:
             # In order to Process the MC iterations separately, the array with the input quantities has to be reordered
             # so that it has the same length (i.e. the first dimension) as the number of MCsteps.
             # First we move the axis with the same length as self.MCsteps from the last dimension to the fist dimension
-            data2 = [np.moveaxis(dat, -1, 0) for dat in data]
+            if self.dtype is not None:
+                data2 = [np.moveaxis(dat, -1, 0).astype(self.dtype) for dat in data]
+            else:
+                data2 = [np.moveaxis(dat, -1, 0) for dat in data]
+
             if output_vars == 1 or all(
                 [yshapes[i] == yshapes[0] for i in range(len(yshapes))]
             ):
@@ -808,13 +831,15 @@ class MCPropagation:
         else:
             # We again need to reorder the input quantities samples in order to be able to pass them to p.starmap
             # We here use lists to iterate over and order them slightly different as the case above.
-            data2 = [
-                [data[j][..., i] for j in range(len(data))] for i in range(self.MCsteps)
-            ]
-            pool = Pool(self.parallel_cores)
-            MC_y2 = np.array(pool.starmap(func, data2))
-            pool.close()
-            del pool
+            if self.dtype is not None:
+                data2 = np.empty(self.MCsteps,dtype=object)
+                for i in range(self.MCsteps):
+                    data2[i] = [data[j][...,i] for j in range(len(data))]
+            else:
+                data2=np.empty(self.MCsteps)
+                for i in range(self.MCsteps):
+                    data2[i] = [data[j][..., i] for j in range(len(data))]
+            MC_y2 = np.array(self.pool.starmap(func, data2), dtype=self.dtype)
             if output_vars == 1:
                 MC_y = np.moveaxis(MC_y2, 0, -1)
             else:
@@ -905,16 +930,16 @@ class MCPropagation:
 
         elif len(MC_y.shape) == 3:
             if corr_axis == 0:
-                corr_ys = np.empty(len(MC_y[0]), dtype=object)
+                corr_ys = np.zeros(MC_y[:,0].shape)
                 for i in range(len(MC_y[0])):
-                    corr_ys[i] = np.corrcoef(MC_y[:, i])
-                corr_y = np.mean(corr_ys, axis=0)
+                    corr_ys += np.corrcoef(MC_y[:, i])
+                corr_y = corr_ys/len(MC_y[0])
 
             elif corr_axis == 1:
-                corr_ys = np.empty(len(MC_y), dtype=object)
+                corr_ys = np.zeros(MC_y[0].shape)
                 for i in range(len(MC_y)):
-                    corr_ys[i] = np.corrcoef(MC_y[i])
-                corr_y = np.mean(corr_ys, axis=0)
+                    corr_ys += np.corrcoef(MC_y[i])
+                corr_y = corr_ys/len(MC_y)
 
             else:
                 MC_y = MC_y.reshape((MC_y.shape[0] * MC_y.shape[1], self.MCsteps))
@@ -922,25 +947,25 @@ class MCPropagation:
 
         elif len(MC_y.shape) == 4:
             if corr_axis == 0:
-                corr_ys = np.empty(len(MC_y[0]) * len(MC_y[0, 0]), dtype=object)
+                corr_ys = np.zeros(MC_y[:, 0, 0].shape)
                 for i in range(len(MC_y[0])):
                     for j in range(len(MC_y[0, 0])):
-                        corr_ys[i + j * len(MC_y[0])] = np.corrcoef(MC_y[:, i, j])
-                corr_y = np.mean(corr_ys, axis=0)
+                        corr_ys+= np.corrcoef(MC_y[:, i, j])
+                corr_y = corr_ys/(len(MC_y[0]) * len(MC_y[0, 0]))
 
             elif corr_axis == 1:
-                corr_ys = np.empty(len(MC_y) * len(MC_y[0, 0]), dtype=object)
+                corr_ys = np.zeros(MC_y[0, :, 0].shape)
                 for i in range(len(MC_y)):
                     for j in range(len(MC_y[0, 0])):
-                        corr_ys[i + j * len(MC_y)] = np.corrcoef(MC_y[i, :, j])
-                corr_y = np.mean(corr_ys, axis=0)
+                        corr_ys+= np.corrcoef(MC_y[i, :, j])
+                corr_y = corr_ys/(len(MC_y) * len(MC_y[0, 0]))
 
             elif corr_axis == 2:
-                corr_ys = np.empty(len(MC_y) * len(MC_y[0]), dtype=object)
+                corr_ys = np.zeros(MC_y[0, 0].shape)
                 for i in range(len(MC_y)):
                     for j in range(len(MC_y[0])):
-                        corr_ys[i + j * len(MC_y)] = np.corrcoef(MC_y[i, j])
-                corr_y = np.mean(corr_ys, axis=0)
+                        corr_ys+= np.corrcoef(MC_y[i, j])
+                corr_y = corr_ys/(len(MC_y) * len(MC_y[0]))
             else:
                 MC_y = MC_y.reshape(
                     (MC_y.shape[0] * MC_y.shape[1] * MC_y.shape[2], self.MCsteps)
@@ -1006,10 +1031,12 @@ class MCPropagation:
         :rtype: array
         """
         if not hasattr(param, "__len__"):
-            return np.random.normal(size=self.MCsteps) * u_param + param
+            return np.random.normal(size=self.MCsteps).astype(self.dtype) * u_param + param
+        elif len(param.shape) ==0:
+            return np.random.normal(size=self.MCsteps).astype(self.dtype) * u_param + param
         elif len(param.shape) == 1:
             return (
-                np.random.normal(size=(len(param), self.MCsteps)) * u_param[:, None]
+                np.random.normal(size=(len(param), self.MCsteps)).astype(self.dtype) * u_param[:, None]
                 + param[:, None]
             )
         elif len(param.shape) == 2:
@@ -1020,12 +1047,12 @@ class MCPropagation:
             )
         elif len(param.shape) == 3:
             return (
-                np.random.normal(size=param.shape + (self.MCsteps,))
+                np.random.normal(size=param.shape + (self.MCsteps,)).astype(self.dtype)
                 * u_param[:, :, :, None]
                 + param[:, :, :, None]
             )
         else:
-            print("parameter shape not supported")
+            print("parameter shape not supported: ", param.shape, param)
             exit()
 
     def generate_samples_systematic(self, param, u_param):
@@ -1040,17 +1067,19 @@ class MCPropagation:
         :rtype: array
         """
         if not hasattr(param, "__len__"):
-            return np.random.normal(size=self.MCsteps) * u_param + param
+            return np.random.normal(size=self.MCsteps).astype(self.dtype) * u_param + param
+        elif len(param.shape) ==0:
+            return np.random.normal(size=self.MCsteps).astype(self.dtype) * u_param + param
         elif len(param.shape) == 1:
             return (
-                np.dot(u_param[:, None], np.random.normal(size=self.MCsteps)[None, :])
+                np.dot(u_param[:, None], np.random.normal(size=self.MCsteps).astype(self.dtype)[None, :])
                 + param[:, None]
             )
         elif len(param.shape) == 2:
             return (
                 np.dot(
                     u_param[:, :, None],
-                    np.random.normal(size=self.MCsteps)[:, None, None],
+                    np.random.normal(size=self.MCsteps).astype(self.dtype)[:, None, None],
                 )[:, :, :, 0]
                 + param[:, :, None]
             )
@@ -1058,7 +1087,7 @@ class MCPropagation:
             return (
                 np.dot(
                     u_param[:, :, :, None],
-                    np.random.normal(size=self.MCsteps)[:, None, None, None],
+                    np.random.normal(size=self.MCsteps).astype(self.dtype)[:, None, None, None],
                 )[:, :, :, :, 0, 0]
                 + param[:, :, :, None]
             )
@@ -1084,7 +1113,7 @@ class MCPropagation:
             L = util.nearestPD_cholesky(cov_param)
 
         return (
-            np.dot(L, np.random.normal(size=(len(param), self.MCsteps)))
+            np.dot(L, np.random.normal(size=(len(param), self.MCsteps)).astype(self.dtype))
             + param[:, None]
         )
 
@@ -1111,8 +1140,8 @@ class MCPropagation:
 
             # Cholesky needs to be applied to Gaussian distributions with mean=0 and std=1,
             # We first calculate the mean and std for each input quantity
-            means = np.array([np.mean(samples[i]) for i in range(len(samples))])
-            stds = np.array([np.std(samples[i]) for i in range(len(samples))])
+            means = np.array([np.mean(samples[i]) for i in range(len(samples))],dtype=self.dtype)
+            stds = np.array([np.std(samples[i]) for i in range(len(samples))],dtype=self.dtype)
 
             # We normalise the samples with the mean and std, then apply Cholesky, and finally reapply the mean and std.
             if all(stds != 0):
