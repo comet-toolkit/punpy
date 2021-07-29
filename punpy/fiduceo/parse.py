@@ -2,6 +2,8 @@
 
 from multiprocessing import Pool
 
+import numpy as np
+
 """___Authorship___"""
 __author__ = "Pieter De Vis"
 __created__ = "30/03/2019"
@@ -28,9 +30,9 @@ class FiduceoParser:
             self.pool = Pool(self.parallel_cores)
 
     def parse_and_propagate_variable(self,func,xarr,corr_between=None,corrdim=None,repeat_dims=None):
-        vars=parse_vars(func)
-        x=parse_x(xarr,vars)
-        u_x=parse_u_x(xarr,vars)
+        vars=self.parse_vars(func)
+        x=self.parse_x(xarr,vars)
+        u_x=self.parse_u_x(xarr,vars)
 
         corr_x=[]
         for ivar,var in enumerate(vars):
@@ -78,3 +80,18 @@ class FiduceoParser:
         :rtype:
         """
 
+    def parse_var(self,func):
+        vars = func["variables"]
+        return vars
+
+    def parse_x(self, xarr,vars):
+        x=np.empty(len(vars),dtype=object)
+        for ivar,var in enumerate(vars):
+            x[ivar]=xarr[vars]
+        return x
+
+    def parse_u_x(self,xarr,vars):
+        u_x = np.empty(len(vars),dtype=object)
+        for ivar,var in enumerate(vars):
+            u_x[ivar] = xarr["unc_"+vars]
+        return u_x

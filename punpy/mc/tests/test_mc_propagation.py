@@ -116,13 +116,16 @@ class TestMCPropagation(unittest.TestCase):
 
         npt.assert_allclose(uf, yerr_uncorr, rtol=0.06)
 
-        uf, yvalues, xvalues = prop.propagate_random(
-            function, xs, xerrs, corr_between=np.ones((2, 2)), return_samples=True
-        )
-        npt.assert_allclose(uf, yerr_corr, rtol=0.06)
+        uf,yvalues,xvalues = prop.propagate_random(function,xs,xerrs,
+            corr_between=np.ones((2,2)),return_samples=True)
+        npt.assert_allclose(uf,yerr_corr,rtol=0.06)
+
+        uf,yvalues,xvalues = prop.propagate_standard(function,xs,xerrs,corr_x=["rand","rand"],
+            corr_between=np.ones((2,2)),return_samples=True)
+        npt.assert_allclose(uf,yerr_corr,rtol=0.06)
 
     def test_propagate_random_2D(self):
-        prop = MCPropagation(20000, parallel_cores=0)
+        prop = MCPropagation(20000, parallel_cores=2)
         ufb, ucorrb = prop.propagate_random(
             functionb, xsb, xerrsb, return_corr=True, repeat_dims=1
         )
@@ -157,6 +160,14 @@ class TestMCPropagation(unittest.TestCase):
             functionc, xsc, xerrsc, corr_between=corr_c, return_samples=True
         )
         npt.assert_allclose(ufc, yerr_corrc, rtol=0.06)
+
+        xsc2 = np.array([x1c,10.,x3c])
+        xerrsc2 = np.array([x1errc,5.,x3errc])
+
+        ufc,ucorrc = prop.propagate_random(functionc,xsc,xerrsc,return_corr=True,param_fixed=[False,True,False])
+        npt.assert_allclose(ucorrc,np.eye(len(ucorrc)),atol=0.06)
+        npt.assert_allclose(ufc,yerr_uncorrc,rtol=0.06)
+
 
     def test_propagate_random_3D_2out(self):
         prop = MCPropagation(20000, parallel_cores=0)
@@ -310,6 +321,14 @@ class TestMCPropagation(unittest.TestCase):
         ufb, ucorrb = prop.propagate_cov(functionb, xsb, covb, return_corr=True)
         npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.06)
         npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
+
+        covb = [util.convert_corr_to_cov(np.eye(len(xerrb[:,0].flatten())),xerrb[:,0]) for xerrb in
+            xerrsb]
+
+        ufb,ucorrb = prop.propagate_cov(functionb,xsb,covb,return_corr=True,
+                                           repeat_dims=1)
+        npt.assert_allclose(ucorrb,np.eye(len(ucorrb)),atol=0.06)
+        npt.assert_allclose(ufb,yerr_uncorrb,rtol=0.06)
 
         covb = [
             util.convert_corr_to_cov(

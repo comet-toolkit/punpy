@@ -83,109 +83,18 @@ class LPUPropagation:
         :return: uncertainties on measurand
         :rtype: array
         """
-        (
-            fun,
-            xflat,
-            u_xflat,
-            yshape,
-            u_x,
-            repeat_dims,
-            n_repeats,
-            repeat_shape,
-            corr_axis,
-            fixed_corr,
-            Jx_diag,
-        ) = self.perform_checks(
-            func,
-            x,
-            u_x,
-            corr_x,
-            repeat_dims,
-            corr_axis,
-            output_vars,
-            fixed_corr_var,
-            Jx_diag,
-            param_fixed,
-        )
+        if corr_x is None:
+            corr_x = ["rand"]*len(x)
+        for i in range(len(x)):
+            if corr_x[i] is None:
+                corr_x[i] = "rand"
 
-        if n_repeats > 0:
-            inputs = np.empty(n_repeats, dtype=object)
-            for i in range(n_repeats):
-                xb, u_xb = util.select_repeated_x(
-                    x, u_x, param_fixed, i, repeat_dims, repeat_shape
-                )
-                if Jx is not None:
-                    Jxi = Jx[i]
-                else:
-                    Jxi = Jx
-                inputs[i] = [
-                    func,
-                    xb,
-                    u_xb,
-                    corr_x,
-                    None,
-                    corr_between,
-                    return_corr,
-                    return_Jacobian,
-                    -99,
-                    corr_axis,
-                    fixed_corr_var,
-                    output_vars,
-                    Jxi,
-                    Jx_diag,
-                ]
-            if self.parallel_cores > 1:
-                pool = Pool(self.parallel_cores)
-                outs = pool.starmap(self.propagate_random, inputs)
-                pool.close()
-
-            else:
-                outs = np.empty(n_repeats, dtype=object)
-                for i in range(n_repeats):
-                    outs[i] = self.propagate_random(*inputs[i])
-
-            return self.combine_repeated_outs(
-                outs,
-                yshape,
-                n_repeats,
-                repeat_shape,
-                repeat_dims,
-                return_corr,
-                return_Jacobian,
-                output_vars,
-            )
-
-        else:
-            if Jx is None:
-                Jx = util.calculate_Jacobian(fun, xflat, Jx_diag, self.step)
-
-            if corr_between is None:
-                corr_between = np.eye(len(x))
-
-            if corr_x is None:
-                corrs = [np.eye(len(xi.flatten())) for xi in x]
-            else:
-                corrs = np.empty(len(x), dtype=object)
-                for i in range(len(x)):
-                    if corr_x[i] is None or corr_x[i] == "rand":
-                        corrs[i] = np.eye(len(x[i].flatten()))
-                    elif corr_x[i] == "syst":
-                        corrs[i] = np.ones((len(x[i].flatten()), len(x[i].flatten())))
-                    else:
-                        corrs[i] = corr_x[i]
-            corr_x = util.calculate_flattened_corr(corrs, corr_between)
-            cov_x = util.convert_corr_to_cov(corr_x, u_xflat)
-
-            return self.process_jacobian(
-                Jx,
-                cov_x,
-                yshape,
-                return_corr,
-                corr_axis,
-                fixed_corr,
-                output_vars,
-                return_Jacobian,
-            )
+        return self.propagate_standard(func,x,u_x,corr_x,param_fixed=param_fixed,
+                                       corr_between=corr_between,return_corr=return_corr,
+                                       return_Jacobian=return_Jacobian,
+                                       repeat_dims=repeat_dims,corr_axis=corr_axis,
+                                       fixed_corr_var=fixed_corr_var,
+                                       output_vars=output_vars,Jx=Jx,Jx_diag=Jx_diag)
 
     def propagate_systematic(
         self,
@@ -218,6 +127,71 @@ class LPUPropagation:
         :type u_x: list[array]
         :param corr_x: list of correlation matrices (n,n) along non-repeating axis, defaults to None. Can optionally be set to "rand" (diagonal correlation matrix), "syst" (correlation matrix of ones) or a custom correlation matrix.
         :type corr_x: list[array], optional
+        :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
+        :type param_fixed: list of bools, optional
+        :param corr_between: correlation matrix (n,n) between input quantities, defaults to None
+        :type corr_between: array, optional
+        :param return_corr: set to True to return correlation matrix of measurand, defaults to False
+        :type return_corr: bool, optional
+        :param return_Jacobian: set to True to return Jacobian matrix, defaults to False
+        :type return_Jacobian: bool, optional
+        :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
+        :type repeat_dims: integer or list of 2 integers, optional
+        :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+        :type corr_axis: integer, optional
+        :param fixed_corr_var: set to integer to copy the correlation matrix of the dimension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
+        :type fixed_corr_var: bool or integer, optional
+        :param output_vars: number of output parameters in the measurement function. Defaults to 1.
+        :type output_vars: integer, optional
+        :param Jx: Jacobian matrix, evaluated at x. This allows to give a precomputed jacobian matrix, which could potentially be calculated using analytical prescription. Defaults to None, in which case Jx is calculated numerically as part of the propagation.
+        :rtype Jx: array, optional
+        :param Jx_diag: Bool to indicate whether the Jacobian matrix can be described with semi-diagonal elements. With this we mean that the measurand has the same shape as each of the input quantities and the square jacobain between the measurand and each of the input quantities individually, only has diagonal elements. Defaults to False
+        :rtype Jx_diag: bool, optional
+        :return: uncertainties on measurand
+        :rtype: array
+        """
+        if corr_x is None:
+            corr_x=["syst"]*len(x)
+        for i in range(len(x)):
+            if corr_x[i] is None:
+                corr_x[i]="syst"
+
+        return self.propagate_standard(func,x,u_x,corr_x,param_fixed=param_fixed,
+            corr_between=corr_between,return_corr=return_corr,
+            return_Jacobian=return_Jacobian,repeat_dims=repeat_dims,corr_axis=corr_axis,
+            fixed_corr_var=fixed_corr_var,output_vars=output_vars,Jx=Jx,Jx_diag=Jx_diag)
+
+    def propagate_standard(
+        self,
+        func,
+        x,
+        u_x,
+        corr_x,
+        param_fixed=None,
+        corr_between=None,
+        return_corr=False,
+        return_Jacobian=False,
+        repeat_dims=-99,
+        corr_axis=-99,
+        fixed_corr_var=False,
+        output_vars=1,
+        Jx=None,
+        Jx_diag=None,
+    ):
+        """
+        Propagate uncertainties through measurement function with n input quantities. Correlations must be specified in corr_x.
+        Input quantities can be floats, vectors (1d-array) or images (2d-array).
+        Systematic uncertainties arise when there is full correlation between repeated measurements.
+        There is a often also a correlation between measurements along the dimensions that is not one of the repeat_dims.
+
+        :param func: measurement function
+        :type func: function
+        :param x: list of input quantities (usually numpy arrays)
+        :type x: list[array]
+        :param u_x: list of systematic uncertainties on input quantities (usually numpy arrays)
+        :type u_x: list[array]
+        :param corr_x: list of correlation matrices (n,n) along non-repeating axis. Can optionally be set to "rand" (diagonal correlation matrix), "syst" (correlation matrix of ones) or a custom correlation matrix.
+        :type corr_x: list[array]
         :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
         :type param_fixed: list of bools, optional
         :param corr_between: correlation matrix (n,n) between input quantities, defaults to None
@@ -321,17 +295,16 @@ class LPUPropagation:
             if corr_between is None:
                 corr_between = np.eye(len(x))
 
-            if corr_x is None:
-                corrs = [np.ones((len(xi.flatten()), len(xi.flatten()))) for xi in x]
-            else:
-                corrs = np.empty(len(x), dtype=object)
-                for i in range(len(x)):
-                    if corr_x[i] is None or corr_x[i] == "syst":
-                        corrs[i] = np.ones((len(x[i].flatten()), len(x[i].flatten())))
-                    elif corr_x[i] == "rand":
-                        corrs[i] = np.eye(len(x[i].flatten()))
-                    else:
-                        corrs[i] = corr_x[i]
+
+            corrs = np.empty(len(x), dtype=object)
+            for i in range(len(x)):
+                if corr_x[i] == "syst":
+                    corrs[i] = np.ones((len(x[i].flatten()), len(x[i].flatten())))
+                elif corr_x[i] == "rand":
+                    corrs[i] = np.eye(len(x[i].flatten()))
+                else:
+                    corrs[i] = corr_x[i]
+
             corr_x = util.calculate_flattened_corr(corrs, corr_between)
             cov_x = util.convert_corr_to_cov(corr_x, u_xflat)
 

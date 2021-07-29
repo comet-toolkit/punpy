@@ -203,7 +203,11 @@ class MCPropagation:
         else:
             MC_data = np.empty(len(x),dtype=np.ndarray)
             for i in range(len(x)):
-                if corr_x[i] == "rand":
+                if not hasattr(x[i], "__len__"):
+                    MC_data[i] = self.generate_samples_systematic(x[i], u_x[i])
+                if all((u_x[i] == 0).flatten()):  # This is the case if one of the variables has no uncertainty
+                    MC_data[i] = np.tile(x[i].flatten(),(self.MCsteps,1)).T
+                elif corr_x[i] == "rand":
                     MC_data[i] = self.generate_samples_random(x[i],u_x[i])
                 elif corr_x[i] == "syst":
                     MC_data[i] = self.generate_samples_systematic(x[i],u_x[i])
@@ -265,6 +269,8 @@ class MCPropagation:
         :return: uncertainties on measurand
         :rtype: array
         """
+
+
         (
             yshapes,x,u_x,corr_x,
             n_repeats,
@@ -754,7 +760,7 @@ class MCPropagation:
                 for i in range(self.MCsteps):
                     data2[i] = [data[j][...,i] for j in range(len(data))]
             else:
-                data2=np.empty(self.MCsteps)
+                data2=np.empty(self.MCsteps,dtype=object)
                 for i in range(self.MCsteps):
                     data2[i] = [data[j][..., i] for j in range(len(data))]
             MC_y2 = np.array(self.pool.starmap(func, data2), dtype=self.dtype)
@@ -989,8 +995,6 @@ class MCPropagation:
         :rtype: array
         """
         if not hasattr(param, "__len__"):
-            return np.random.normal(size=self.MCsteps).astype(self.dtype) * u_param + param
-        elif len(param.shape) ==0:
             return np.random.normal(size=self.MCsteps).astype(self.dtype) * u_param + param
         elif len(param.shape) == 1:
             return (
