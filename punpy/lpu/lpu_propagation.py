@@ -275,7 +275,7 @@ class LPUPropagation:
             else:
                 outs = np.empty(n_repeats, dtype=object)
                 for i in range(n_repeats):
-                    outs[i] = self.propagate_systematic(*inputs[i])
+                    outs[i] = self.propagate_standard(*inputs[i])
 
             return self.combine_repeated_outs(
                 outs,
@@ -373,6 +373,13 @@ class LPUPropagation:
         """
         u_x = [util.uncertainty_from_covariance(cov_x[i]) for i in range(len(x))]
         corr_x = [util.correlation_from_covariance(cov_x[i]) for i in range(len(x))]
+
+        for i in range(len(x)):
+            if len(x[i].shape)>1:
+                if len(u_x[i])==len(x[i][:,0]):
+                    u_x[i]=np.tile(u_x[i],(len(x[i][0]),1)).T
+                else:
+                    u_x[i] =u_x[i].reshape(x[i].shape)
 
         (
             fun,

@@ -193,7 +193,7 @@ class MCPropagation:
                 xb,u_xb = util.select_repeated_x(x,u_x,param_fixed,i,repeat_dims,
                     repeat_shape)
 
-                outs[i] = self.propagate_systematic(func,xb,u_xb,corr_x,param_fixed,
+                outs[i] = self.propagate_standard(func,xb,u_xb,corr_x,param_fixed,
                     corr_between,return_corr,return_samples,-99,corr_axis=corr_axis,
                     fixed_corr_var=fixed_corr_var,output_vars=output_vars,PD_corr=False,)
 
@@ -651,6 +651,8 @@ class MCPropagation:
 
             if output_vars > 1:
                 if all([yshapes[i] == yshapes[0] for i in range(len(yshapes))]):
+                    print([out.shape for out in outs[0]],extra_index)
+                    print([out[0].shape for out in outs[0]],extra_index)
                     corr_out = np.mean(
                         [outs[i][1 + extra_index] for i in range(n_repeats)], axis=0
                     )
@@ -779,6 +781,7 @@ class MCPropagation:
             u_func = np.empty(output_vars, dtype=object)
             for i in range(output_vars):
                 u_func[i] = np.std(np.array(MC_y[i]), axis=-1)
+
         if not return_corr:
             if return_samples:
                 return u_func, MC_y, data
@@ -959,8 +962,6 @@ class MCPropagation:
         :rtype: array
         """
         if not hasattr(param, "__len__"):
-            return np.random.normal(size=self.MCsteps).astype(self.dtype) * u_param + param
-        elif len(param.shape) ==0:
             return np.random.normal(size=self.MCsteps).astype(self.dtype) * u_param + param
         elif len(param.shape) == 1:
             return (

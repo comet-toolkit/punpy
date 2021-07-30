@@ -3,8 +3,10 @@ Tests for mc propagation class
 """
 
 import unittest
+
 import numpy as np
 import numpy.testing as npt
+
 import punpy.utilities.utilities as util
 from punpy.lpu.lpu_propagation import LPUPropagation
 
@@ -114,9 +116,18 @@ class TestLPUPropagation(unittest.TestCase):
     def test_propagate_random_1D(self):
         prop = LPUPropagation()
         Jx = Jac_function(*xs)
-        uf, ucorr = prop.propagate_random(function, xs, xerrs, return_corr=True, Jx=Jx)
-        npt.assert_allclose(ucorr, np.eye(len(ucorr)), atol=0.01)
-        npt.assert_allclose(uf, yerr_uncorr_1order, rtol=0.01)
+        uf,ucorr = prop.propagate_random(function,xs,xerrs,return_corr=True,Jx=Jx)
+        npt.assert_allclose(ucorr,np.eye(len(ucorr)),atol=0.01)
+        npt.assert_allclose(uf,yerr_uncorr_1order,rtol=0.01)
+
+        uf,ucorr = prop.propagate_random(function,xs,xerrs,corr_x=["rand",None],return_corr=True,Jx=Jx)
+        npt.assert_allclose(ucorr,np.eye(len(ucorr)),atol=0.01)
+        npt.assert_allclose(uf,yerr_uncorr_1order,rtol=0.01)
+
+        uf,ucorr = prop.propagate_standard(function,xs,xerrs,["rand","rand"],return_corr=True,Jx=Jx)
+        npt.assert_allclose(ucorr,np.eye(len(ucorr)),atol=0.01)
+        npt.assert_allclose(uf,yerr_uncorr_1order,rtol=0.01)
+
         ucov = util.convert_corr_to_cov(ucorr, uf)
         ucorr2 = util.convert_cov_to_corr(ucov, uf)
         npt.assert_allclose(ucorr, ucorr2, atol=0.01)
@@ -312,7 +323,7 @@ class TestLPUPropagation(unittest.TestCase):
         npt.assert_allclose(uf, yerr_corr_1order, atol=0.01)
 
     def test_propagate_cov_2D(self):
-        prop = LPUPropagation()
+        prop = LPUPropagation(parallel_cores=2)
 
         covb = [
             util.convert_corr_to_cov(np.eye(len(xerrb.flatten())), xerrb)
@@ -323,6 +334,14 @@ class TestLPUPropagation(unittest.TestCase):
         )
         npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.01)
         npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.01)
+
+        covb = [util.convert_corr_to_cov(np.eye(len(xerrb[:,0].flatten())),xerrb[:,0])
+                for xerrb in xerrsb]
+
+        ufb,ucorrb = prop.propagate_cov(functionb,xsb,covb,return_corr=True,
+                                        repeat_dims=1,Jx_diag=True)
+        npt.assert_allclose(ucorrb,np.eye(len(ucorrb)),atol=0.06)
+        npt.assert_allclose(ufb,yerr_uncorrb,rtol=0.06)
 
         covb = [
             util.convert_corr_to_cov(
@@ -483,18 +502,40 @@ class TestLPUPropagation(unittest.TestCase):
             np.ones((len(xerrd[:, 0, 0].flatten()), len(xerrd[:, 0, 0].flatten())))
             for xerrd in xerrsd
         ]
-        ufd, ucorrd, corr_out = prop.propagate_systematic(
-            functiond,
-            xsd,
-            xerrsd,
-            corr_x=corrd,
-            return_corr=True,
-            corr_axis=0,
-            repeat_dims=[1, 2],
-            output_vars=2,
-        )
-        npt.assert_allclose(ucorrd[1], np.ones_like(ucorrd[1]), atol=0.01)
-        npt.assert_allclose(ufd, yerr_uncorrd, rtol=0.01)
+
+        ufd,ucorrd,corr_out = prop.propagate_systematic(functiond,xsd,xerrsd,
+            corr_x=corrd,return_corr=True,corr_axis=0,repeat_dims=[1,2],output_vars=2,)
+        npt.assert_allclose(ucorrd[1],np.ones_like(ucorrd[1]),atol=0.01)
+        npt.assert_allclose(ufd,yerr_uncorrd,rtol=0.01)
+
+        ufd,ucorrd = prop.propagate_systematic(functionb,xsd,xerrsd,
+            corr_x=corrd,return_corr=True,corr_axis=0,repeat_dims=[1,2],output_vars=1,)
+        npt.assert_allclose(ucorrd[1],np.ones_like(ucorrd[1]),atol=0.01)
+
+    def test_perform_checks(self):
+        prop = LPUPropagation()
+        corrc = [np.ones((len(xerrc[0].flatten()),len(xerrc[0].flatten()))) for xerrc in
+            xerrsc]
+        corrd = [np.ones((len(xerrd[0].flatten()),len(xerrd[0].flatten()))) for xerrd in
+                 xerrsd]
+
+        out = prop.perform_checks(functionc,xsc,xerrsc,corr_x=corrc,repeat_dims=0,
+                                  corr_axis=1,output_vars=1,fixed_corr_var=None,
+                                  Jx_diag=None,param_fixed=None)
+
+        out = prop.perform_checks(functiond,xsd,xerrsd,corr_x=corrd,repeat_dims=[0,1],
+                                  corr_axis=2,output_vars=2,fixed_corr_var=None,
+                                  Jx_diag=None,param_fixed=[True,False,False])
+        try:
+            out = prop.perform_checks(functionc,xsc,xerrsc,corr_x=corrc,repeat_dims=0,
+                                  corr_axis=0,output_vars=1,fixed_corr_var=None,
+                                  Jx_diag=None,param_fixed=None)
+            out = prop.perform_checks(functiond,xsd,xerrsd,corr_x=corrd,
+                                      repeat_dims=[0,1],corr_axis=1,output_vars=2,
+                                      fixed_corr_var=None,Jx_diag=None,
+                                      param_fixed=[True,False,False])
+        except:
+            print("done")
 
 
 if __name__ == "__main__":
