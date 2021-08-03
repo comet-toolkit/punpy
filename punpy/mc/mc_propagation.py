@@ -149,40 +149,40 @@ class MCPropagation:
             corr_between=None,return_corr=False,return_samples=False,repeat_dims=-99,
             corr_axis=-99,fixed_corr_var=False,output_vars=1,PD_corr=True,):
         """
-        Propagate uncertainties through measurement function with n input quantities. Correlations must be specified in corr_x.
-        Input quantities can be floats, vectors (1d-array) or images (2d-array).
-        Systematic uncertainties arise when there is full correlation between repeated measurements.
-        There is a often also a correlation between measurements along the dimensions that is not one of the repeat_dims.
+                Propagate uncertainties through measurement function with n input quantities. Correlations must be specified in corr_x.
+                Input quantities can be floats, vectors (1d-array) or images (2d-array).
+                Systematic uncertainties arise when there is full correlation between repeated measurements.
+                There is a often also a correlation between measurements along the dimensions that is not one of the repeat_dims.
 
-        :param func: measurement function
-        :type func: function
-        :param x: list of input quantities (usually numpy arrays)
-        :type x: list[array]
-        :param u_x: list of systematic uncertainties on input quantities (usually numpy arrays)
-        :type u_x: list[array]
-        :param corr_x: list of correlation matrices (n,n) along non-repeating axis. Can be set to "rand" (diagonal correlation matrix), "syst" (correlation matrix of ones) or a custom correlation matrix.
-        :type corr_x: list[array]
-        :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
-        :type param_fixed: list of bools, optional
-        :param corr_between: correlation matrix (n,n) between input quantities, defaults to None
-        :type corr_between: array, optional
-        :param return_corr: set to True to return correlation matrix of measurand, defaults to False
-        :type return_corr: bool, optional
-        :param return_samples: set to True to return generated samples, defaults to False
-        :type return_samples: bool, optional
-        :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
-        :type repeat_dims: integer or list of 2 integers, optional
-        :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
-        :type corr_axis: integer, optional
-        :param fixed_corr_var: set to integer to copy the correlation matrix of the dimiension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
-        :type fixed_corr_var: bool or integer, optional
-        :param output_vars: number of output parameters in the measurement function. Defaults to 1.
-        :type output_vars: integer, optional
-        :param PD_corr: set to True to make sure returned correlation matrices are positive semi-definite, default to True
-        :type PD_corr: bool, optional
-        :return: uncertainties on measurand
-        :rtype: array
-        """
+                :param func: measurement function
+                :type func: function
+                :param x: list of input quantities (usually numpy arrays)
+                :type x: list[array]
+                :param u_x: list of systematic uncertainties on input quantities (usually numpy arrays)
+                :type u_x: list[array]
+                :param corr_x: list of correlation matrices (n,n) along non-repeating axis. Can be set to "rand" (diagonal correlation matrix), "syst" (correlation matrix of ones) or a custom correlation matrix.
+                :type corr_x: list[array]
+                :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
+                :type param_fixed: list of bools, optional
+                :param corr_between: correlation matrix (n,n) between input quantities, defaults to None
+                :type corr_between: array, optional
+                :param return_corr: set to True to return correlation matrix of measurand, defaults to False
+                :type return_corr: bool, optional
+                :param return_samples: set to True to return generated samples, defaults to False
+                :type return_samples: bool, optional
+                :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
+                :type repeat_dims: integer or list of 2 integers, optional
+                :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+                :type corr_axis: integer, optional
+                :param fixed_corr_var: set to integer to copy the correlation matrix of the dimiension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
+                :type fixed_corr_var: bool or integer, optional
+                :param output_vars: number of output parameters in the measurement function. Defaults to 1.
+                :type output_vars: integer, optional
+                :param PD_corr: set to True to make sure returned correlation matrices are positive semi-definite, default to True
+                :type PD_corr: bool, optional
+                :return: uncertainties on measurand
+                :rtype: array
+                """
         (yshapes,x,u_x,corr_x,n_repeats,repeat_shape,repeat_dims,corr_axis,
          fixed_corr,) = self.perform_checks(func,x,u_x,corr_x,repeat_dims,corr_axis,
             output_vars,fixed_corr_var,param_fixed,)
@@ -205,7 +205,7 @@ class MCPropagation:
             for i in range(len(x)):
                 if not hasattr(x[i], "__len__"):
                     MC_data[i] = self.generate_samples_systematic(x[i], u_x[i])
-                if all((u_x[i] == 0).flatten()):  # This is the case if one of the variables has no uncertainty
+                elif all((u_x[i] == 0).flatten()):  # This is the case if one of the variables has no uncertainty
                     MC_data[i] = np.tile(x[i].flatten(),(self.MCsteps,1)).T
                 elif corr_x[i] == "rand":
                     MC_data[i] = self.generate_samples_random(x[i],u_x[i])
@@ -651,8 +651,8 @@ class MCPropagation:
 
             if output_vars > 1:
                 if all([yshapes[i] == yshapes[0] for i in range(len(yshapes))]):
-                    print([out.shape for out in outs[0]],extra_index)
-                    print([out[0].shape for out in outs[0]],extra_index)
+                    # print([out.shape for out in outs[0]],extra_index)
+                    # print([out[0].shape for out in outs[0]],extra_index)
                     corr_out = np.mean(
                         [outs[i][1 + extra_index] for i in range(n_repeats)], axis=0
                     )
@@ -735,22 +735,29 @@ class MCPropagation:
 
             else:
                 MC_y = np.empty(output_vars, dtype=object)
-                MC_y2 = np.array(list(map(func, *data2)))
+                MC_y2 = np.empty(output_vars, dtype=object)
 
                 for i in range(output_vars):
+                    MC_y2[i]=np.array([out[i] for out in list(map(func,*data2))])
                     MC_y[i] = np.empty(yshapes[i] + (self.MCsteps,))
                     if len(yshapes[i]) == 0:
                         for j in range(self.MCsteps):
-                            MC_y[i][j] = MC_y2[j, i]
+                            MC_y[i][j] = MC_y2[i][j]
                     elif len(yshapes[i]) == 1:
                         for ii in range(yshapes[i][0]):
                             for j in range(self.MCsteps):
-                                MC_y[i][ii, j] = MC_y2[j, i][ii]
+                                MC_y[i][ii, j] = MC_y2[i][j][ii]
                     elif len(yshapes[i]) == 2:
                         for ii in range(yshapes[i][0]):
                             for iii in range(yshapes[i][1]):
                                 for j in range(self.MCsteps):
-                                    MC_y[i][ii, iii, j] = MC_y2[j, i][ii, iii]
+                                    MC_y[i][ii, iii, j] = MC_y2[i][j][ii, iii]
+                    elif len(yshapes[i]) == 3:
+                        for ii in range(yshapes[i][0]):
+                            for iii in range(yshapes[i][1]):
+                                for iiii in range(yshapes[i][2]):
+                                    for j in range(self.MCsteps):
+                                        MC_y[i][ii,iii,iiii,j] = MC_y2[i][j][ii,iii,iiii]
                     else:
                         print("this shape is not supported")
 
@@ -771,7 +778,7 @@ class MCPropagation:
             else:
                 MC_y = np.empty(output_vars, dtype=object)
                 for i in range(output_vars):
-                    MC_y[i] = np.moveaxis(MC_y2[i], 0, -1)
+                    MC_y[i] = np.moveaxis(MC_y2[:,i], 0, -1)
 
         # if hasattr(MC_y[0,0], '__len__'):
         #     print(yshape,np.array(MC_y[0,0]).shape,np.array(MC_y[1,0]).shape,np.array(MC_y[2,0]).shape,np.array(MC_y[3,0]).shape)
@@ -820,14 +827,14 @@ class MCPropagation:
                         corr_ys[i] = fixed_corr
                 # calculate correlation matrix between the different outputs produced by the measurement function.
                 if all([yshapes[i] == yshapes[0] for i in range(len(yshapes))]):
-                    corr_out = np.corrcoef(MC_y.reshape((output_vars, -1))).astype(
+                    corr_out = np.corrcoef(MC_y[i].reshape((output_vars, -1))).astype(
                         "float32"
                     )
                 else:
                     corr_out = None  # np.corrcoef([[np.mean(MC_y[i][:,j]) for j in range(self.MCsteps)] for i in range(output_vars)]).astype(
                     # "float32")
 
-                if PD_corr:
+                if PD_corr and corr_out is not None:
                     if not util.isPD(corr_out):
                         corr_out = util.nearestPD_cholesky(
                             corr_out, corr=True, return_cholesky=False
