@@ -24,6 +24,8 @@ class MCPropagation:
         :type steps: int
         :param parallel_cores: number of CPU to be used in parallel processing
         :type parallel_cores: int
+        :param dtype: numpy dtype for output variables
+        :type dtype: numpy dtype
         """
 
         self.MCsteps = steps
@@ -47,6 +49,7 @@ class MCPropagation:
         fixed_corr_var=False,
         output_vars=1,
         PD_corr=True,
+        refyvar=0,
     ):
         """
         Propagate random uncertainties through measurement function with n input quantities.
@@ -80,6 +83,8 @@ class MCPropagation:
         :type output_vars: integer, optional
         :param PD_corr: set to True to make sure returned correlation matrices are positive semi-definite, default to True
         :type PD_corr: bool, optional
+        :param refyvar: Index of output variable with reference shape (only relevant when output_vars>1; should be output variable with most dimensions; affects things like repeat_dims)
+        :type refyvar: int, optional
         :return: uncertainties on measurand
         :rtype: array
         """
@@ -92,12 +97,12 @@ class MCPropagation:
         return self.propagate_standard(func,x,u_x,corr_x,param_fixed=param_fixed,
             corr_between=corr_between,return_corr=return_corr,
             return_samples=return_samples,repeat_dims=repeat_dims,corr_axis=corr_axis,
-            fixed_corr_var=fixed_corr_var,output_vars=output_vars,PD_corr=PD_corr)
+            fixed_corr_var=fixed_corr_var,output_vars=output_vars,PD_corr=PD_corr, refyvar=refyvar)
 
     def propagate_systematic(self,func,x,u_x,corr_x=None,param_fixed=None,
                              corr_between=None,return_corr=False,return_samples=False,
                              repeat_dims=-99,corr_axis=-99,fixed_corr_var=False,
-                             output_vars=1,PD_corr=True,):
+                             output_vars=1,PD_corr=True, refyvar=0,):
         """
         Propagate systematic uncertainties through measurement function with n input quantities.
         Input quantities can be floats, vectors (1d-array) or images (2d-array).
@@ -130,6 +135,8 @@ class MCPropagation:
         :type output_vars: integer, optional
         :param PD_corr: set to True to make sure returned correlation matrices are positive semi-definite, default to True
         :type PD_corr: bool, optional
+        :param refyvar: Index of output variable with reference shape (only relevant when output_vars>1; should be output variable with most dimensions; affects things like repeat_dims)
+        :type refyvar: int, optional
         :return: uncertainties on measurand
         :rtype: array
         """
@@ -142,12 +149,12 @@ class MCPropagation:
         return self.propagate_standard(func,x,u_x,corr_x,param_fixed=param_fixed,
             corr_between=corr_between,return_corr=return_corr,
             return_samples=return_samples,repeat_dims=repeat_dims,corr_axis=corr_axis,
-            fixed_corr_var=fixed_corr_var,output_vars=output_vars,PD_corr=PD_corr)
+            fixed_corr_var=fixed_corr_var,output_vars=output_vars,PD_corr=PD_corr, refyvar=refyvar)
 
 
     def propagate_standard(self,func,x,u_x,corr_x,param_fixed=None,
             corr_between=None,return_corr=False,return_samples=False,repeat_dims=-99,
-            corr_axis=-99,fixed_corr_var=False,output_vars=1,PD_corr=True,):
+            corr_axis=-99,fixed_corr_var=False,output_vars=1,PD_corr=True, refyvar=0):
         """
                 Propagate uncertainties through measurement function with n input quantities. Correlations must be specified in corr_x.
                 Input quantities can be floats, vectors (1d-array) or images (2d-array).
@@ -180,12 +187,14 @@ class MCPropagation:
                 :type output_vars: integer, optional
                 :param PD_corr: set to True to make sure returned correlation matrices are positive semi-definite, default to True
                 :type PD_corr: bool, optional
+                :param refyvar: Index of output variable with reference shape (only relevant when output_vars>1; should be output variable with most dimensions; affects things like repeat_dims)
+                :type refyvar: int, optional
                 :return: uncertainties on measurand
                 :rtype: array
                 """
         (yshapes,x,u_x,corr_x,n_repeats,repeat_shape,repeat_dims,corr_axis,
          fixed_corr,) = self.perform_checks(func,x,u_x,corr_x,repeat_dims,corr_axis,
-            output_vars,fixed_corr_var,param_fixed,)
+            output_vars,fixed_corr_var,param_fixed,refyvar)
 
         if n_repeats > 0:
             outs = np.empty(n_repeats,dtype=object)
@@ -198,7 +207,7 @@ class MCPropagation:
                     fixed_corr_var=fixed_corr_var,output_vars=output_vars,PD_corr=False,)
 
             return self.combine_repeated_outs(outs,yshapes,len(x),n_repeats,repeat_shape,
-                repeat_dims,return_corr,return_samples,output_vars,)
+                repeat_dims,return_corr,return_samples,output_vars,refyvar,)
 
         else:
             MC_data = np.empty(len(x),dtype=np.ndarray)
@@ -234,6 +243,7 @@ class MCPropagation:
         fixed_corr_var=False,
         output_vars=1,
         PD_corr=True,
+        refyvar=0,
     ):
         """
         Propagate uncertainties with given covariance matrix through measurement function with n input quantities.
@@ -266,6 +276,8 @@ class MCPropagation:
         :type output_vars: integer, optional
         :param PD_corr: set to True to make sure returned correlation matrices are positive semi-definite, default to True
         :type PD_corr: bool, optional
+        :param refyvar: Index of output variable with reference shape (only relevant when output_vars>1; should be output variable with most dimensions; affects things like repeat_dims)
+        :type refyvar: int, optional
         :return: uncertainties on measurand
         :rtype: array
         """
@@ -288,6 +300,7 @@ class MCPropagation:
             output_vars,
             fixed_corr_var,
             param_fixed,
+            refyvar,
         )
 
         if n_repeats > 0:
@@ -320,6 +333,7 @@ class MCPropagation:
                 return_corr,
                 return_samples,
                 output_vars,
+                refyvar,
             )
 
         else:
@@ -377,6 +391,7 @@ class MCPropagation:
         output_vars,
         fixed_corr_var,
         param_fixed,
+        refyvar,
     ):
         """
         Perform checks on the input parameters and set up the appropriate keywords for further processing
@@ -399,6 +414,8 @@ class MCPropagation:
         :type fixed_corr_var: bool or integer, optional
         :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
         :type param_fixed: list of bools, optional
+        :param refyvar: Index of output variable with reference shape (only relevant when output_vars>1; should be output variable with most dimensions; affects things like repeat_dims)
+        :type refyvar: int
         :return: yshape,u_x,repeat_axis,repeat_dims,corr_axis,fixed_corr
         :rtype: tuple, list[array], int, int, int, array
         """
@@ -412,7 +429,7 @@ class MCPropagation:
             yshape = np.array(func(*x)).shape
             yshapes = [np.array(func(*x)).shape]
         else:
-            yshape = np.array(func(*x)[0]).shape
+            yshape = np.array(func(*x)[refyvar]).shape
             yshapes = [np.array(func(*x)[i]).shape for i in range(output_vars)]
 
         shapewarning = False
@@ -537,6 +554,7 @@ class MCPropagation:
         return_corr,
         return_samples,
         output_vars,
+        refyvar,
     ):
         """
         Combine the outputs of the repeated measurements into one results array
@@ -559,6 +577,8 @@ class MCPropagation:
         :type return_Jacobian: bool, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
         :type output_vars: integer, optional
+        :param refyvar: Index of output variable with reference shape (only relevant when output_vars>1; should be output variable with most dimensions; affects things like repeat_dims)
+        :type refyvar: int
         :return: combined outputs
         :rtype: list[array]
         """
@@ -573,6 +593,13 @@ class MCPropagation:
                 [[outs[i][ii] for i in range(n_repeats)] for ii in range(output_vars)]
             )
 
+        elif (outs[0][0][0].ndim)>1:
+            u_func = np.empty(output_vars,dtype=object)
+
+            for ii in range(output_vars):
+                u_func[ii]=np.array([[outs[i][0][ii][iii] for iii in range(len(outs[i][0][ii]))] for i in range(n_repeats)])
+
+
         else:
             u_func = np.array(
                 [
@@ -583,21 +610,23 @@ class MCPropagation:
 
         if len(repeat_dims) == 1:
             if output_vars == 1:
-                u_func = np.moveaxis(u_func, 0, repeat_dims[0])
+                u_func = np.squeeze(np.moveaxis(u_func, 0, repeat_dims[0]))
             else:
-                if all([yshapes[i] == yshapes[0] for i in range(len(yshapes))]):
-                    u_func = np.moveaxis(u_func, 1, repeat_dims[0] + 1)
+                u_funcb = u_func[:]
+                u_func = np.empty(output_vars,dtype=object)
+                if all([yshapes[i] == yshapes[refyvar] for i in range(len(yshapes))]):
+                    for i in range(output_vars):
+                        u_func[i] = np.moveaxis(u_funcb[i], 0, repeat_dims[0])
                 else:
-                    u_funcb = u_func[:]
-                    u_func = np.empty(output_vars, dtype=object)
                     for i in range(output_vars):
                         u_func[i] = np.empty(yshapes[i])
-                        if len(yshapes[i]) == 0:
-                            u_func[i] = u_funcb[i]
-                        elif len(yshapes[i]) == 1:
-                            for ii in range(yshapes[i][0]):
-                                u_func[i][ii] = u_funcb[i][ii]
-                        elif len(yshapes[i]) == 2:
+                        if len(yshapes[i]) == len(u_funcb[i].shape):
+                            repeat_dim_corr=repeat_dims[0]
+                            for idim,dim in enumerate(yshapes[refyvar]):
+                                if dim not in yshapes[i] and idim < repeat_dims[0]:
+                                    repeat_dim_corr-=1
+                            u_func[i] = np.moveaxis(u_funcb[i], 0, repeat_dim_corr)
+                        elif len(yshapes[i]) == 2 and len(u_funcb[i].shape) == 1:
                             for ii in range(yshapes[i][0]):
                                 for iii in range(yshapes[i][1]):
                                     u_func[i][ii, iii] = u_funcb[i][iii][ii]
@@ -610,14 +639,17 @@ class MCPropagation:
                 u_func = np.moveaxis(u_func, 0, repeat_dims[0])
                 u_func = np.moveaxis(u_func, 0, repeat_dims[1])
             else:
-                u_func = u_func.reshape((output_vars,) + repeat_shape + (-1,))
-                u_func = np.moveaxis(u_func, 1, repeat_dims[0] + 1)
-                u_func = np.moveaxis(u_func, 1, repeat_dims[1] + 1)
+                u_funcb = u_func[:]
+                u_func = np.empty(output_vars,dtype=object)
+                for i in range(output_vars):
+                    u_func[i] = u_funcb[i].reshape(repeat_shape+(-1,))
+                    u_func[i] = np.moveaxis(u_func[i],0,repeat_dims[0])
+                    u_func[i] = np.moveaxis(u_func[i],0,repeat_dims[1])
 
         if (output_vars == 1 and u_func.shape != yshapes[0]) or (
-            output_vars > 1 and u_func[0].shape != yshapes[0]
+            output_vars > 1 and (u_func[0].shape != yshapes[0] or u_func[1].shape != yshapes[1])
         ):
-            print(u_func.shape, yshapes[0])
+            print(u_func.shape, yshapes)
             raise ValueError(
                 "The shape of the uncertainties does not match the shape"
                 "of the measurand. This is likely a problem with combining"
@@ -633,7 +665,7 @@ class MCPropagation:
             extra_index = 0
             if return_corr:
                 corr = np.mean([outs[i][1] for i in range(n_repeats)], axis=0)
-                if all([yshapes[i] == yshapes[0] for i in range(len(yshapes))]):
+                if all([yshapes[i] == yshapes[refyvar] for i in range(len(yshapes))]):
                     if output_vars > 1:
                         for j in range(output_vars):
                             if not util.isPD(corr[j]):
@@ -650,7 +682,7 @@ class MCPropagation:
                 extra_index += 1
 
             if output_vars > 1:
-                if all([yshapes[i] == yshapes[0] for i in range(len(yshapes))]):
+                if all([yshapes[i] == yshapes[refyvar] for i in range(len(yshapes))]):
                     # print([out.shape for out in outs[0]],extra_index)
                     # print([out[0].shape for out in outs[0]],extra_index)
                     corr_out = np.mean(
