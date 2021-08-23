@@ -10,19 +10,19 @@ __email__ = "pieter.de.vis@npl.co.uk"
 __status__ = "Development"
 
 
-
-def calculate_corr(var,form,dataset,repeat_dims):
+def calculate_corr(var, form, dataset, repeat_dims):
     data = dataset[var].values
-    if len(data.shape)>1:
+    if len(data.shape) > 1:
         if repeat_dims is None:
-            data=dataset[var].values
+            data = dataset[var].values
         elif repeat_dims == 0:
-            data=dataset[var].values[0,:]
+            data = dataset[var].values[0, :]
         elif repeat_dims == 1:
-            data=dataset[var].values[:,0]
+            data = dataset[var].values[:, 0]
         else:
             print("this repeat_dims option ins not yet implemented.")
     return np.eye(len(data.flatten()))
+
 
 #
 # def return_covariance(data_arr):
