@@ -84,17 +84,27 @@ class LPUPropagation:
         :rtype: array
         """
         if corr_x is None:
-            corr_x = ["rand"]*len(x)
+            corr_x = ["rand"] * len(x)
         for i in range(len(x)):
             if corr_x[i] is None:
                 corr_x[i] = "rand"
 
-        return self.propagate_standard(func,x,u_x,corr_x,param_fixed=param_fixed,
-                                       corr_between=corr_between,return_corr=return_corr,
-                                       return_Jacobian=return_Jacobian,
-                                       repeat_dims=repeat_dims,corr_axis=corr_axis,
-                                       fixed_corr_var=fixed_corr_var,
-                                       output_vars=output_vars,Jx=Jx,Jx_diag=Jx_diag)
+        return self.propagate_standard(
+            func,
+            x,
+            u_x,
+            corr_x,
+            param_fixed=param_fixed,
+            corr_between=corr_between,
+            return_corr=return_corr,
+            return_Jacobian=return_Jacobian,
+            repeat_dims=repeat_dims,
+            corr_axis=corr_axis,
+            fixed_corr_var=fixed_corr_var,
+            output_vars=output_vars,
+            Jx=Jx,
+            Jx_diag=Jx_diag,
+        )
 
     def propagate_systematic(
         self,
@@ -151,15 +161,27 @@ class LPUPropagation:
         :rtype: array
         """
         if corr_x is None:
-            corr_x=["syst"]*len(x)
+            corr_x = ["syst"] * len(x)
         for i in range(len(x)):
             if corr_x[i] is None:
-                corr_x[i]="syst"
+                corr_x[i] = "syst"
 
-        return self.propagate_standard(func,x,u_x,corr_x,param_fixed=param_fixed,
-            corr_between=corr_between,return_corr=return_corr,
-            return_Jacobian=return_Jacobian,repeat_dims=repeat_dims,corr_axis=corr_axis,
-            fixed_corr_var=fixed_corr_var,output_vars=output_vars,Jx=Jx,Jx_diag=Jx_diag)
+        return self.propagate_standard(
+            func,
+            x,
+            u_x,
+            corr_x,
+            param_fixed=param_fixed,
+            corr_between=corr_between,
+            return_corr=return_corr,
+            return_Jacobian=return_Jacobian,
+            repeat_dims=repeat_dims,
+            corr_axis=corr_axis,
+            fixed_corr_var=fixed_corr_var,
+            output_vars=output_vars,
+            Jx=Jx,
+            Jx_diag=Jx_diag,
+        )
 
     def propagate_standard(
         self,
@@ -295,7 +317,6 @@ class LPUPropagation:
             if corr_between is None:
                 corr_between = np.eye(len(x))
 
-
             corrs = np.empty(len(x), dtype=object)
             for i in range(len(x)):
                 if corr_x[i] == "syst":
@@ -375,11 +396,11 @@ class LPUPropagation:
         corr_x = [util.correlation_from_covariance(cov_x[i]) for i in range(len(x))]
 
         for i in range(len(x)):
-            if len(x[i].shape)>1:
-                if len(u_x[i])==len(x[i][:,0]):
-                    u_x[i]=np.tile(u_x[i],(len(x[i][0]),1)).T
+            if len(x[i].shape) > 1:
+                if len(u_x[i]) == len(x[i][:, 0]):
+                    u_x[i] = np.tile(u_x[i], (len(x[i][0]), 1)).T
                 else:
-                    u_x[i] =u_x[i].reshape(x[i].shape)
+                    u_x[i] = u_x[i].reshape(x[i].shape)
 
         (
             fun,

@@ -91,8 +91,9 @@ yerr_uncorrd = [
 ]
 yerr_corrd = [np.zeros((20, 3, 4)), 16 ** 0.5 * np.ones((20, 3, 4))]
 
+
 def functione(x1, x2):
-    return 2 * x1 - x2, np.mean(2 * x1 + x2,axis=0)
+    return 2 * x1 - x2, np.mean(2 * x1 + x2, axis=0)
 
 
 class TestMCPropagation(unittest.TestCase):
@@ -119,56 +120,74 @@ class TestMCPropagation(unittest.TestCase):
 
         npt.assert_allclose(uf, yerr_uncorr, rtol=0.06)
 
-        uf,yvalues,xvalues = prop.propagate_random(function,xs,xerrs,
-            corr_between=np.ones((2,2)),return_samples=True)
-        npt.assert_allclose(uf,yerr_corr,rtol=0.06)
+        uf, yvalues, xvalues = prop.propagate_random(
+            function, xs, xerrs, corr_between=np.ones((2, 2)), return_samples=True
+        )
+        npt.assert_allclose(uf, yerr_corr, rtol=0.06)
 
-        uf,yvalues,xvalues = prop.propagate_standard(function,xs,xerrs,
-                                                     corr_x=["rand","rand"],
-                                                     corr_between=np.ones((2,2)),
-                                                     return_samples=True)
-        npt.assert_allclose(uf,yerr_corr,rtol=0.06)
+        uf, yvalues, xvalues = prop.propagate_standard(
+            function,
+            xs,
+            xerrs,
+            corr_x=["rand", "rand"],
+            corr_between=np.ones((2, 2)),
+            return_samples=True,
+        )
+        npt.assert_allclose(uf, yerr_corr, rtol=0.06)
 
-        uf,yvalues,xvalues = prop.propagate_random(function,xs,xerrs,
-                                                   corr_x=["rand",None],
-                                                   corr_between=np.ones((2,2)),
-                                                   return_samples=True)
-        npt.assert_allclose(uf,yerr_corr,rtol=0.06)
+        uf, yvalues, xvalues = prop.propagate_random(
+            function,
+            xs,
+            xerrs,
+            corr_x=["rand", None],
+            corr_between=np.ones((2, 2)),
+            return_samples=True,
+        )
+        npt.assert_allclose(uf, yerr_corr, rtol=0.06)
 
-        uf,yvalues,xvalues = prop.propagate_random(function,xs,xerrs,
-                                                   corr_x=[np.diag(np.ones(xs[0].shape)),None],
-                                                   corr_between=np.ones((2,2)),
-                                                   return_samples=True)
-        npt.assert_allclose(uf,yerr_corr,rtol=0.06)
+        uf, yvalues, xvalues = prop.propagate_random(
+            function,
+            xs,
+            xerrs,
+            corr_x=[np.diag(np.ones(xs[0].shape)), None],
+            corr_between=np.ones((2, 2)),
+            return_samples=True,
+        )
+        npt.assert_allclose(uf, yerr_corr, rtol=0.06)
 
     def test_propagate_random_2D(self):
         prop = MCPropagation(20000, parallel_cores=2)
-        ufb,ucorrb = prop.propagate_random(functionb,xsb,xerrsb,return_corr=True,
-                                           repeat_dims=1)
-        npt.assert_allclose(ucorrb,np.eye(len(ucorrb)),atol=0.06)
-        npt.assert_allclose(ufb,yerr_uncorrb,rtol=0.06)
+        ufb, ucorrb = prop.propagate_random(
+            functionb, xsb, xerrsb, return_corr=True, repeat_dims=1
+        )
+        npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.06)
+        npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
 
         prop = MCPropagation(20000, parallel_cores=2, dtype=np.float32)
 
-        ufb,ucorrb = prop.propagate_random(functionb,xsb,xerrsb,
-                                           corr_x=[None,np.eye(len(xsb[0]))],
-                                           return_corr=True)
+        ufb, ucorrb = prop.propagate_random(
+            functionb, xsb, xerrsb, corr_x=[None, np.eye(len(xsb[0]))], return_corr=True
+        )
 
-        npt.assert_allclose(ucorrb,np.eye(len(ucorrb)),atol=0.06)
-        npt.assert_allclose(ufb,yerr_uncorrb,rtol=0.06)
+        npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.06)
+        npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
 
-        ufb,ucorrb = prop.propagate_random(functionb,xsb,xerrsb,
-                                           corr_x=[None,np.eye(len(xsb[0]*xsb[1]))],
-                                           return_corr=True)
+        ufb, ucorrb = prop.propagate_random(
+            functionb,
+            xsb,
+            xerrsb,
+            corr_x=[None, np.eye(len(xsb[0] * xsb[1]))],
+            return_corr=True,
+        )
 
-        npt.assert_allclose(ucorrb,np.eye(len(ucorrb)),atol=0.06)
-        npt.assert_allclose(ufb,yerr_uncorrb,rtol=0.06)
+        npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.06)
+        npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
 
-
-        ufb,ucorrb = prop.propagate_random(functionb,xsb,xerrsb,return_corr=True,
-                                           corr_axis=1)
-        npt.assert_allclose(ucorrb,np.eye(len(ucorrb)),atol=0.06)
-        npt.assert_allclose(ufb,yerr_uncorrb,rtol=0.06)
+        ufb, ucorrb = prop.propagate_random(
+            functionb, xsb, xerrsb, return_corr=True, corr_axis=1
+        )
+        npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.06)
+        npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
 
         ufb = prop.propagate_random(
             functionb, xsb, xerrsb, corr_between=np.ones((2, 2))
@@ -199,7 +218,6 @@ class TestMCPropagation(unittest.TestCase):
         )
         npt.assert_allclose(ufc, yerr_corrc, rtol=0.06)
 
-
     def test_propagate_random_3D_2out(self):
         prop = MCPropagation(20000, parallel_cores=0)
         ufd, ucorrd, corr_out = prop.propagate_random(
@@ -226,15 +244,28 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufd[0], yerr_corrd[0], atol=0.06)
         npt.assert_allclose(ufd[1], yerr_corrd[1], rtol=0.06)
 
-        ufd,yvaluesd,xvaluesd = prop.propagate_random(functiond,xsd,xerrsd,
-            corr_between=corr_d,return_samples=True,output_vars=2,)
-        npt.assert_allclose(ufd[0],yerr_corrd[0],atol=0.1)
-        npt.assert_allclose(ufd[1],yerr_corrd[1],atol=0.1)
+        ufd, yvaluesd, xvaluesd = prop.propagate_random(
+            functiond,
+            xsd,
+            xerrsd,
+            corr_between=corr_d,
+            return_samples=True,
+            output_vars=2,
+        )
+        npt.assert_allclose(ufd[0], yerr_corrd[0], atol=0.1)
+        npt.assert_allclose(ufd[1], yerr_corrd[1], atol=0.1)
 
-        ufd = prop.propagate_random(functiond,xsd,xerrsd,
-            corr_between=corr_d,return_samples=False,output_vars=2,repeat_dims=0)
-        npt.assert_allclose(ufd[0],yerr_corrd[0],atol=0.1)
-        npt.assert_allclose(ufd[1],yerr_corrd[1],atol=0.1)
+        ufd = prop.propagate_random(
+            functiond,
+            xsd,
+            xerrsd,
+            corr_between=corr_d,
+            return_samples=False,
+            output_vars=2,
+            repeat_dims=0,
+        )
+        npt.assert_allclose(ufd[0], yerr_corrd[0], atol=0.1)
+        npt.assert_allclose(ufd[1], yerr_corrd[1], atol=0.1)
 
     def test_propagate_systematic_1D(self):
         prop = MCPropagation(30000)
@@ -293,29 +324,32 @@ class TestMCPropagation(unittest.TestCase):
         ufc = prop.propagate_systematic(functionc, xsc, xerrsc, corr_between=corr_c)
         npt.assert_allclose(ufc, yerr_corrc, rtol=0.06)
 
-        xsc2 = np.array([x1c,10.,x3c])
-        xerrsc2 = np.array([x1errc,5.,x3errc])
+        xsc2 = np.array([x1c, 10.0, x3c])
+        xerrsc2 = np.array([x1errc, 5.0, x3errc])
 
-        ufc,ucorrc = prop.propagate_systematic(functionc,xsc2,xerrsc2,return_corr=True,
-                                           param_fixed=[False,True,False])
+        ufc, ucorrc = prop.propagate_systematic(
+            functionc, xsc2, xerrsc2, return_corr=True, param_fixed=[False, True, False]
+        )
         npt.assert_allclose(ucorrc, np.ones_like(ucorrc), atol=0.06)
         npt.assert_allclose(ufc, yerr_uncorrc, rtol=0.06)
 
-        xsc2 = np.array([x1c,10.,x3c])
-        xerrsc2 = np.array([x1errc,5.,x3errc])
+        xsc2 = np.array([x1c, 10.0, x3c])
+        xerrsc2 = np.array([x1errc, 5.0, x3errc])
 
-        ufc = prop.propagate_systematic(functionc,xsc2,xerrsc2)
+        ufc = prop.propagate_systematic(functionc, xsc2, xerrsc2)
         npt.assert_allclose(ufc, yerr_uncorrc, rtol=0.06)
 
     def test_propagate_systematic_3D_2out(self):
-        prop = MCPropagation(30000,parallel_cores=2)
-        ufd,ucorrd,corr_out = prop.propagate_systematic(functiond,xsd,xerrsd,
-            return_corr=True,output_vars=2)
-        npt.assert_allclose(ucorrd[0],np.ones_like(ucorrd[0]),atol=0.06)
+        prop = MCPropagation(30000, parallel_cores=2)
+        ufd, ucorrd, corr_out = prop.propagate_systematic(
+            functiond, xsd, xerrsd, return_corr=True, output_vars=2
+        )
+        npt.assert_allclose(ucorrd[0], np.ones_like(ucorrd[0]), atol=0.06)
 
-        ufd,ucorrd,corr_out = prop.propagate_systematic(functiond,xsd,xerrsd,
-            return_corr=True,corr_axis=0,output_vars=2)
-        npt.assert_allclose(ucorrd[0],np.ones_like(ucorrd[0]),atol=0.06)
+        ufd, ucorrd, corr_out = prop.propagate_systematic(
+            functiond, xsd, xerrsd, return_corr=True, corr_axis=0, output_vars=2
+        )
+        npt.assert_allclose(ucorrd[0], np.ones_like(ucorrd[0]), atol=0.06)
 
         prop = MCPropagation(30000)
 
@@ -371,22 +405,38 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.06)
         npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
 
-        covb = [util.convert_corr_to_cov(np.eye(len(xerrb[:,0].flatten())),xerrb[:,0])
-                for xerrb in xerrsb]
+        covb = [
+            util.convert_corr_to_cov(np.eye(len(xerrb[:, 0].flatten())), xerrb[:, 0])
+            for xerrb in xerrsb
+        ]
 
-        ufb,ucorrb = prop.propagate_cov(functionb,xsb,covb,return_corr=True,
-                                        repeat_dims=1)
-        npt.assert_allclose(ucorrb,np.eye(len(ucorrb)),atol=0.06)
-        npt.assert_allclose(ufb,yerr_uncorrb,rtol=0.06)
+        ufb, ucorrb = prop.propagate_cov(
+            functionb, xsb, covb, return_corr=True, repeat_dims=1
+        )
+        npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.06)
+        npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
 
-        xsb2= [50,xsb[1]]
-        covb = [1,util.convert_corr_to_cov(np.ones((len(xerrsb[1][:,0].flatten()),len(xerrsb[1][:,0].flatten()))),xerrsb[1][:,0])
-                ]
+        xsb2 = [50, xsb[1]]
+        covb = [
+            1,
+            util.convert_corr_to_cov(
+                np.ones(
+                    (len(xerrsb[1][:, 0].flatten()), len(xerrsb[1][:, 0].flatten()))
+                ),
+                xerrsb[1][:, 0],
+            ),
+        ]
 
-        ufb,ucorrb = prop.propagate_cov(functionb,xsb2,covb,return_corr=True,
-                                        repeat_dims=1,param_fixed=[True,False])
-        npt.assert_allclose(ucorrb,np.ones((len(ucorrb),len(ucorrb))),atol=0.06)
-        npt.assert_allclose(ufb,yerr_uncorrb,rtol=0.06)
+        ufb, ucorrb = prop.propagate_cov(
+            functionb,
+            xsb2,
+            covb,
+            return_corr=True,
+            repeat_dims=1,
+            param_fixed=[True, False],
+        )
+        npt.assert_allclose(ucorrb, np.ones((len(ucorrb), len(ucorrb))), atol=0.06)
+        npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
 
         covb = [
             util.convert_corr_to_cov(
@@ -520,43 +570,68 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
 
     def test_propagate_syst_corr_3D_2out(self):
-        prop = MCPropagation(20000,parallel_cores=1)
+        prop = MCPropagation(20000, parallel_cores=1)
 
-        corrd = [np.eye(len(xerrd[:,0,0].flatten())) for xerrd in xerrsd]
-        ufd,ucorrd,corr_out = prop.propagate_systematic(functiond,xsd,xerrsd,
-                                                        corr_x=corrd,return_corr=True,
-                                                        corr_axis=0,repeat_dims=[1,2],
-                                                        output_vars=2,)
-        npt.assert_allclose(ucorrd[0],np.eye(len(ucorrd[0])),atol=0.06)
-        npt.assert_allclose(ufd[0],yerr_uncorrd[0],rtol=0.06)
-        npt.assert_allclose(ufd[1],yerr_uncorrd[1],rtol=0.06)
+        corrd = [np.eye(len(xerrd[:, 0, 0].flatten())) for xerrd in xerrsd]
+        ufd, ucorrd, corr_out = prop.propagate_systematic(
+            functiond,
+            xsd,
+            xerrsd,
+            corr_x=corrd,
+            return_corr=True,
+            corr_axis=0,
+            repeat_dims=[1, 2],
+            output_vars=2,
+        )
+        npt.assert_allclose(ucorrd[0], np.eye(len(ucorrd[0])), atol=0.06)
+        npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
+        npt.assert_allclose(ufd[1], yerr_uncorrd[1], rtol=0.06)
 
-        prop = MCPropagation(20000,parallel_cores=1)
+        prop = MCPropagation(20000, parallel_cores=1)
 
-        corrd = [np.eye(len(xerrd[:,0,0].flatten())) for xerrd in xerrsd]
-        ufd,ucorrd,corr_out = prop.propagate_systematic(functiond,xsd,xerrsd,
-                                                        corr_x=corrd,return_corr=True,
-                                                        corr_axis=0,repeat_dims=1,
-                                                        output_vars=2,)
-        npt.assert_allclose(ucorrd[0],np.eye(len(ucorrd[0])),atol=0.06)
-        npt.assert_allclose(ufd[0],yerr_uncorrd[0],rtol=0.06)
-        npt.assert_allclose(ufd[1],yerr_uncorrd[1],rtol=0.06)
+        corrd = [np.eye(len(xerrd[:, 0, 0].flatten())) for xerrd in xerrsd]
+        ufd, ucorrd, corr_out = prop.propagate_systematic(
+            functiond,
+            xsd,
+            xerrsd,
+            corr_x=corrd,
+            return_corr=True,
+            corr_axis=0,
+            repeat_dims=1,
+            output_vars=2,
+        )
+        npt.assert_allclose(ucorrd[0], np.eye(len(ucorrd[0])), atol=0.06)
+        npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
+        npt.assert_allclose(ufd[1], yerr_uncorrd[1], rtol=0.06)
 
-        xsd2 = [x1d, 1.]
-        xerrsd2 = [x1errd, 2.]
+        xsd2 = [x1d, 1.0]
+        xerrsd2 = [x1errd, 2.0]
 
-        ufd,ucorrd,corr_out = prop.propagate_systematic(functione,xsd2,xerrsd2,
-            return_corr=True,corr_axis=0,output_vars=2,)
-        npt.assert_allclose(ucorrd[0],np.ones_like(ucorrd[0]),atol=0.06)
-        npt.assert_allclose(ufd[0],yerr_uncorrd[0],rtol=0.06)
+        ufd, ucorrd, corr_out = prop.propagate_systematic(
+            functione,
+            xsd2,
+            xerrsd2,
+            return_corr=True,
+            corr_axis=0,
+            output_vars=2,
+        )
+        npt.assert_allclose(ucorrd[0], np.ones_like(ucorrd[0]), atol=0.06)
+        npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
 
-        ufd,ucorrd,corr_out = prop.propagate_systematic(functione,xsd2,xerrsd2,
-                                                        return_corr=True,corr_axis=0,
-                                                        output_vars=2,repeat_dims=1,param_fixed=[False,True])
-        npt.assert_allclose(ucorrd[0],np.ones_like(ucorrd[0]),atol=0.06)
-        npt.assert_allclose(ufd[0],yerr_uncorrd[0],rtol=0.06)
+        ufd, ucorrd, corr_out = prop.propagate_systematic(
+            functione,
+            xsd2,
+            xerrsd2,
+            return_corr=True,
+            corr_axis=0,
+            output_vars=2,
+            repeat_dims=1,
+            param_fixed=[False, True],
+        )
+        npt.assert_allclose(ucorrd[0], np.ones_like(ucorrd[0]), atol=0.06)
+        npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
 
-        prop = MCPropagation(20000,parallel_cores=1,dtype=np.float32)
+        prop = MCPropagation(20000, parallel_cores=1, dtype=np.float32)
 
         corrd = [
             np.ones((len(xerrd[:, 0, 0].flatten()), len(xerrd[:, 0, 0].flatten())))
@@ -574,37 +649,85 @@ class TestMCPropagation(unittest.TestCase):
         )
         npt.assert_allclose(ucorrd[1], np.ones_like(ucorrd[1]), atol=0.06)
         npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
-        self.assertIsInstance(ufd[0][0,0,0],np.float32)
+        print(ufd[0][0, 0, 0].dtype)
+        self.assertIsInstance(ufd[0][0, 0, 0], np.float32)
 
-        ufd,ucorrd = prop.propagate_systematic(functionb,xsd,xerrsd,corr_x=corrd,
-                                               return_corr=True,corr_axis=0,
-                                               repeat_dims=[1,2],output_vars=1,)
-        npt.assert_allclose(ucorrd[1],np.ones_like(ucorrd[1]),atol=0.01)
+        ufd, ucorrd = prop.propagate_systematic(
+            functionb,
+            xsd,
+            xerrsd,
+            corr_x=corrd,
+            return_corr=True,
+            corr_axis=0,
+            repeat_dims=[1, 2],
+            output_vars=1,
+        )
+        npt.assert_allclose(ucorrd[1], np.ones_like(ucorrd[1]), atol=0.01)
 
     def test_perform_checks(self):
         prop = MCPropagation(20000)
-        corrc = [np.ones((len(xerrc[0].flatten()),len(xerrc[0].flatten()))) for xerrc in
-            xerrsc]
-        corrd = [np.ones((len(xerrd[0].flatten()),len(xerrd[0].flatten()))) for xerrd in
-                 xerrsd]
+        corrc = [
+            np.ones((len(xerrc[0].flatten()), len(xerrc[0].flatten())))
+            for xerrc in xerrsc
+        ]
+        corrd = [
+            np.ones((len(xerrd[0].flatten()), len(xerrd[0].flatten())))
+            for xerrd in xerrsd
+        ]
 
-        out = prop.perform_checks(functionc,xsc,xerrsc,corr_x=corrc,repeat_dims=0,
-                                  corr_axis=1,output_vars=1,fixed_corr_var=None,
-                                  param_fixed=None,refyvar=0)
+        out = prop.perform_checks(
+            functionc,
+            xsc,
+            xerrsc,
+            corr_x=corrc,
+            repeat_dims=0,
+            corr_axis=1,
+            output_vars=1,
+            fixed_corr_var=None,
+            param_fixed=None,
+            refyvar=0,
+        )
 
-        out = prop.perform_checks(functiond,xsd,xerrsd,corr_x=corrd,repeat_dims=[0,1],
-                                  corr_axis=2,output_vars=2,fixed_corr_var=None,
-                                  param_fixed=[True,False,False],refyvar=0)
+        out = prop.perform_checks(
+            functiond,
+            xsd,
+            xerrsd,
+            corr_x=corrd,
+            repeat_dims=[0, 1],
+            corr_axis=2,
+            output_vars=2,
+            fixed_corr_var=None,
+            param_fixed=[True, False, False],
+            refyvar=0,
+        )
         try:
-            out = prop.perform_checks(functionc,xsc,xerrsc,corr_x=corrc,repeat_dims=0,
-                                  corr_axis=0,output_vars=1,fixed_corr_var=None,
-                                  param_fixed=None,refyvar=0)
-            out = prop.perform_checks(functiond,xsd,xerrsd,corr_x=corrd,
-                                      repeat_dims=[0,1],corr_axis=1,output_vars=2,
-                                      fixed_corr_var=None,
-                                      param_fixed=[True,False,False],refyvar=0)
+            out = prop.perform_checks(
+                functionc,
+                xsc,
+                xerrsc,
+                corr_x=corrc,
+                repeat_dims=0,
+                corr_axis=0,
+                output_vars=1,
+                fixed_corr_var=None,
+                param_fixed=None,
+                refyvar=0,
+            )
+            out = prop.perform_checks(
+                functiond,
+                xsd,
+                xerrsd,
+                corr_x=corrd,
+                repeat_dims=[0, 1],
+                corr_axis=1,
+                output_vars=2,
+                fixed_corr_var=None,
+                param_fixed=[True, False, False],
+                refyvar=0,
+            )
         except:
             print("done")
+
 
 if __name__ == "__main__":
     unittest.main()
