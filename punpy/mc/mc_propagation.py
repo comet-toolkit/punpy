@@ -732,14 +732,13 @@ class MCPropagation:
             fixed_corr,
         )
 
-    def combine_repeated_outs(self,outs,yshapes,lenx,n_repeats,repeat_shape,repeat_dims,
-            return_corr,return_samples,output_vars,refyvar,):
+    def make_new_outs(self,out_0,yshapes,lenx,n_repeats,repeat_shape,
+            repeat_dims,return_corr,return_samples,output_vars,refyvar,):
         """
-        Combine the outputs of the repeated measurements into one results array
+        Prepare arrays for storing the results from the individual repeated measurements.
 
-        :param outs: list of outputs of the repeated measurements
-        :type outs: list[array]
-        :param yshapes: shape of the measurand
+        :param out_0: output array of the first repeated measurement
+        :type out_0: array
         :type yshapes: tuple
         :param lenx: number of input quantities
         :type lenx: int
@@ -757,126 +756,9 @@ class MCPropagation:
         :type output_vars: integer, optional
         :param refyvar: Index of output variable with reference shape (only relevant when output_vars>1; should be output variable with most dimensions; affects things like repeat_dims)
         :type refyvar: int
-        :return: combined outputs
-        :rtype: list[array]
+        :return: array of outputs of the repeated measurements
+        :rtype: array
         """
-        if not return_corr and output_vars == 1 and not return_samples:
-            u_func = np.array([outs[i] for i in range(n_repeats)])
-
-        elif output_vars == 1:
-            u_func = np.array([outs[i][0] for i in range(n_repeats)])
-
-        elif output_vars > 1 and not return_corr and not return_samples:
-            u_func = np.array(
-                [[outs[i][ii] for i in range(n_repeats)] for ii in range(output_vars)])
-
-        elif (outs[0][0][0].ndim) > 1:
-            u_func = np.empty(output_vars,dtype=object)
-
-            for ii in range(output_vars):
-                u_func[ii] = np.array(
-                    [[outs[i][0][ii][iii] for iii in range(len(outs[i][0][ii]))] for i in
-                        range(n_repeats)])
-
-        else:
-            u_func = np.array([[outs[i][0][ii] for i in range(n_repeats)] for ii in
-                range(output_vars)])
-
-        if len(repeat_dims) == 1:
-            if output_vars == 1:
-                u_func = np.squeeze(np.moveaxis(u_func,0,repeat_dims[0]))
-            else:
-                u_funcb = u_func[:]
-                u_func = np.empty(output_vars,dtype=object)
-                if all([yshapes[i] == yshapes[refyvar] for i in range(len(yshapes))]):
-                    for i in range(output_vars):
-                        u_func[i] = np.moveaxis(u_funcb[i],0,repeat_dims[0])
-                else:
-                    for i in range(output_vars):
-                        u_func[i] = np.empty(yshapes[i])
-                        if len(yshapes[i]) == len(u_funcb[i].shape):
-                            repeat_dim_corr = repeat_dims[0]
-                            for idim,dim in enumerate(yshapes[refyvar]):
-                                if dim not in yshapes[i] and idim < repeat_dims[0]:
-                                    repeat_dim_corr -= 1
-                            u_func[i] = np.moveaxis(u_funcb[i],0,repeat_dim_corr)
-                        elif len(yshapes[i]) == 2 and len(u_funcb[i].shape) == 1:
-                            for ii in range(yshapes[i][0]):
-                                for iii in range(yshapes[i][1]):
-                                    u_func[i][ii,iii] = u_funcb[i][iii][ii]
-                        else:
-                            print("this shape is not supported")
-
-        else:
-            if output_vars == 1:
-                u_func = u_func.reshape(repeat_shape+(-1,))
-                u_func = np.moveaxis(u_func,0,repeat_dims[0])
-                u_func = np.moveaxis(u_func,0,repeat_dims[1])
-            else:
-                u_funcb = u_func[:]
-                u_func = np.empty(output_vars,dtype=object)
-                for i in range(output_vars):
-                    u_func[i] = u_funcb[i].reshape(repeat_shape+(-1,))
-                    u_func[i] = np.moveaxis(u_func[i],0,repeat_dims[0])
-                    u_func[i] = np.moveaxis(u_func[i],0,repeat_dims[1])
-
-        if (output_vars == 1 and u_func.shape != yshapes[0]) or (output_vars > 1 and (
-                u_func[0].shape != yshapes[0] or u_func[1].shape != yshapes[1])):
-            print(u_func.shape,yshapes)
-            raise ValueError("The shape of the uncertainties does not match the shape"
-                             "of the measurand. This is likely a problem with combining"
-                             "repeated measurements (repeat_dims keyword).")
-
-        if not return_corr and not return_samples:
-            return u_func
-
-        else:
-            returns = np.empty(len(outs[0]),dtype=object)
-            returns[0] = u_func
-            extra_index = 0
-            if return_corr:
-                corr = np.mean([outs[i][1] for i in range(n_repeats)],axis=0)
-                if all([yshapes[i] == yshapes[refyvar] for i in range(len(yshapes))]):
-                    if output_vars > 1:
-                        for j in range(output_vars):
-                            if not util.isPD(corr[j]):
-                                corr[j] = util.nearestPD_cholesky(corr[j],corr=True,
-                                    return_cholesky=False)
-                    else:
-                        if not util.isPD(corr):
-                            corr = util.nearestPD_cholesky(corr,corr=True,
-                                return_cholesky=False)
-
-                returns[1] = corr
-                extra_index += 1
-
-            if output_vars > 1:
-                if all([yshapes[i] == yshapes[refyvar] for i in range(len(yshapes))]):
-                    # print([out.shape for out in outs[0]],extra_index)
-                    # print([out[0].shape for out in outs[0]],extra_index)
-                    corr_out = np.mean(
-                        [outs[i][1+extra_index] for i in range(n_repeats)],axis=0)
-                    if not util.isPD(corr_out):
-                        corr_out = util.nearestPD_cholesky(corr_out,corr=True,
-                            return_cholesky=False)
-                else:
-                    corr_out = None
-                returns[1+extra_index] = corr_out
-                extra_index += 1
-
-            if return_samples:
-                returns[1+extra_index] = [
-                    np.vstack([outs[i][1+extra_index][k] for i in range(n_repeats)]) for
-                    k in range(lenx)]
-                returns[2+extra_index] = [
-                    np.vstack([outs[i][2+extra_index][k] for i in range(n_repeats)]) for
-                    k in range(lenx)]
-
-            return returns
-
-    def make_new_outs(self,out_0,yshapes,lenx,n_repeats,repeat_shape,
-            repeat_dims,return_corr,return_samples,output_vars,refyvar,):
-
         if not return_corr and output_vars == 1 and not return_samples:
             outs=np.empty((n_repeats,)+out_0.shape,dtype=self.dtype)
 
@@ -935,10 +817,14 @@ class MCPropagation:
         refyvar,
     ):
         """
-        Combine the outputs of the repeated measurements into one results array
+        Add the results for a single repeated measurement to the combined array
 
-        :param outs: list of outputs of the repeated measurements
+        :param outs: array with outputs of the repeated measurements
         :type outs: list[array]
+        :param i: index of the individual measurements
+        :type i: int
+        :param out_i: array with outputs of the individual measurements
+        :type out_i: list[array]
         :param yshapes: shape of the measurand
         :type yshapes: tuple
         :param lenx: number of input quantities
@@ -1025,6 +911,31 @@ class MCPropagation:
         output_vars,
         refyvar,
     ):
+        """
+        Do final operations to output arrays with repeated measurements (e.g. dividing by number of repeats to take mean).
+
+        :param outs: array of outputs of the repeated measurements
+        :type outs: array
+        :type yshapes: tuple
+        :param lenx: number of input quantities
+        :type lenx: int
+        :param n_repeats: number of repeated measurements
+        :type n_repeats: int
+        :param repeat_shape: shape along which the measurements are repeated
+        :type repeat_shape: tuple
+        :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
+        :type repeat_dims: integer or list of 2 integers, optional
+        :param return_corr: set to True to return correlation matrix of measurand, defaults to True
+        :type return_corr: bool, optional
+        :param return_Jacobian: set to True to return Jacobian, defaults to False
+        :type return_Jacobian: bool, optional
+        :param output_vars: number of output parameters in the measurement function. Defaults to 1.
+        :type output_vars: integer, optional
+        :param refyvar: Index of output variable with reference shape (only relevant when output_vars>1; should be output variable with most dimensions; affects things like repeat_dims)
+        :type refyvar: int
+        :return: finalised array of outputs of the repeated measurements
+        :rtype: array
+        """
         if not return_corr and output_vars == 1 and not return_samples:
             u_func=np.array(outs,dtype=self.dtype)
         else:
