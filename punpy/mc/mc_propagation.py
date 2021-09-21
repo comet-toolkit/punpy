@@ -369,10 +369,6 @@ class MCPropagation:
             for i in range(len(x)):
                 if not hasattr(x[i], "__len__"):
                     MC_data[i] = self.generate_samples_systematic(x[i], u_x[i])
-                elif all(
-                    (u_x[i] == 0).flatten()
-                ):  # This is the case if one of the variables has no uncertainty
-                    MC_data[i] = np.tile(x[i].flatten(), (self.MCsteps, 1)).T
                 elif corr_x[i] == "rand":
                     MC_data[i] = self.generate_samples_random(x[i], u_x[i])
                 elif corr_x[i] == "syst":
@@ -583,10 +579,6 @@ class MCPropagation:
             for i in range(len(x)):
                 if not hasattr(x[i], "__len__"):
                     MC_data[i] = self.generate_samples_systematic(x[i], cov_x[i])
-                elif all(
-                    (cov_x[i] == 0).flatten()
-                ):  # This is the case if one of the variables has no uncertainty
-                    MC_data[i] = np.tile(x[i].flatten(), (self.MCsteps, 1)).T
                 elif param_fixed is not None:
                     if param_fixed[i] and (len(x[i].shape) == 2):
                         MC_data[i] = np.array(
@@ -1517,6 +1509,7 @@ class MCPropagation:
         :return: correlated samples of input quantities
         :rtype: array[array]
         """
+
         if np.max(corr) > 1.000001 or len(corr) != len(samples):
             raise ValueError(
                 "The correlation matrix between variables is not the right shape or has elements >1."
@@ -1527,29 +1520,36 @@ class MCPropagation:
             except:
                 L = util.nearestPD_cholesky(corr)
 
-            # Cholesky needs to be applied to Gaussian distributions with mean=0 and std=1,
-            # We first calculate the mean and std for each input quantity
-            means = np.array(
-                [np.mean(samples[i]) for i in range(len(samples))], dtype=self.dtype
-            )
-            stds = np.array(
-                [np.std(samples[i]) for i in range(len(samples))], dtype=self.dtype
-            )
+            samples_out = samples.copy()
+            for j in np.ndindex(samples[0][...,0].shape):
+                samples_j= np.array([samples[i][j] for i in range(len(samples))], dtype=self.dtype)
 
-            # We normalise the samples with the mean and std, then apply Cholesky, and finally reapply the mean and std.
-            if all(stds != 0):
-                return np.dot(L, (samples - means) / stds) * stds + means
+                # Cholesky needs to be applied to Gaussian distributions with mean=0 and std=1,
+                # We first calculate the mean and std for each input quantity
+                means = np.array(
+                    [np.mean(samples[i][j]) for i in range(len(samples))], dtype=self.dtype
+                )[:, None]
+                stds = np.array(
+                    [np.std(samples[i][j]) for i in range(len(samples))], dtype=self.dtype
+                )[:, None]
 
-            # If any of the variables has no uncertainty, the normalisation will fail. Instead we leave the parameters without uncertainty unchanged.
-            else:
-                samples_out = samples[:]
-                id_nonzero = np.where(stds != 0)
-                samples_out[id_nonzero] = (
-                    np.dot(
-                        L[id_nonzero][:, id_nonzero],
-                        (samples[id_nonzero] - means[id_nonzero]) / stds[id_nonzero],
-                    )[:, 0]
-                    * stds[id_nonzero]
-                    + means[id_nonzero]
-                )
-                return samples_out
+                # We normalise the samples with the mean and std, then apply Cholesky, and finally reapply the mean and std.
+                if all(stds[:,0] != 0):
+                    samples_j =np.dot(L, (samples_j - means) / stds) * stds+ means
+
+                # If any of the variables has no uncertainty, the normalisation will fail. Instead we leave the parameters without uncertainty unchanged.
+                else:
+                    id_nonzero = np.where(stds[:,0] != 0)[0]
+                    samples_j[id_nonzero] = (
+                        np.dot(
+                            L[id_nonzero][:, id_nonzero],
+                            (samples_j[id_nonzero] - means[id_nonzero]) / stds[id_nonzero],
+                        )
+                        * stds[id_nonzero]
+                        + means[id_nonzero]
+                    )
+
+                for i in range(len(samples)):
+                    samples_out[i][j] = samples_j[i]
+
+            return samples_out
