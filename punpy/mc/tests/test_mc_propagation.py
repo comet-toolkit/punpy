@@ -102,7 +102,7 @@ class TestMCPropagation(unittest.TestCase):
     """
 
     def test_propagate_random_1D(self):
-        prop = MCPropagation(20000, parallel_cores=0)
+        prop = MCPropagation(40000, parallel_cores=0)
 
         uf, ucorr = prop.propagate_random(function, xs, xerrs, return_corr=True)
         npt.assert_allclose(ucorr, np.eye(len(ucorr)), atol=0.06)
@@ -112,7 +112,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ucorr, ucorr2, atol=0.01)
 
         uf = prop.propagate_random(function, xs, xerrs, corr_between=np.ones((2, 2)))
-        npt.assert_allclose(uf, yerr_corr, rtol=0.06)
+        npt.assert_allclose(uf, yerr_corr, atol=0.1)
 
         uf, ucorr, yvalues, xvalues = prop.propagate_random(
             function, xs, xerrs, return_corr=True, return_samples=True
@@ -123,7 +123,7 @@ class TestMCPropagation(unittest.TestCase):
         uf, yvalues, xvalues = prop.propagate_random(
             function, xs, xerrs, corr_between=np.ones((2, 2)), return_samples=True
         )
-        npt.assert_allclose(uf, yerr_corr, rtol=0.06)
+        npt.assert_allclose(uf, yerr_corr, atol=0.1)
 
         uf, yvalues, xvalues = prop.propagate_standard(
             function,
@@ -133,7 +133,7 @@ class TestMCPropagation(unittest.TestCase):
             corr_between=np.ones((2, 2)),
             return_samples=True,
         )
-        npt.assert_allclose(uf, yerr_corr, rtol=0.06)
+        npt.assert_allclose(uf, yerr_corr, atol=0.1)
 
         uf, yvalues, xvalues = prop.propagate_random(
             function,
@@ -143,7 +143,7 @@ class TestMCPropagation(unittest.TestCase):
             corr_between=np.ones((2, 2)),
             return_samples=True,
         )
-        npt.assert_allclose(uf, yerr_corr, rtol=0.06)
+        npt.assert_allclose(uf, yerr_corr, atol=0.1)
 
         uf, yvalues, xvalues = prop.propagate_random(
             function,
@@ -153,7 +153,7 @@ class TestMCPropagation(unittest.TestCase):
             corr_between=np.ones((2, 2)),
             return_samples=True,
         )
-        npt.assert_allclose(uf, yerr_corr, rtol=0.06)
+        npt.assert_allclose(uf, yerr_corr, atol=0.1)
 
     def test_propagate_random_2D(self):
         prop = MCPropagation(20000, parallel_cores=2)
@@ -192,7 +192,7 @@ class TestMCPropagation(unittest.TestCase):
         ufb = prop.propagate_random(
             functionb, xsb, xerrsb, corr_between=np.ones((2, 2))
         )
-        npt.assert_allclose(ufb, yerr_corrb, atol=0.03)
+        npt.assert_allclose(ufb, yerr_corrb, atol=0.06)
 
         ufb, yvaluesb, xvaluesb = prop.propagate_random(
             functionb,
@@ -202,7 +202,7 @@ class TestMCPropagation(unittest.TestCase):
             return_samples=True,
             repeat_dims=1,
         )
-        npt.assert_allclose(ufb, yerr_corrb, atol=0.03)
+        npt.assert_allclose(ufb, yerr_corrb, atol=0.06)
 
     def test_propagate_random_1D_3var(self):
         prop = MCPropagation(20000, parallel_cores=1)
@@ -364,7 +364,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ucorrd[0], np.ones_like(ucorrd[0]), atol=0.06)
 
     def test_propagate_cov_1D(self):
-        prop = MCPropagation(20000)
+        prop = MCPropagation(25000)
 
         cov = [
             util.convert_corr_to_cov(np.eye(len(xerr.flatten())), xerr)
@@ -392,7 +392,7 @@ class TestMCPropagation(unittest.TestCase):
             function, xs, cov, return_corr=True, corr_between=np.ones((2, 2))
         )
         npt.assert_allclose(ucorr, np.eye(len(ucorr)), atol=0.06)
-        npt.assert_allclose(uf, yerr_corr, rtol=0.06)
+        npt.assert_allclose(uf, yerr_corr, atol=0.1)
 
     def test_propagate_cov_2D(self):
         prop = MCPropagation(20000)
@@ -457,7 +457,7 @@ class TestMCPropagation(unittest.TestCase):
             functionb, xsb, covb, return_corr=True, corr_between=np.ones((2, 2))
         )
         npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.06)
-        npt.assert_allclose(ufb, yerr_corrb, atol=0.03)
+        npt.assert_allclose(ufb, yerr_corrb, atol=0.1)
 
     def test_propagate_cov_1D_3var(self):
         prop = MCPropagation(20000)
