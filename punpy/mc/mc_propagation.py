@@ -1448,6 +1448,12 @@ class MCPropagation:
                 * u_param[:, :, :, None]
                 + param[:, :, :, None]
             )
+        elif len(param.shape) == 4:
+            return (
+                np.random.normal(size=param.shape + (self.MCsteps,)).astype(self.dtype)
+                * u_param[:, :, :, :, None]
+                + param[:, :, :, :, None]
+            )
         else:
             print("parameter shape not supported: ", param.shape, param)
             exit()
@@ -1494,6 +1500,16 @@ class MCPropagation:
                     ],
                 )[:, :, :, :, 0, 0]
                 + param[:, :, :, None]
+            )
+        elif len(param.shape) == 4:
+            return (
+                np.dot(
+                    u_param[:, :, :, :, None],
+                    np.random.normal(size=self.MCsteps).astype(self.dtype)[
+                        :, None, None, None, None
+                    ],
+                )[:, :, :, :, :, 0, 0, 0]
+                + param[:, :, :, :, None]
             )
         else:
             print("parameter shape not supported")
