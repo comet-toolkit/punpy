@@ -367,14 +367,7 @@ class MCPropagation:
         else:
             MC_data = np.empty(len(x), dtype=np.ndarray)
             for i in range(len(x)):
-                if not hasattr(x[i], "__len__"):
-                    MC_data[i] = self.generate_samples_systematic(x[i], u_x[i])
-                elif corr_x[i] == "rand":
-                    MC_data[i] = self.generate_samples_random(x[i], u_x[i])
-                elif corr_x[i] == "syst":
-                    MC_data[i] = self.generate_samples_systematic(x[i], u_x[i])
-                else:
-                    MC_data[i] = self.generate_samples_correlated(x, u_x, corr_x, i)
+                MC_data[i]= self.generate_sample(x,u_x,corr_x,i)
 
             if corr_between is not None:
                 MC_data = self.correlate_samples_corr(MC_data, corr_between)
@@ -1349,6 +1342,38 @@ class MCPropagation:
             exit()
 
         return corr_y
+
+    def generate_sample(self,x,u_x,corr_x,i=None):
+        """
+        Generate correlated MC samples of input quantity with given uncertainties and correlation matrix.
+
+         :param x: list of input quantities (usually numpy arrays)
+        :type x: list[array]
+        :param u_x: list of uncertainties/covariances on input quantities (usually numpy arrays)
+        :type u_x: list[array]
+        :param corr_x: list of correlation matrices (n,n) along non-repeating axis, or list of correlation matrices for each repeated measurement.
+        :type corr_x: list[array], optional
+        :param i: index of the input quantity (in x)
+        :type i: int
+        :return: generated samples
+        :rtype: array
+        """
+        if i is None:
+            x=np.array([x])
+            u_x=np.array([u_x])
+            corr_x = np.array([corr_x])
+            i=0
+
+        if not hasattr(x[i],"__len__"):
+            sample = self.generate_samples_systematic(x[i],u_x[i])
+        elif corr_x[i] == "rand":
+            sample = self.generate_samples_random(x[i],u_x[i])
+        elif corr_x[i] == "syst":
+            sample = self.generate_samples_systematic(x[i],u_x[i])
+        else:
+            sample = self.generate_samples_correlated(x,u_x,corr_x,i)
+
+        return sample
 
     def generate_samples_correlated(self, x, u_x, corr_x, i):
         """
