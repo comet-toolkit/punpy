@@ -42,6 +42,7 @@ class MCPropagation:
         corr_x=None,
         param_fixed=None,
         corr_between=None,
+        samples=None,
         return_corr=False,
         return_samples=False,
         repeat_dims=-99,
@@ -101,6 +102,7 @@ class MCPropagation:
             corr_x,
             param_fixed=param_fixed,
             corr_between=corr_between,
+            samples=samples,
             return_corr=return_corr,
             return_samples=return_samples,
             repeat_dims=repeat_dims,
@@ -119,6 +121,7 @@ class MCPropagation:
         corr_x=None,
         param_fixed=None,
         corr_between=None,
+        samples=None,
         return_corr=False,
         return_samples=False,
         repeat_dims=-99,
@@ -178,6 +181,7 @@ class MCPropagation:
             corr_x,
             param_fixed=param_fixed,
             corr_between=corr_between,
+            samples=samples,
             return_corr=return_corr,
             return_samples=return_samples,
             repeat_dims=repeat_dims,
@@ -196,6 +200,7 @@ class MCPropagation:
         corr_x,
         param_fixed=None,
         corr_between=None,
+        samples=None,
         return_corr=False,
         return_samples=False,
         repeat_dims=-99,
@@ -276,6 +281,7 @@ class MCPropagation:
                 corr_x,
                 param_fixed,
                 corr_between,
+                samples,
                 return_corr,
                 return_samples,
                 -99,
@@ -325,6 +331,7 @@ class MCPropagation:
                     corr_x,
                     param_fixed,
                     corr_between,
+                    samples,
                     return_corr,
                     return_samples,
                     -99,
@@ -365,12 +372,15 @@ class MCPropagation:
             return outs
 
         else:
-            MC_data = np.empty(len(x), dtype=np.ndarray)
-            for i in range(len(x)):
-                MC_data[i]= self.generate_sample(x,u_x,corr_x,i)
+            if samples is not None:
+                MC_data=samples
+            else:
+                MC_data = np.empty(len(x), dtype=np.ndarray)
+                for i in range(len(x)):
+                    MC_data[i]= self.generate_sample(x,u_x,corr_x,i)
 
-            if corr_between is not None:
-                MC_data = self.correlate_samples_corr(MC_data, corr_between)
+                if corr_between is not None:
+                    MC_data = self.correlate_samples_corr(MC_data, corr_between)
 
             return self.process_samples(
                 func,
@@ -1455,7 +1465,7 @@ class MCPropagation:
                 + param[:, :, :, :, None]
             )
         else:
-            print("parameter shape not supported: ", param.shape, param)
+            print("parameter shape not supported for punpy: ", param.shape, param)
             exit()
 
     def generate_samples_systematic(self, param, u_param):
@@ -1512,7 +1522,7 @@ class MCPropagation:
                 + param[:, :, :, :, None]
             )
         else:
-            print("parameter shape not supported")
+            print("parameter shape not supported for punpy")
             exit()
 
     def generate_samples_cov(self, param, cov_param):
