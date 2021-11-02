@@ -1381,7 +1381,6 @@ class MCPropagation:
         elif corr_x[i] == "syst":
             sample = self.generate_samples_systematic(x[i],u_x[i])
         else:
-            print(x.shape,u_x.shape,corr_x.shape,i)
             sample = self.generate_samples_correlated(x,u_x,corr_x,i)
 
         return sample
