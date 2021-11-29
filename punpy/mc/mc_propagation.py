@@ -1376,10 +1376,15 @@ class MCPropagation:
 
         if not hasattr(x[i],"__len__"):
             sample = self.generate_samples_systematic(x[i],u_x[i])
-        elif corr_x[i] == "rand":
-            sample = self.generate_samples_random(x[i],u_x[i])
-        elif corr_x[i] == "syst":
-            sample = self.generate_samples_systematic(x[i],u_x[i])
+        elif type(corr_x[i]) == str:
+            if corr_x[i] == "rand":
+                sample = self.generate_samples_random(x[i],u_x[i])
+            elif corr_x[i] == "syst":
+                sample = self.generate_samples_systematic(x[i],u_x[i])
+        #elif corr_x[i] == "rand":
+            #sample = self.generate_samples_random(x[i],u_x[i])
+        #elif corr_x[i] == "syst":
+            #sample = self.generate_samples_systematic(x[i],u_x[i])
         else:
             sample = self.generate_samples_correlated(x,u_x,corr_x,i)
 
