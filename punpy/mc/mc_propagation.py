@@ -728,7 +728,7 @@ class MCPropagation:
                     if not isinstance(corr_x[i], str):
                         if np.any(corr_x[i] > 1.000001):
                             raise ValueError(
-                                "One of the provided correlation matrices "
+                                "punpy.mc_propagation: One of the provided correlation matrices "
                                 "has elements >1."
                             )
 
@@ -756,8 +756,7 @@ class MCPropagation:
                 if corr_axis > repeat_dims[0]:
                     corr_axis -= 1
                 elif corr_axis == repeat_dims[0]:
-                    print("corr_axis and repeat_axis keywords should not be the same.")
-                    exit()
+                    raise ValueError("punpy.mc_propagation: corr_axis and repeat_axis keywords should not be the same.")
             else:
                 n_repeats = 0
             repeat_shape = (n_repeats,)  # repeat_dims = -99
@@ -768,14 +767,13 @@ class MCPropagation:
             if corr_axis > repeat_dims[0]:
                 corr_axis -= 1
             elif corr_axis == repeat_dims[0]:
-                print("corr_axis and repeat_axis keywords should not be the same.")
-                exit()
+                raise ValueError(
+                    "punpy.mc_propagation: corr_axis and repeat_axis keywords should not be the same.")
             if corr_axis > repeat_dims[1]:
                 corr_axis -= 1
             elif corr_axis == repeat_dims[1]:
-                print("corr_axis and repeat_axis keywords should not be the same.")
-                exit()
-
+                raise ValueError(
+                    "punpy.mc_propagation: corr_axis and repeat_axis keywords should not be the same.")
         return (
             yshapes,
             x,
@@ -1051,7 +1049,7 @@ class MCPropagation:
                                 for iii in range(yshapes[i][1]):
                                     u_func[i][ii, iii] = u_funcb[i][iii][ii]
                         else:
-                            print("this shape is not supported")
+                            raise ValueError("punpy.mc_propagation: this shape is not supported")
 
         else:
             if output_vars == 1:
@@ -1072,7 +1070,7 @@ class MCPropagation:
         ):
             print(u_func.shape, u_func[0].shape, yshapes)
             raise ValueError(
-                "The shape of the uncertainties does not match the shape"
+                "punpy.mc_propagation: The shape of the uncertainties does not match the shape"
                 "of the measurand. This is likely a problem with combining"
                 "repeated measurements (repeat_dims keyword)."
             )
@@ -1191,7 +1189,7 @@ class MCPropagation:
                                             ii, iii, iiii
                                         ]
                     else:
-                        print("this shape is not supported")
+                        raise ValueError("punpy.mc_propagation: this shape is not supported")
 
         else:
             # We again need to reorder the input quantities samples in order to be able to pass them to p.starmap
@@ -1346,10 +1344,9 @@ class MCPropagation:
                 )
                 corr_y = np.corrcoef(MC_y)
         else:
-            print(
-                "MC_y has too high dimensions. Reduce the dimensionality of the input data"
+            raise ValueError(
+                "punpy.mc_propagation: MC_y has too high dimensions. Reduce the dimensionality of the input data"
             )
-            exit()
 
         return corr_y
 
@@ -1357,7 +1354,7 @@ class MCPropagation:
         """
         Generate correlated MC samples of input quantity with given uncertainties and correlation matrix.
 
-         :param x: list of input quantities (usually numpy arrays)
+        :param x: list of input quantities (usually numpy arrays)
         :type x: list[array]
         :param u_x: list of uncertainties/covariances on input quantities (usually numpy arrays)
         :type u_x: list[array]
@@ -1437,9 +1434,10 @@ class MCPropagation:
         :rtype: array
         """
         if not hasattr(param, "__len__"):
-            return (
-                np.random.normal(size=self.MCsteps).astype(self.dtype) * u_param + param
-            )
+            return (np.random.normal(size=self.MCsteps).astype(self.dtype)*u_param+param)
+        elif len(param.shape) == 0:
+            return (np.random.normal(size=self.MCsteps).astype(self.dtype)*u_param+param)
+
         elif len(param.shape) == 1:
             return (
                 np.random.normal(size=(len(param), self.MCsteps)).astype(self.dtype)
@@ -1465,8 +1463,7 @@ class MCPropagation:
                 + param[:, :, :, :, None]
             )
         else:
-            print("parameter shape not supported for punpy: ", param.shape, param)
-            exit()
+            raise ValueError("punpy.mc_propagation: parameter shape not supported: %s %s"%(param.shape, param))
 
     def generate_samples_systematic(self, param, u_param):
         """
@@ -1483,6 +1480,8 @@ class MCPropagation:
             return (
                 np.random.normal(size=self.MCsteps).astype(self.dtype) * u_param + param
             )
+        elif len(param.shape) == 0:
+            return (np.random.normal(size=self.MCsteps).astype(self.dtype)*u_param+param)
         elif len(param.shape) == 1:
             return (
                 np.dot(
@@ -1522,8 +1521,9 @@ class MCPropagation:
                 + param[:, :, :, :, None]
             )
         else:
-            print("parameter shape not supported for punpy")
-            exit()
+            raise ValueError(
+                "punpy.mc_propagation: parameter shape not supported: %s %s"%(
+                param.shape,param))
 
     def generate_samples_cov(self, param, cov_param):
         """
@@ -1563,7 +1563,7 @@ class MCPropagation:
 
         if np.max(corr) > 1.000001 or len(corr) != len(samples):
             raise ValueError(
-                "The correlation matrix between variables is not the right shape or has elements >1."
+                "punpy.mc_propagation: The correlation matrix between variables is not the right shape or has elements >1."
             )
         else:
             try:
