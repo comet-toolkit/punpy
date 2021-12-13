@@ -53,23 +53,49 @@ class MeasurementFunction(ABC):
     def function(self):
         pass
 
-    def propagate_ds(self,measurandstring,*args):
+    def propagate_ds(self, measurandstring, *args):
         y = self.run(*args)
         u_rand_y = self.propagate_random(*args)
         u_syst_y = self.propagate_systematic(*args)
 
-        dims=args[0][self.variables[0]].dims
-        coords=args[0][self.variables[0]].coords
+        dims = args[0][self.variables[0]].dims
+        coords = args[0][self.variables[0]].coords
 
-        ds_out = xr.Dataset({measurandstring: (dims,y)},
-                            coords=coords,attrs={},)
-        ds_out.unc[measurandstring]["u_ran_"+measurandstring] = (dims,u_rand_y,{
-            "err_corr":[{"dim":dim,"form":"random","params":[],} for dim in dims]},)
-        ds_out.unc[measurandstring]["u_sys_"+measurandstring] = (dims,u_syst_y,{
-            "err_corr":[{"dim":dim,"form":"systematic","params":[],} for dim in dims]},)
+        ds_out = xr.Dataset(
+            {measurandstring: (dims, y)},
+            coords=coords,
+            attrs={},
+        )
+        ds_out.unc[measurandstring]["u_ran_" + measurandstring] = (
+            dims,
+            u_rand_y,
+            {
+                "err_corr": [
+                    {
+                        "dim": dim,
+                        "form": "random",
+                        "params": [],
+                    }
+                    for dim in dims
+                ]
+            },
+        )
+        ds_out.unc[measurandstring]["u_sys_" + measurandstring] = (
+            dims,
+            u_syst_y,
+            {
+                "err_corr": [
+                    {
+                        "dim": dim,
+                        "form": "systematic",
+                        "params": [],
+                    }
+                    for dim in dims
+                ]
+            },
+        )
 
         return ds_out
-
 
     def run(self, *args, expand=True):
         input_qty = self.get_input_qty(args, expand=expand)
@@ -78,22 +104,39 @@ class MeasurementFunction(ABC):
         else:
             return self.function(*input_qty)
 
-    def propagate_total(self,*args,expand=True):
-        input_qty = self.get_input_qty(args,expand=expand)
-        input_unc = self.get_input_unc("tot",args,expand=expand)
-        input_corr = self.get_input_corr("tot",args)
-        return self.prop.propagate_standard(self.function,input_qty,input_unc,input_corr,
-            param_fixed=self.param_fixed,corr_between=self.corr_between,
-            return_corr=False,return_samples=False,repeat_dims=self.repeat_dims,
-            corr_axis=self.corr_axis,output_vars=self.output_vars,)
+    def propagate_total(self, *args, expand=True):
+        input_qty = self.get_input_qty(args, expand=expand)
+        input_unc = self.get_input_unc("tot", args, expand=expand)
+        input_corr = self.get_input_corr("tot", args)
+        return self.prop.propagate_standard(
+            self.function,
+            input_qty,
+            input_unc,
+            input_corr,
+            param_fixed=self.param_fixed,
+            corr_between=self.corr_between,
+            return_corr=False,
+            return_samples=False,
+            repeat_dims=self.repeat_dims,
+            corr_axis=self.corr_axis,
+            output_vars=self.output_vars,
+        )
 
-    def propagate_random(self,*args,expand=True):
-        input_qty = self.get_input_qty(args,expand=expand)
-        input_unc = self.get_input_unc("rand",args,expand=expand)
-        return self.prop.propagate_random(self.function,input_qty,input_unc,
-            param_fixed=self.param_fixed,corr_between=self.corr_between,
-            return_corr=False,return_samples=False,repeat_dims=self.repeat_dims,
-            corr_axis=self.corr_axis,output_vars=self.output_vars,)
+    def propagate_random(self, *args, expand=True):
+        input_qty = self.get_input_qty(args, expand=expand)
+        input_unc = self.get_input_unc("rand", args, expand=expand)
+        return self.prop.propagate_random(
+            self.function,
+            input_qty,
+            input_unc,
+            param_fixed=self.param_fixed,
+            corr_between=self.corr_between,
+            return_corr=False,
+            return_samples=False,
+            repeat_dims=self.repeat_dims,
+            corr_axis=self.corr_axis,
+            output_vars=self.output_vars,
+        )
 
     def propagate_systematic(self, *args, expand=True):
         input_qty = self.get_input_qty(args, expand=expand)
@@ -162,14 +205,13 @@ class MeasurementFunction(ABC):
         inputs_unc = np.empty(len(self.variables), dtype=object)
         for iv, var in enumerate(self.variables):
             if form == "tot":
-                inputs_unc[iv]=self.get_input_unc_total(var,*args)
+                inputs_unc[iv] = self.get_input_unc_total(var, *args)
             elif form == "rand":
-                inputs_unc[iv]=self.get_input_unc_random(var,*args)
+                inputs_unc[iv] = self.get_input_unc_random(var, *args)
             elif form == "syst":
-                inputs_unc[iv]=self.get_input_unc_systematic(var,*args)
+                inputs_unc[iv] = self.get_input_unc_systematic(var, *args)
             else:
-                inputs_unc[iv]=self.get_input_unc_specific(form,var,*args)
-
+                inputs_unc[iv] = self.get_input_unc_specific(form, var, *args)
 
         # if expand:
         #     datashape = inputs_unc[0].shape
@@ -179,33 +221,32 @@ class MeasurementFunction(ABC):
         #                 inputs_unc[i] = np.tile(inputs_unc[i], (datashape[1], 1)).T
         return inputs_unc
 
-    def get_input_unc_total(self,var,*args):
-        inputs_unc=None
+    def get_input_unc_total(self, var, *args):
+        inputs_unc = None
         for dataset in args[0]:
-            data=dataset.unc[var].total
+            data = dataset.unc[var].total
             if not isinstance(data, float):
                 inputs_unc = data.values
         return inputs_unc
 
-    def get_input_unc_random(self,var,*args):
-        inputs_unc=None
+    def get_input_unc_random(self, var, *args):
+        inputs_unc = None
         for dataset in args[0]:
             data = dataset.unc[var].random
             if not isinstance(data, float):
                 inputs_unc = data.values
         return inputs_unc
 
-    def get_input_unc_systematic(self,var,*args):
-        inputs_unc=None
+    def get_input_unc_systematic(self, var, *args):
+        inputs_unc = None
         for dataset in args[0]:
             data = dataset.unc[var].systematic
             if not isinstance(data, float):
                 inputs_unc = data.values
         return inputs_unc
 
-
     def get_input_unc_specific(self, form, var, *args):
-        uvar = "u_%s_%s"%(form,var)
+        uvar = "u_%s_%s" % (form, var)
         found = False
         for dataset in args[0]:
             try:
@@ -218,11 +259,10 @@ class MeasurementFunction(ABC):
         if not found:
             inputs_unc = None
             print(
-                "%s uncertainty for variable %s (%s) not found in provided datasets. Zero uncertainty assumed."%(
-                form,var,uvar))
+                "%s uncertainty for variable %s (%s) not found in provided datasets. Zero uncertainty assumed."
+                % (form, var, uvar)
+            )
         return inputs_unc
-
-
 
     def get_input_corr(self, form, *args):
         inputs_corr = np.empty(len(self.variables), dtype=object)

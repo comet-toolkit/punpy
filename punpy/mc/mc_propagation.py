@@ -373,11 +373,11 @@ class MCPropagation:
 
         else:
             if samples is not None:
-                MC_data=samples
+                MC_data = samples
             else:
                 MC_data = np.empty(len(x), dtype=np.ndarray)
                 for i in range(len(x)):
-                    MC_data[i]= self.generate_sample(x,u_x,corr_x,i)
+                    MC_data[i] = self.generate_sample(x, u_x, corr_x, i)
 
                 if corr_between is not None:
                     MC_data = self.correlate_samples_corr(MC_data, corr_between)
@@ -756,7 +756,9 @@ class MCPropagation:
                 if corr_axis > repeat_dims[0]:
                     corr_axis -= 1
                 elif corr_axis == repeat_dims[0]:
-                    raise ValueError("punpy.mc_propagation: corr_axis and repeat_axis keywords should not be the same.")
+                    raise ValueError(
+                        "punpy.mc_propagation: corr_axis and repeat_axis keywords should not be the same."
+                    )
             else:
                 n_repeats = 0
             repeat_shape = (n_repeats,)  # repeat_dims = -99
@@ -768,12 +770,14 @@ class MCPropagation:
                 corr_axis -= 1
             elif corr_axis == repeat_dims[0]:
                 raise ValueError(
-                    "punpy.mc_propagation: corr_axis and repeat_axis keywords should not be the same.")
+                    "punpy.mc_propagation: corr_axis and repeat_axis keywords should not be the same."
+                )
             if corr_axis > repeat_dims[1]:
                 corr_axis -= 1
             elif corr_axis == repeat_dims[1]:
                 raise ValueError(
-                    "punpy.mc_propagation: corr_axis and repeat_axis keywords should not be the same.")
+                    "punpy.mc_propagation: corr_axis and repeat_axis keywords should not be the same."
+                )
         return (
             yshapes,
             x,
@@ -1048,8 +1052,16 @@ class MCPropagation:
                             for ii in range(yshapes[i][0]):
                                 for iii in range(yshapes[i][1]):
                                     u_func[i][ii, iii] = u_funcb[i][iii][ii]
+                        elif len(yshapes[i]) == 2 and len(u_funcb[i].shape) == 3:
+                            if yshapes[i][0] == u_funcb[i].shape[0]:
+                                for ii in range(yshapes[i][0]):
+                                    for iii in range(yshapes[i][1]):
+                                        u_func[i][ii, iii] = u_funcb[i][ii][0][iii]
                         else:
-                            raise ValueError("punpy.mc_propagation: this shape is not supported")
+                            print(yshapes, i, u_funcb[i].shape)
+                            raise ValueError(
+                                "punpy.mc_propagation: this shape is not supported"
+                            )
 
         else:
             if output_vars == 1:
@@ -1189,7 +1201,9 @@ class MCPropagation:
                                             ii, iii, iiii
                                         ]
                     else:
-                        raise ValueError("punpy.mc_propagation: this shape is not supported")
+                        raise ValueError(
+                            "punpy.mc_propagation: this shape is not supported"
+                        )
 
         else:
             # We again need to reorder the input quantities samples in order to be able to pass them to p.starmap
@@ -1350,7 +1364,7 @@ class MCPropagation:
 
         return corr_y
 
-    def generate_sample(self,x,u_x,corr_x,i=None):
+    def generate_sample(self, x, u_x, corr_x, i=None):
         """
         Generate correlated MC samples of input quantity with given uncertainties and correlation matrix.
 
@@ -1366,20 +1380,20 @@ class MCPropagation:
         :rtype: array
         """
         if i is None:
-            x=np.array([x])
-            u_x=np.array([u_x])
+            x = np.array([x])
+            u_x = np.array([u_x])
             corr_x = np.array([corr_x])
-            i=0
+            i = 0
 
-        if not hasattr(x[i],"__len__"):
-            sample = self.generate_samples_systematic(x[i],u_x[i])
+        if not hasattr(x[i], "__len__"):
+            sample = self.generate_samples_systematic(x[i], u_x[i])
         elif type(corr_x[i]) == str:
             if corr_x[i] == "rand":
-                sample = self.generate_samples_random(x[i],u_x[i])
+                sample = self.generate_samples_random(x[i], u_x[i])
             elif corr_x[i] == "syst":
-                sample = self.generate_samples_systematic(x[i],u_x[i])
+                sample = self.generate_samples_systematic(x[i], u_x[i])
         else:
-            sample = self.generate_samples_correlated(x,u_x,corr_x,i)
+            sample = self.generate_samples_correlated(x, u_x, corr_x, i)
 
         return sample
 
@@ -1435,9 +1449,13 @@ class MCPropagation:
         :rtype: array
         """
         if not hasattr(param, "__len__"):
-            return (np.random.normal(size=self.MCsteps).astype(self.dtype)*u_param+param)
+            return (
+                np.random.normal(size=self.MCsteps).astype(self.dtype) * u_param + param
+            )
         elif len(param.shape) == 0:
-            return (np.random.normal(size=self.MCsteps).astype(self.dtype)*u_param+param)
+            return (
+                np.random.normal(size=self.MCsteps).astype(self.dtype) * u_param + param
+            )
 
         elif len(param.shape) == 1:
             return (
@@ -1464,7 +1482,10 @@ class MCPropagation:
                 + param[:, :, :, :, None]
             )
         else:
-            raise ValueError("punpy.mc_propagation: parameter shape not supported: %s %s"%(param.shape, param))
+            raise ValueError(
+                "punpy.mc_propagation: parameter shape not supported: %s %s"
+                % (param.shape, param)
+            )
 
     def generate_samples_systematic(self, param, u_param):
         """
@@ -1482,7 +1503,9 @@ class MCPropagation:
                 np.random.normal(size=self.MCsteps).astype(self.dtype) * u_param + param
             )
         elif len(param.shape) == 0:
-            return (np.random.normal(size=self.MCsteps).astype(self.dtype)*u_param+param)
+            return (
+                np.random.normal(size=self.MCsteps).astype(self.dtype) * u_param + param
+            )
         elif len(param.shape) == 1:
             return (
                 np.dot(
@@ -1523,8 +1546,9 @@ class MCPropagation:
             )
         else:
             raise ValueError(
-                "punpy.mc_propagation: parameter shape not supported: %s %s"%(
-                param.shape,param))
+                "punpy.mc_propagation: parameter shape not supported: %s %s"
+                % (param.shape, param)
+            )
 
     def generate_samples_cov(self, param, cov_param):
         """
@@ -1573,29 +1597,34 @@ class MCPropagation:
                 L = util.nearestPD_cholesky(corr)
 
             samples_out = samples.copy()
-            for j in np.ndindex(samples[0][...,0].shape):
-                samples_j= np.array([samples[i][j] for i in range(len(samples))], dtype=self.dtype)
+            for j in np.ndindex(samples[0][..., 0].shape):
+                samples_j = np.array(
+                    [samples[i][j] for i in range(len(samples))], dtype=self.dtype
+                )
 
                 # Cholesky needs to be applied to Gaussian distributions with mean=0 and std=1,
                 # We first calculate the mean and std for each input quantity
                 means = np.array(
-                    [np.mean(samples[i][j]) for i in range(len(samples))], dtype=self.dtype
+                    [np.mean(samples[i][j]) for i in range(len(samples))],
+                    dtype=self.dtype,
                 )[:, None]
                 stds = np.array(
-                    [np.std(samples[i][j]) for i in range(len(samples))], dtype=self.dtype
+                    [np.std(samples[i][j]) for i in range(len(samples))],
+                    dtype=self.dtype,
                 )[:, None]
 
                 # We normalise the samples with the mean and std, then apply Cholesky, and finally reapply the mean and std.
-                if all(stds[:,0] != 0):
-                    samples_j =np.dot(L, (samples_j - means) / stds) * stds+ means
+                if all(stds[:, 0] != 0):
+                    samples_j = np.dot(L, (samples_j - means) / stds) * stds + means
 
                 # If any of the variables has no uncertainty, the normalisation will fail. Instead we leave the parameters without uncertainty unchanged.
                 else:
-                    id_nonzero = np.where(stds[:,0] != 0)[0]
+                    id_nonzero = np.where(stds[:, 0] != 0)[0]
                     samples_j[id_nonzero] = (
                         np.dot(
                             L[id_nonzero][:, id_nonzero],
-                            (samples_j[id_nonzero] - means[id_nonzero]) / stds[id_nonzero],
+                            (samples_j[id_nonzero] - means[id_nonzero])
+                            / stds[id_nonzero],
                         )
                         * stds[id_nonzero]
                         + means[id_nonzero]
