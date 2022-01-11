@@ -1,6 +1,6 @@
 """Use Monte Carlo to propagate uncertainties"""
 
-from abc import ABC,abstractmethod
+from abc import ABC, abstractmethod
 
 import numpy as np
 import xarray as xr
