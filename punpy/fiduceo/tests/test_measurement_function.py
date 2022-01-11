@@ -6,6 +6,7 @@ import unittest
 
 import numpy.testing as npt
 import xarray as xr
+import obsarray
 
 from punpy.fiduceo.measurement_function import MeasurementFunction
 

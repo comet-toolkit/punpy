@@ -4,6 +4,7 @@ from abc import ABC,abstractmethod
 
 import numpy as np
 import xarray as xr
+import obsarray
 
 import punpy.fiduceo.fiduceo_correlations as fc
 from punpy.lpu.lpu_propagation import LPUPropagation

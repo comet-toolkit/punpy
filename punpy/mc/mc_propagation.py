@@ -1384,10 +1384,9 @@ class MCPropagation:
             u_x = np.array([u_x])
             corr_x = np.array([corr_x])
             i = 0
-
         if not hasattr(x[i], "__len__"):
             sample = self.generate_samples_systematic(x[i], u_x[i])
-        elif type(corr_x[i]) == str:
+        elif isinstance(corr_x[i], str):
             if corr_x[i] == "rand":
                 sample = self.generate_samples_random(x[i], u_x[i])
             elif corr_x[i] == "syst":
