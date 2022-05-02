@@ -1,7 +1,7 @@
 # Define your measurement function inside a subclass of MeasurementFunction
 class GasLaw(MeasurementFunction):
-    def function(self, pres, temp):
-        return pres / (temp * 8.134)
+    def function(self, pres, temp, n):
+        return (n *temp * 8.134)/P
 
 
 # create class object and pass all optional keywords for punpy

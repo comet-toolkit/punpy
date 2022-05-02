@@ -3,16 +3,18 @@
    Email: pieter.de.vis@npl.co.uk
    Created: 15/04/20
 
-.. _overview_of_method:
+.. _using_punpy_standalone:
 
-Overview of method
+Using punpy as a standalone package
 ======================================
+In this section we give a short overview of some of the key capabilities of punpy for propagating uncertainties through a measurement function.
+When using punpy as a standalone tool, the input quantities and their uncertainties are manually specified.
+The code in this section is just as illustration and we refer to the Examples Section for example with all requied information for running punpy.
+The punpy package can propagate various types of uncertainty through a given measurement function. In the next subsection we discuss how these measurement functions are defined in python.
+
 Measurement Function
 ####################
 
-In this section we give a short overview of some of the key capabilities of punpy for propagating uncertainties through a measurement function.
-The code in this section is just as illustration and we refer to the Examples Section for example with all requied information for running punpy.
-The punpy package can propagate various types of uncertainty through a given measurement function. 
 The measurement function can be written mathematically as:
 
 .. math:: y = f\left( x_{i},\ldots,\ x_{N} \right)
@@ -25,12 +27,13 @@ where:
 
 The measurand and input quantities are often vectors consisting of multiple numbers. E.g. in spectroscopy, the input quantities and measurand each have measurements for multiple wavelengths. These wavelengths are the same for the input quantities and the measurand. We refer to the 'Principles of Uncertainty Analysis' section below for more details on the vocabulary used and the various types of uncertainty.
 
-Within punpy the measurement function can be any python function that takes a number of input quantities as arguments (usually arrays) and returns a measurand (usually array).
+When using punpy as a standalone package, the measurement function can be any python function that takes a number of input quantities as arguments (usually arrays) and returns a measurand (usually array).
 For example::
 
    def measurement_function(x1,x2,x3):
       y=x1+x2-x3 # here any real measurement function can be implemented
       return y
+
 
 Propagating random and systematic uncertainties
 ################################################

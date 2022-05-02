@@ -1,12 +1,10 @@
 """Use Monte Carlo to propagate uncertainties"""
 
-from abc import ABC, abstractmethod
+from abc import ABC,abstractmethod
 
 import numpy as np
-import xarray as xr
-import obsarray
-
 import punpy.fiduceo.fiduceo_correlations as fc
+import xarray as xr
 from punpy.lpu.lpu_propagation import LPUPropagation
 from punpy.mc.mc_propagation import MCPropagation
 
@@ -22,12 +20,12 @@ class MeasurementFunction(ABC):
     def __init__(
         self,
         variables,
+        proptype,
         corr_between=None,
         param_fixed=None,
         output_vars=1,
         repeat_dims=-99,
         corr_axis=-99,
-        mc=True,
         steps=10000,
         parallel_cores=0,
         dtype=None,
@@ -39,11 +37,12 @@ class MeasurementFunction(ABC):
         """
         # self.measurandstring = measurandstring
         self.variables = variables
-        if mc:
+        if proptype.lower() == "mc":
             self.prop = MCPropagation(steps, parallel_cores, dtype)
-        else:
+        elif proptype.lower() == "lpu":
             self.prop = LPUPropagation(parallel_cores, Jx_diag, step)
-
+        else:
+            raise ValueError("punpy: %s (second argument of MeasurementFunction class initialiser) is not a valid uncertainty propagation method. Pleasee use MC or LPU.")
         self.corr_between = corr_between
         self.param_fixed = param_fixed
         self.output_vars = output_vars
