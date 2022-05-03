@@ -2,7 +2,7 @@ punpy
 =====
 
 Propagating UNcertainties in PYthon
-https://eco.gitlab-docs.npl.co.uk/tools/punpy 
+https://punpy.readthedocs.io/en/latest/
 
 Usage
 =====
