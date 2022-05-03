@@ -3,9 +3,9 @@
    Email: pieter.de.vis@npl.co.uk
    Created: 15/04/20
 
-.. _examples:
+.. _examples_standalone:
 
-Examples on how to use the punpy package
+Examples on how to use the punpy package standalone
 ==================================================
 
 1D input quantities and measurand

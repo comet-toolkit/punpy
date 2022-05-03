@@ -18,8 +18,8 @@ This documentation provides general information on how to use the module (with s
    :maxdepth: 1
 
    content/getting_started
-   content/using_punpy_standalone
-   content/using_punpy_digital_effects_table
+   content/punpy_standalone
+   content/punpy_digital_effects_table
    content/examples
    content/atbd
 

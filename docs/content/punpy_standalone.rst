@@ -3,9 +3,9 @@
    Email: pieter.de.vis@npl.co.uk
    Created: 15/04/20
 
-.. _using_punpy_standalone:
+.. _punpy_standalone:
 
-Using punpy as a standalone package
+punpy as a standalone package
 ======================================
 In this section we give a short overview of some of the key capabilities of punpy for propagating uncertainties through a measurement function.
 When using punpy as a standalone tool, the input quantities and their uncertainties are manually specified.

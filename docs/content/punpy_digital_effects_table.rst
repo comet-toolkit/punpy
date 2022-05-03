@@ -3,12 +3,12 @@
    Email: pieter.de.vis@npl.co.uk
    Created: 15/04/20
 
-.. _using_punpy_digital_effects_table:
+.. _punpy_digital_effects_table:
 
-Using punpy in combination with digital effects tables
+punpy in combination with digital effects tables
 =======================================================
 In this section we explain how punpy can be used for propagating uncertainties in digital effects tables through a measurement function.
-For details on how to create these digital effects tables, we refer to the `obsarray documentation<>`_.
+For details on how to create these digital effects tables, we refer to the `obsarray documentation <>`_.
 Once the digital effects tables are created, this is the most concise method for propagating uncertainties.
 The code in this section is just as illustration and we refer to the Examples Section for example with all requied information for running punpy.
 The punpy package can propagate the various types of correlated uncertainties that can be stored in digital effects tables through a given measurement function. In the next subsection we discuss how these measurement functions need to be defined in order to use the digital effects tables.
@@ -19,14 +19,20 @@ Digital Effects tables are created with the obsarray package. The `documentation
 Here we summarise the main concepts in order to give context to the rest of the Section.
 
 Digital effects tables are a digital version of the effects tables created as part of the `FIDUCEO project <https://research.reading.ac.uk/fiduceo/>`_.
-Both FIDUCEO effects tables and digital effects tables store information on the uncertainties on a given variable, as well as its error-correlation information.
+Both FIDUCEO effects tables and digital effects tables store information on the uncertainties on a given variable, as well as its error-correlation information (see Figure below).
 The error-correlation information often needs to be specified along multiple different dimensions.
 For each of these dimensions (or for combinations of them), the correlation structure needs to be defined.
-This can be done using an error-correlation matrix, or using the `FIDUCEO correlation forms<https://research.reading.ac.uk/fiduceo/cdr/theoretical-basis-3/4-completing-the-effects-table/>`_.
+This can be done using an error-correlation matrix, or using the `FIDUCEO correlation forms <https://research.reading.ac.uk/fiduceo/cdr/theoretical-basis-3/4-completing-the-effects-table/>`_.
 These FIDUCEO correlation forms essentially provide a parametrisation of the error correlation matrix using a few parameters rather than a full matrix.
 These thus require much less memory and are typically the preferred option (though this is not always possible as not all error-correlation matrices can be parameterised in this way).
 Some correlation forms, such as e.g. "random" and "systematic" do not require any additional parameters.
 Others, such as "triangle_relative", require a parameter that e.g. sets the number of pixels/scanlines being averaged.
+
+
+.. image:: images/Digital_effects_tables.jpg
+
+*Figure 1 - left: FIDUCEO effects table template. right: obsarray digital effects table for one uncertainty component.*
+
 
 The obsarray package which implements the digital effects tables, extends the commonly used xarray package.
 xarray objects typically have multiple variables with data defined on multiple dimensions and with attributes specifying additional information.
@@ -56,7 +62,7 @@ where:
 
 The measurand and input quantities are often vectors consisting of multiple numbers. Here, we choose an example of an ideal gas law equivalent:
 
-.. math:: V = \frac{8.314 n T}{P}
+.. math:: V = \frac{8.314 \times n T}{P}
 
 where:
 
@@ -102,7 +108,7 @@ As can be seen from the code, the name of the measurand needs to be specified wh
 It is quite common that not all the uncertainty information is available in a single digital effects table.
 In such cases, multiple digital effects tables can simply be provided to "propagate_ds".
 punpy will then search each of these effects tables for the input quantities provided when initialising the MeasurementFunction object.
-For example, if :math:`n`, :math:`T` and :math:`P`, each had their own digital effects tables, these could be propaated as::
+For example, if :math:`n`, :math:`T` and :math:`P`, each had their own digital effects tables, these could be propagated as::
 
    import xarray as xr
    ds_nmol = xr.open_dataset("n_moles.nc")
@@ -111,4 +117,4 @@ For example, if :math:`n`, :math:`T` and :math:`P`, each had their own digital e
    ds_y = gl.propagate_ds("volume", ds_pres, ds_nmol, ds_temp)
 
 These digital effects tables can be provided in any order. They can also contain numerous other quantities that are not relevant for the current measurement function.
-When multiple of these digital effects tables have a variable with the same name (which is used in the measurment function), an error is raised.
+When multiple of these digital effects tables have a variable with the same name (which is used in the measurement function), an error is raised.
