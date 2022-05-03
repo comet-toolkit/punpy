@@ -34,7 +34,7 @@ setup(
     description="Propagating UNcertainties in PYthon",
     long_description=read("README.rst"),
     packages=find_packages(exclude=("tests",)),
-    install_requires=["numpy", "emcee", "numdifftools==0.9.39", "scipy","xarray","netcdf4"],
+    install_requires=["numpy", "emcee", "numdifftools==0.9.39","xarray","netcdf4"],
     extras_require={"dev": ["pre-commit", "tox", "sphinx", "sphinx_rtd_theme"]},
     # ext_modules=cythonize(extensions),
 )
