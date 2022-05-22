@@ -3,8 +3,9 @@
 from abc import ABC,abstractmethod
 
 import numpy as np
-import punpy.fiduceo.fiduceo_correlations as fc
 import xarray as xr
+
+import punpy.fiduceo.fiduceo_correlations as fc
 from punpy.lpu.lpu_propagation import LPUPropagation
 from punpy.mc.mc_propagation import MCPropagation
 
@@ -50,7 +51,7 @@ class MeasurementFunction(ABC):
         self.corr_axis = corr_axis
 
     @abstractmethod
-    def function(self):
+    def meas_function(self):
         pass
 
     def propagate_ds(self, measurandstring, *args):
@@ -100,16 +101,16 @@ class MeasurementFunction(ABC):
     def run(self, *args, expand=True):
         input_qty = self.get_input_qty(args, expand=expand)
         if self.repeat_dims is None:
-            return self.function(*input_qty)
+            return self.meas_function(*input_qty)
         else:
-            return self.function(*input_qty)
+            return self.meas_function(*input_qty)
 
     def propagate_total(self, *args, expand=True):
         input_qty = self.get_input_qty(args, expand=expand)
         input_unc = self.get_input_unc("tot", args, expand=expand)
         input_corr = self.get_input_corr("tot", args)
         return self.prop.propagate_standard(
-            self.function,
+            self.meas_function,
             input_qty,
             input_unc,
             input_corr,
@@ -126,7 +127,7 @@ class MeasurementFunction(ABC):
         input_qty = self.get_input_qty(args, expand=expand)
         input_unc = self.get_input_unc("rand", args, expand=expand)
         return self.prop.propagate_random(
-            self.function,
+            self.meas_function,
             input_qty,
             input_unc,
             param_fixed=self.param_fixed,
@@ -142,7 +143,7 @@ class MeasurementFunction(ABC):
         input_qty = self.get_input_qty(args, expand=expand)
         input_unc = self.get_input_unc("syst", args, expand=expand)
         return self.prop.propagate_systematic(
-            self.function,
+            self.meas_function,
             input_qty,
             input_unc,
             param_fixed=self.param_fixed,
@@ -159,7 +160,7 @@ class MeasurementFunction(ABC):
         input_unc = self.get_input_unc(form, args, expand=expand)
         input_corr = self.get_input_corr(form, args)
         return self.prop.propagate_standard(
-            self.function,
+            self.meas_function,
             input_qty,
             input_unc,
             input_corr,

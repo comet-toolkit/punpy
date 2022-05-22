@@ -47,7 +47,7 @@
 #
 #
 # dir_path = os.path.dirname(os.path.realpath(__file__))
-# ds = xr.open_dataset(os.path.join(dir_path, "obs_example.nc"))
+# ds = xr.open_dataset(os.path.join(dir_path, "digital_effects_table_gaslaw_example.nc"))
 #
 #
 # class TestMeasurementFunction(unittest.TestCase):

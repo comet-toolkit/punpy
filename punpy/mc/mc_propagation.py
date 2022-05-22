@@ -1,5 +1,6 @@
 """Use Monte Carlo to propagate uncertainties"""
 
+import time
 import warnings
 from multiprocessing import Pool
 
@@ -16,7 +17,7 @@ __status__ = "Development"
 
 
 class MCPropagation:
-    def __init__(self, steps, parallel_cores=0, dtype=None):
+    def __init__(self, steps, parallel_cores=0, dtype=None, verbose=False):
         """
         Initialise MC Propagator
 
@@ -26,6 +27,8 @@ class MCPropagation:
         :type parallel_cores: int
         :param dtype: numpy dtype for output variables
         :type dtype: numpy dtype
+        :param verbose: bool to set if logging info should be printed
+        :type verbose: bool
         """
 
         self.MCsteps = steps
@@ -33,6 +36,8 @@ class MCPropagation:
         self.dtype = dtype
         if parallel_cores > 1:
             self.pool = Pool(self.parallel_cores)
+        self.verbose = verbose
+        self.starttime = time.time()
 
     def propagate_random(
         self,
@@ -355,6 +360,8 @@ class MCPropagation:
                     output_vars,
                     refyvar,
                 )
+                if self.verbose:
+                    print("repeated measurement %s out of %s processed (%s s since creation of prop object)"%(i,n_repeats,time.time()-self.starttime))
 
             outs = self.finish_repeated_outs(
                 outs,
@@ -381,6 +388,8 @@ class MCPropagation:
 
                 if corr_between is not None:
                     MC_data = self.correlate_samples_corr(MC_data, corr_between)
+                if self.verbose:
+                    print("samples generated (%s s since creation of prop object)"%(time.time()-self.starttime))
 
             return self.process_samples(
                 func,
@@ -1218,6 +1227,9 @@ class MCPropagation:
                 MC_y = np.empty(output_vars, dtype=object)
                 for i in range(output_vars):
                     MC_y[i] = np.moveaxis(MC_y2[:, i], 0, -1)
+
+        if self.verbose:
+            print("samples propagated (%s s since creation of prop object)"%(time.time()-self.starttime))
 
         # if hasattr(MC_y[0,0], '__len__'):
         #     print(yshape,np.array(MC_y[0,0]).shape,np.array(MC_y[1,0]).shape,np.array(MC_y[2,0]).shape,np.array(MC_y[3,0]).shape)
