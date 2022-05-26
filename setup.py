@@ -32,7 +32,7 @@ setup(
     author="CoMet Toolkit Team",
     author_email="team@comet-toolkit.org",
     description="Propagating UNcertainties in PYthon",
-    long_description=read("README.rst"),
+    long_description=read("README.md"),
     packages=find_packages(exclude=("tests",)),
     install_requires=["numpy", "numdifftools==0.9.39","scipy","xarray","netcdf4"],
     extras_require={"dev": ["pre-commit", "tox", "sphinx", "sphinx_rtd_theme"]},
