@@ -14,12 +14,12 @@ For more information visit our [documentation](https://punpy.readthedocs.io/en/l
 
 ## License
 
-obsarray is free software licensed under the
+punpy is free software licensed under the
 [GNU Public License (v3)](./LICENSE).
 
 ## Acknowledgements
 
-obsarray has been developed by [Pieter De Vis](https://www.comet-toolkit.org/author/pieter-de-vis/).
+punpy has been developed by [Pieter De Vis](https://www.comet-toolkit.org/author/pieter-de-vis/).
 
 The development has been funded by:
 
