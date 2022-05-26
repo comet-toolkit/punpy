@@ -2,7 +2,7 @@
 
 **punpy** is a Python software package to propagate random, structured and systematic uncertainties through a given measurement function.
 
-punpy is part of the [CoMet Toolkit](https://www.comet-toolkit.org) (community metrology toolkit), and can combined with the [obsarray](https://obsarray.readthedocs.io/en/latest/) (propagating uncertainties in python) module for very simple propagation of defined data uncertainties through arbitrary python functions.
+punpy is part of the [CoMet Toolkit](https://www.comet-toolkit.org) (community metrology toolkit), and can combined with the [obsarray](https://obsarray.readthedocs.io/en/latest/) (Measurement uncertainty handling in Python) for efficient definition, storing and interfacing with uncertainty information using standardised metadata.
 
 ## Installation
 
