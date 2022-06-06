@@ -4,10 +4,10 @@ Tests for mc propagation class
 
 import unittest
 
+import comet_maths as cm
 import numpy as np
 import numpy.testing as npt
 
-import punpy.utilities.utilities as util
 from punpy.lpu.lpu_propagation import LPUPropagation
 
 """___Authorship___"""
@@ -132,8 +132,8 @@ class TestLPUPropagation(unittest.TestCase):
         npt.assert_allclose(ucorr, np.eye(len(ucorr)), atol=0.01)
         npt.assert_allclose(uf, yerr_uncorr_1order, rtol=0.01)
 
-        ucov = util.convert_corr_to_cov(ucorr, uf)
-        ucorr2 = util.convert_cov_to_corr(ucov, uf)
+        ucov = cm.convert_corr_to_cov(ucorr, uf)
+        ucorr2 = cm.convert_cov_to_corr(ucov, uf)
         npt.assert_allclose(ucorr, ucorr2, atol=0.01)
 
         uf = prop.propagate_random(
@@ -300,7 +300,7 @@ class TestLPUPropagation(unittest.TestCase):
         prop = LPUPropagation()
 
         cov = [
-            util.convert_corr_to_cov(np.eye(len(xerr.flatten())), xerr)
+            cm.convert_corr_to_cov(np.eye(len(xerr.flatten())), xerr)
             for xerr in xerrs
         ]
 
@@ -310,7 +310,7 @@ class TestLPUPropagation(unittest.TestCase):
         npt.assert_allclose(uf, yerr_uncorr_1order, rtol=0.01)
 
         cov = [
-            util.convert_corr_to_cov(
+            cm.convert_corr_to_cov(
                 np.ones((len(xerr.flatten()), len(xerr.flatten()))), xerr
             )
             for xerr in xerrs
@@ -319,7 +319,7 @@ class TestLPUPropagation(unittest.TestCase):
         npt.assert_allclose(uf, yerr_uncorr_1order, atol=0.01)
         npt.assert_allclose(ucorr, np.ones((len(ucorr), len(ucorr))), atol=0.01)
 
-        cov = [util.convert_corr_to_cov(np.eye(len(xerr)), xerr) for xerr in xerrs]
+        cov = [cm.convert_corr_to_cov(np.eye(len(xerr)), xerr) for xerr in xerrs]
         uf, ucorr = prop.propagate_cov(
             function, xs, cov, return_corr=True, corr_between=np.ones((2, 2)), Jx=Jx
         )
@@ -330,7 +330,7 @@ class TestLPUPropagation(unittest.TestCase):
         prop = LPUPropagation(parallel_cores=2)
 
         covb = [
-            util.convert_corr_to_cov(np.eye(len(xerrb.flatten())), xerrb)
+            cm.convert_corr_to_cov(np.eye(len(xerrb.flatten())), xerrb)
             for xerrb in xerrsb
         ]
         ufb, ucorrb = prop.propagate_cov(
@@ -340,7 +340,7 @@ class TestLPUPropagation(unittest.TestCase):
         npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.01)
 
         covb = [
-            util.convert_corr_to_cov(np.eye(len(xerrb[:, 0].flatten())), xerrb[:, 0])
+            cm.convert_corr_to_cov(np.eye(len(xerrb[:, 0].flatten())), xerrb[:, 0])
             for xerrb in xerrsb
         ]
 
@@ -351,7 +351,7 @@ class TestLPUPropagation(unittest.TestCase):
         npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
 
         covb = [
-            util.convert_corr_to_cov(
+            cm.convert_corr_to_cov(
                 np.ones((len(xerrb.flatten()), len(xerrb.flatten())))
                 + np.eye(len(xerrb.flatten())),
                 xerrb,
@@ -364,7 +364,7 @@ class TestLPUPropagation(unittest.TestCase):
         npt.assert_allclose(ufb, yerr_uncorrb * 2 ** 0.5, rtol=0.01)
 
         covb = [
-            util.convert_corr_to_cov(np.eye(len(xerrb.flatten())), xerrb)
+            cm.convert_corr_to_cov(np.eye(len(xerrb.flatten())), xerrb)
             for xerrb in xerrsb
         ]
         ufb, ucorrb = prop.propagate_cov(
@@ -383,7 +383,7 @@ class TestLPUPropagation(unittest.TestCase):
         Jx = Jac_functionc(*xsc)
 
         covc = [
-            util.convert_corr_to_cov(np.eye(len(xerrc.flatten())), xerrc)
+            cm.convert_corr_to_cov(np.eye(len(xerrc.flatten())), xerrc)
             for xerrc in xerrsc
         ]
         ufc, ucorrc = prop.propagate_cov(functionc, xsc, covc, return_corr=True, Jx=Jx)
@@ -391,7 +391,7 @@ class TestLPUPropagation(unittest.TestCase):
         npt.assert_allclose(ufc, yerr_uncorrc, rtol=0.01)
 
         covc = [
-            util.convert_corr_to_cov(
+            cm.convert_corr_to_cov(
                 np.ones((len(xerrc.flatten()), len(xerrc.flatten())))
                 + np.eye(len(xerrc)),
                 xerrc,
@@ -402,7 +402,7 @@ class TestLPUPropagation(unittest.TestCase):
         npt.assert_allclose(ufc, yerr_uncorrc * 2 ** 0.5, rtol=0.01)
 
         covc = [
-            util.convert_corr_to_cov(np.eye(len(xerrc.flatten())), xerrc)
+            cm.convert_corr_to_cov(np.eye(len(xerrc.flatten())), xerrc)
             for xerrc in xerrsc
         ]
         ufc, ucorrc = prop.propagate_cov(
@@ -415,7 +415,7 @@ class TestLPUPropagation(unittest.TestCase):
         prop = LPUPropagation()
 
         covd = [
-            util.convert_corr_to_cov(np.eye(len(xerrd.flatten())), xerrd)
+            cm.convert_corr_to_cov(np.eye(len(xerrd.flatten())), xerrd)
             for xerrd in xerrsd
         ]
         ufd, ucorrd, corr_out = prop.propagate_cov(
@@ -425,7 +425,7 @@ class TestLPUPropagation(unittest.TestCase):
         npt.assert_allclose(ufd, yerr_uncorrd, rtol=0.01)
 
         covd = [
-            util.convert_corr_to_cov(
+            cm.convert_corr_to_cov(
                 np.ones((len(xerrd.flatten()), len(xerrd.flatten()))), xerrd
             )
             for xerrd in xerrsd

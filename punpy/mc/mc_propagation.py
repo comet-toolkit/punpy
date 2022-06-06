@@ -4,6 +4,7 @@ import time
 import warnings
 from multiprocessing import Pool
 
+import comet_maths as cm
 import numpy as np
 
 import punpy.utilities.utilities as util
@@ -241,7 +242,7 @@ class MCPropagation:
         :type repeat_dims: integer or list of 2 integers, optional
         :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
         :type corr_axis: integer, optional
-        :param fixed_corr_var: set to integer to copy the correlation matrix of the dimiension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
+        :param fixed_corr_var: set to integer to copy the correlation matrix of the dimension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
         :type fixed_corr_var: bool or integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
         :type output_vars: integer, optional
@@ -384,10 +385,10 @@ class MCPropagation:
             else:
                 MC_data = np.empty(len(x), dtype=np.ndarray)
                 for i in range(len(x)):
-                    MC_data[i] = self.generate_sample(x, u_x, corr_x, i)
+                    MC_data[i] = cm.generate_sample(self.MCsteps, x, u_x, corr_x, i)
 
                 if corr_between is not None:
-                    MC_data = self.correlate_samples_corr(MC_data, corr_between)
+                    MC_data = cm.correlate_sample_corr(MC_data, corr_between)
                 if self.verbose:
                     print("samples generated (%s s since creation of prop object)"%(time.time()-self.starttime))
 
@@ -590,12 +591,12 @@ class MCPropagation:
             MC_data = np.empty(len(x), dtype=np.ndarray)
             for i in range(len(x)):
                 if not hasattr(x[i], "__len__"):
-                    MC_data[i] = self.generate_samples_systematic(x[i], cov_x[i])
+                    MC_data[i] = cm.generate_sample_systematic(self.MCsteps, x[i], cov_x[i])
                 elif param_fixed is not None:
                     if param_fixed[i] and (len(x[i].shape) == 2):
                         MC_data[i] = np.array(
                             [
-                                self.generate_samples_cov(
+                                cm.generate_sample_cov(self.MCsteps,
                                     x[i][:, j].flatten(), cov_x[i]
                                 ).reshape(x[i][:, j].shape + (self.MCsteps,))
                                 for j in range(x[i].shape[1])
@@ -603,16 +604,16 @@ class MCPropagation:
                         ).T
                         MC_data[i] = np.moveaxis(MC_data[i], 0, 1)
                     else:
-                        MC_data[i] = self.generate_samples_cov(
+                        MC_data[i] = cm.generate_sample_cov(self.MCsteps,
                             x[i].flatten(), cov_x[i]
                         ).reshape(x[i].shape + (self.MCsteps,))
                 else:
-                    MC_data[i] = self.generate_samples_cov(
+                    MC_data[i] = cm.generate_sample_cov(self.MCsteps,
                         x[i].flatten(), cov_x[i]
                     ).reshape(x[i].shape + (self.MCsteps,))
 
             if corr_between is not None:
-                MC_data = self.correlate_samples_corr(MC_data, corr_between)
+                MC_data = cm.correlate_sample_corr(MC_data, corr_between)
 
         return self.process_samples(
             func,
@@ -1104,15 +1105,15 @@ class MCPropagation:
             if return_corr:
                 outs[1] = outs[1] / n_repeats
                 if output_vars == 1:
-                    if not util.isPD(outs[1]):
-                        outs[1] = util.nearestPD_cholesky(
+                    if not cm.isPD(outs[1]):
+                        outs[1] = cm.nearestPD_cholesky(
                             outs[1], corr=True, return_cholesky=False
                         )
 
                 else:
                     for j in range(output_vars):
-                        if not util.isPD(outs[1][j]):
-                            outs[1][j] = util.nearestPD_cholesky(
+                        if not cm.isPD(outs[1][j]):
+                            outs[1][j] = cm.nearestPD_cholesky(
                                 outs[1][j], corr=True, return_cholesky=False
                             )
 
@@ -1120,8 +1121,8 @@ class MCPropagation:
                         [yshapes[i] == yshapes[refyvar] for i in range(len(yshapes))]
                     ):
                         outs[2] = outs[2] / n_repeats
-                        if not util.isPD(outs[2]):
-                            outs[2] = util.nearestPD_cholesky(
+                        if not cm.isPD(outs[2]):
+                            outs[2] = cm.nearestPD_cholesky(
                                 outs[2], corr=True, return_cholesky=False
                             )
         return outs
@@ -1238,6 +1239,7 @@ class MCPropagation:
         else:
             u_func = np.empty(output_vars, dtype=object)
             for i in range(output_vars):
+                print(MC_y[i].shape,MC_y[i])
                 u_func[i] = np.std(np.array(MC_y[i]), axis=-1, dtype=self.dtype)
 
         if not return_corr:
@@ -1248,12 +1250,13 @@ class MCPropagation:
         else:
             if output_vars == 1:
                 if fixed_corr is None:
-                    corr_y = self.calculate_corr(MC_y, corr_axis).astype(self.dtype)
+                    corr_y = cm.calculate_corr(MC_y, corr_axis).astype(self.dtype)
                     if PD_corr:
-                        if not util.isPD(corr_y):
-                            corr_y = util.nearestPD_cholesky(
+                        if not cm.isPD(corr_y):
+                            corr_y = cm.nearestPD_cholesky(
                                 corr_y, corr=True, return_cholesky=False
                             )
+                            print(corr_y)
                 else:
                     corr_y = fixed_corr
                 if return_samples:
@@ -1266,12 +1269,12 @@ class MCPropagation:
                 corr_ys = np.empty(output_vars, dtype=object)
                 for i in range(output_vars):
                     if fixed_corr is None:
-                        corr_ys[i] = self.calculate_corr(MC_y[i], corr_axis).astype(
+                        corr_ys[i] = cm.calculate_corr(MC_y[i], corr_axis).astype(
                             self.dtype
                         )
                         if PD_corr:
-                            if not util.isPD(corr_ys[i]):
-                                corr_ys[i] = util.nearestPD_cholesky(
+                            if not cm.isPD(corr_ys[i]):
+                                corr_ys[i] = cm.nearestPD_cholesky(
                                     corr_ys[i], corr=True, return_cholesky=False
                                 )
                     else:
@@ -1285,8 +1288,8 @@ class MCPropagation:
                     corr_out = None
 
                 if PD_corr and corr_out is not None:
-                    if not util.isPD(corr_out):
-                        corr_out = util.nearestPD_cholesky(
+                    if not cm.isPD(corr_out):
+                        corr_out = cm.nearestPD_cholesky(
                             corr_out, corr=True, return_cholesky=False
                         )
                 if return_samples:
@@ -1294,354 +1297,3 @@ class MCPropagation:
                 else:
                     return u_func, corr_ys, corr_out
 
-    def calculate_corr(self, MC_y, corr_axis=-99):
-        """
-        Calculate the correlation matrix between the MC-generated samples of output quantities.
-        If corr_axis is specified, this axis will be the one used to calculate the correlation matrix (e.g. if corr_axis=0 and x.shape[0]=n, the correlation matrix will have shape (n,n)).
-        This will be done for each combination of parameters in the other dimensions and the resulting correlation matrices are averaged.
-
-        :param MC_y: MC-generated samples of the output quantities (measurands)
-        :type MC_y: array
-        :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
-        :type corr_axis: integer, optional
-        :return: correlation matrix
-        :rtype: array
-        """
-        # print("the shape is:",MC_y.shape)
-
-        if len(MC_y.shape) < 3:
-            corr_y = np.corrcoef(MC_y)
-
-        elif len(MC_y.shape) == 3:
-            if corr_axis == 0:
-                corr_ys = np.zeros(
-                    (len(MC_y[:, 0, 0]), len(MC_y[:, 0, 0])), dtype=self.dtype
-                )
-                for i in range(len(MC_y[0])):
-                    corr_ys += np.corrcoef(MC_y[:, i])
-                corr_y = corr_ys / len(MC_y[0])
-
-            elif corr_axis == 1:
-                corr_ys = np.zeros(
-                    (len(MC_y[0, :, 0]), len(MC_y[0, :, 0])), dtype=self.dtype
-                )
-                # corr_ys = np.zeros(MC_y[0].shape)
-                for i in range(len(MC_y)):
-                    corr_ys += np.corrcoef(MC_y[i])
-                corr_y = corr_ys / len(MC_y)
-
-            else:
-                MC_y = MC_y.reshape((MC_y.shape[0] * MC_y.shape[1], self.MCsteps))
-                corr_y = np.corrcoef(MC_y)
-
-        elif len(MC_y.shape) == 4:
-            if corr_axis == 0:
-                corr_ys = np.zeros(
-                    (len(MC_y[:, 0, 0, 0]), len(MC_y[:, 0, 0, 0])), dtype=self.dtype
-                )
-                # corr_ys = np.zeros(MC_y[:, 0, 0].shape)
-                for i in range(len(MC_y[0])):
-                    for j in range(len(MC_y[0, 0])):
-                        corr_ys += np.corrcoef(MC_y[:, i, j])
-                corr_y = corr_ys / (len(MC_y[0]) * len(MC_y[0, 0]))
-
-            elif corr_axis == 1:
-                corr_ys = np.zeros(
-                    (len(MC_y[0, :, 0, 0]), len(MC_y[0, :, 0, 0])), dtype=self.dtype
-                )
-                # corr_ys = np.zeros(MC_y[0, :, 0].shape)
-                for i in range(len(MC_y)):
-                    for j in range(len(MC_y[0, 0])):
-                        corr_ys += np.corrcoef(MC_y[i, :, j])
-                corr_y = corr_ys / (len(MC_y) * len(MC_y[0, 0]))
-
-            elif corr_axis == 2:
-                corr_ys = np.zeros(
-                    (len(MC_y[0, 0, :, 0]), len(MC_y[0, 0, :, 0])), dtype=self.dtype
-                )
-                # corr_ys = np.zeros(MC_y[0, 0].shape)
-                for i in range(len(MC_y)):
-                    for j in range(len(MC_y[0])):
-                        corr_ys += np.corrcoef(MC_y[i, j])
-                corr_y = corr_ys / (len(MC_y) * len(MC_y[0]))
-            else:
-                MC_y = MC_y.reshape(
-                    (MC_y.shape[0] * MC_y.shape[1] * MC_y.shape[2], self.MCsteps)
-                )
-                corr_y = np.corrcoef(MC_y)
-        else:
-            raise ValueError(
-                "punpy.mc_propagation: MC_y has too high dimensions. Reduce the dimensionality of the input data"
-            )
-
-        return corr_y
-
-    def generate_sample(self, x, u_x, corr_x, i=None):
-        """
-        Generate correlated MC samples of input quantity with given uncertainties and correlation matrix.
-
-        :param x: list of input quantities (usually numpy arrays)
-        :type x: list[array]
-        :param u_x: list of uncertainties/covariances on input quantities (usually numpy arrays)
-        :type u_x: list[array]
-        :param corr_x: list of correlation matrices (n,n) along non-repeating axis, or list of correlation matrices for each repeated measurement.
-        :type corr_x: list[array], optional
-        :param i: index of the input quantity (in x)
-        :type i: int
-        :return: generated samples
-        :rtype: array
-        """
-        if i is None:
-            x = np.array([x])
-            u_x = np.array([u_x])
-            corr_x = np.array([corr_x])
-            i = 0
-        if not hasattr(x[i], "__len__"):
-            sample = self.generate_samples_systematic(x[i], u_x[i])
-        elif isinstance(corr_x[i], str):
-            if corr_x[i] == "rand":
-                sample = self.generate_samples_random(x[i], u_x[i])
-            elif corr_x[i] == "syst":
-                sample = self.generate_samples_systematic(x[i], u_x[i])
-        else:
-            sample = self.generate_samples_correlated(x, u_x, corr_x, i)
-
-        return sample
-
-    def generate_samples_correlated(self, x, u_x, corr_x, i):
-        """
-        Generate correlated MC samples of input quantity with given uncertainties and correlation matrix.
-        Samples are generated using generate_samples_cov() after matching up the uncertainties to the right correlation matrix.
-        It is possible to provide one correlation matrix to be used for each measurement (which each have an uncertainty) or a correlation matrix per measurement.
-
-        :param x: list of input quantities (usually numpy arrays)
-        :type x: list[array]
-        :param u_x: list of uncertainties/covariances on input quantities (usually numpy arrays)
-        :type u_x: list[array]
-        :param corr_x: list of correlation matrices (n,n) along non-repeating axis, or list of correlation matrices for each repeated measurement.
-        :type corr_x: list[array], optional
-        :param i: index of the input quantity (in x)
-        :type i: int
-        :return: generated samples
-        :rtype: array
-        """
-        if len(x[i].shape) == 2:
-            if len(corr_x[i]) == len(u_x[i]):
-                MC_data = np.zeros((u_x[i].shape) + (self.MCsteps,))
-                for j in range(len(u_x[i][0])):
-                    cov_x = util.convert_corr_to_cov(corr_x[i], u_x[i][:, j])
-                    MC_data[:, j, :] = self.generate_samples_cov(
-                        x[i][:, j].flatten(), cov_x
-                    ).reshape(x[i][:, j].shape + (self.MCsteps,))
-            else:
-                MC_data = np.zeros((u_x[i].shape) + (self.MCsteps,))
-                for j in range(len(u_x[i][:, 0])):
-                    cov_x = util.convert_corr_to_cov(corr_x[i], u_x[i][j])
-                    MC_data[j, :, :] = self.generate_samples_cov(
-                        x[i][j].flatten(), cov_x
-                    ).reshape(x[i][j].shape + (self.MCsteps,))
-        else:
-            cov_x = util.convert_corr_to_cov(corr_x[i], u_x[i])
-            MC_data = self.generate_samples_cov(x[i].flatten(), cov_x).reshape(
-                x[i].shape + (self.MCsteps,)
-            )
-
-        return MC_data
-
-    def generate_samples_random(self, param, u_param):
-        """
-        Generate MC samples of input quantity with random (Gaussian) uncertainties.
-
-        :param param: values of input quantity (mean of distribution)
-        :type param: float or array
-        :param u_param: uncertainties on input quantity (std of distribution)
-        :type u_param: float or array
-        :return: generated samples
-        :rtype: array
-        """
-        if not hasattr(param, "__len__"):
-            return (
-                np.random.normal(size=self.MCsteps).astype(self.dtype) * u_param + param
-            )
-        elif len(param.shape) == 0:
-            return (
-                np.random.normal(size=self.MCsteps).astype(self.dtype) * u_param + param
-            )
-
-        elif len(param.shape) == 1:
-            return (
-                np.random.normal(size=(len(param), self.MCsteps)).astype(self.dtype)
-                * u_param[:, None]
-                + param[:, None]
-            )
-        elif len(param.shape) == 2:
-            return (
-                np.random.normal(size=param.shape + (self.MCsteps,))
-                * u_param[:, :, None]
-                + param[:, :, None]
-            )
-        elif len(param.shape) == 3:
-            return (
-                np.random.normal(size=param.shape + (self.MCsteps,)).astype(self.dtype)
-                * u_param[:, :, :, None]
-                + param[:, :, :, None]
-            )
-        elif len(param.shape) == 4:
-            return (
-                np.random.normal(size=param.shape + (self.MCsteps,)).astype(self.dtype)
-                * u_param[:, :, :, :, None]
-                + param[:, :, :, :, None]
-            )
-        else:
-            raise ValueError(
-                "punpy.mc_propagation: parameter shape not supported: %s %s"
-                % (param.shape, param)
-            )
-
-    def generate_samples_systematic(self, param, u_param):
-        """
-        Generate correlated MC samples of input quantity with systematic (Gaussian) uncertainties.
-
-        :param param: values of input quantity (mean of distribution)
-        :type param: float or array
-        :param u_param: uncertainties on input quantity (std of distribution)
-        :type u_param: float or array
-        :return: generated samples
-        :rtype: array
-        """
-        if not hasattr(param, "__len__"):
-            return (
-                np.random.normal(size=self.MCsteps).astype(self.dtype) * u_param + param
-            )
-        elif len(param.shape) == 0:
-            return (
-                np.random.normal(size=self.MCsteps).astype(self.dtype) * u_param + param
-            )
-        elif len(param.shape) == 1:
-            return (
-                np.dot(
-                    u_param[:, None],
-                    np.random.normal(size=self.MCsteps).astype(self.dtype)[None, :],
-                )
-                + param[:, None]
-            )
-        elif len(param.shape) == 2:
-            return (
-                np.dot(
-                    u_param[:, :, None],
-                    np.random.normal(size=self.MCsteps).astype(self.dtype)[
-                        :, None, None
-                    ],
-                )[:, :, :, 0]
-                + param[:, :, None]
-            )
-        elif len(param.shape) == 3:
-            return (
-                np.dot(
-                    u_param[:, :, :, None],
-                    np.random.normal(size=self.MCsteps).astype(self.dtype)[
-                        :, None, None, None
-                    ],
-                )[:, :, :, :, 0, 0]
-                + param[:, :, :, None]
-            )
-        elif len(param.shape) == 4:
-            return (
-                np.dot(
-                    u_param[:, :, :, :, None],
-                    np.random.normal(size=self.MCsteps).astype(self.dtype)[
-                        :, None, None, None, None
-                    ],
-                )[:, :, :, :, :, 0, 0, 0]
-                + param[:, :, :, :, None]
-            )
-        else:
-            raise ValueError(
-                "punpy.mc_propagation: parameter shape not supported: %s %s"
-                % (param.shape, param)
-            )
-
-    def generate_samples_cov(self, param, cov_param):
-        """
-        Generate correlated MC samples of input quantity with a given covariance matrix.
-        Samples are generated independent and then correlated using Cholesky decomposition.
-
-        :param param: values of input quantity (mean of distribution)
-        :type param: array
-        :param cov_param: covariance matrix for input quantity
-        :type cov_param: array
-        :return: generated samples
-        :rtype: array
-        """
-        try:
-            L = np.linalg.cholesky(cov_param)
-        except:
-            L = util.nearestPD_cholesky(cov_param)
-
-        return (
-            np.dot(
-                L, np.random.normal(size=(len(param), self.MCsteps)).astype(self.dtype)
-            )
-            + param[:, None]
-        )
-
-    def correlate_samples_corr(self, samples, corr):
-        """
-        Method to correlate independent samples of input quantities using correlation matrix and Cholesky decomposition.
-
-        :param samples: independent samples of input quantities
-        :type samples: array[array]
-        :param corr: correlation matrix between input quantities
-        :type corr: array
-        :return: correlated samples of input quantities
-        :rtype: array[array]
-        """
-
-        if np.max(corr) > 1.000001 or len(corr) != len(samples):
-            raise ValueError(
-                "punpy.mc_propagation: The correlation matrix between variables is not the right shape or has elements >1."
-            )
-        else:
-            try:
-                L = np.array(np.linalg.cholesky(corr))
-            except:
-                L = util.nearestPD_cholesky(corr)
-
-            samples_out = samples.copy()
-            for j in np.ndindex(samples[0][..., 0].shape):
-                samples_j = np.array(
-                    [samples[i][j] for i in range(len(samples))], dtype=self.dtype
-                )
-
-                # Cholesky needs to be applied to Gaussian distributions with mean=0 and std=1,
-                # We first calculate the mean and std for each input quantity
-                means = np.array(
-                    [np.mean(samples[i][j]) for i in range(len(samples))],
-                    dtype=self.dtype,
-                )[:, None]
-                stds = np.array(
-                    [np.std(samples[i][j]) for i in range(len(samples))],
-                    dtype=self.dtype,
-                )[:, None]
-
-                # We normalise the samples with the mean and std, then apply Cholesky, and finally reapply the mean and std.
-                if all(stds[:, 0] != 0):
-                    samples_j = np.dot(L, (samples_j - means) / stds) * stds + means
-
-                # If any of the variables has no uncertainty, the normalisation will fail. Instead we leave the parameters without uncertainty unchanged.
-                else:
-                    id_nonzero = np.where(stds[:, 0] != 0)[0]
-                    samples_j[id_nonzero] = (
-                        np.dot(
-                            L[id_nonzero][:, id_nonzero],
-                            (samples_j[id_nonzero] - means[id_nonzero])
-                            / stds[id_nonzero],
-                        )
-                        * stds[id_nonzero]
-                        + means[id_nonzero]
-                    )
-
-                for i in range(len(samples)):
-                    samples_out[i][j] = samples_j[i]
-
-            return samples_out

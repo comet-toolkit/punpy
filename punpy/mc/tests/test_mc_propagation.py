@@ -4,10 +4,10 @@ Tests for mc propagation class
 
 import unittest
 
+import comet_maths as cm
 import numpy as np
 import numpy.testing as npt
 
-import punpy.utilities.utilities as util
 from punpy.mc.mc_propagation import MCPropagation
 
 """___Authorship___"""
@@ -107,8 +107,8 @@ class TestMCPropagation(unittest.TestCase):
         uf, ucorr = prop.propagate_random(function, xs, xerrs, return_corr=True)
         npt.assert_allclose(ucorr, np.eye(len(ucorr)), atol=0.06)
         npt.assert_allclose(uf, yerr_uncorr, rtol=0.06)
-        ucov = util.convert_corr_to_cov(ucorr, uf)
-        ucorr2 = util.convert_cov_to_corr(ucov, uf)
+        ucov = cm.convert_corr_to_cov(ucorr, uf)
+        ucorr2 = cm.convert_cov_to_corr(ucov, uf)
         npt.assert_allclose(ucorr, ucorr2, atol=0.01)
 
         uf = prop.propagate_random(function, xs, xerrs, corr_between=np.ones((2, 2)))
@@ -367,7 +367,7 @@ class TestMCPropagation(unittest.TestCase):
         prop = MCPropagation(25000)
 
         cov = [
-            util.convert_corr_to_cov(np.eye(len(xerr.flatten())), xerr)
+            cm.convert_corr_to_cov(np.eye(len(xerr.flatten())), xerr)
             for xerr in xerrs
         ]
         uf, ucorr = prop.propagate_cov(function, xs, cov, return_corr=True)
@@ -375,7 +375,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(uf, yerr_uncorr, rtol=0.06)
 
         cov = [
-            util.convert_corr_to_cov(
+            cm.convert_corr_to_cov(
                 np.ones((len(xerr.flatten()), len(xerr.flatten()))) + np.eye(len(xerr)),
                 xerr,
             )
@@ -385,7 +385,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(uf, yerr_uncorr * 2 ** 0.5, rtol=0.06)
 
         cov = [
-            util.convert_corr_to_cov(np.eye(len(xerr.flatten())), xerr)
+            cm.convert_corr_to_cov(np.eye(len(xerr.flatten())), xerr)
             for xerr in xerrs
         ]
         uf, ucorr = prop.propagate_cov(
@@ -398,7 +398,7 @@ class TestMCPropagation(unittest.TestCase):
         prop = MCPropagation(20000)
 
         covb = [
-            util.convert_corr_to_cov(np.eye(len(xerrb.flatten())), xerrb)
+            cm.convert_corr_to_cov(np.eye(len(xerrb.flatten())), xerrb)
             for xerrb in xerrsb
         ]
         ufb, ucorrb = prop.propagate_cov(functionb, xsb, covb, return_corr=True)
@@ -406,7 +406,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
 
         covb = [
-            util.convert_corr_to_cov(np.eye(len(xerrb[:, 0].flatten())), xerrb[:, 0])
+            cm.convert_corr_to_cov(np.eye(len(xerrb[:, 0].flatten())), xerrb[:, 0])
             for xerrb in xerrsb
         ]
 
@@ -419,7 +419,7 @@ class TestMCPropagation(unittest.TestCase):
         xsb2 = [50, xsb[1]]
         covb = [
             1,
-            util.convert_corr_to_cov(
+            cm.convert_corr_to_cov(
                 np.ones(
                     (len(xerrsb[1][:, 0].flatten()), len(xerrsb[1][:, 0].flatten()))
                 ),
@@ -439,7 +439,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
 
         covb = [
-            util.convert_corr_to_cov(
+            cm.convert_corr_to_cov(
                 np.ones((len(xerrb.flatten()), len(xerrb.flatten())))
                 + np.eye(len(xerrb.flatten())),
                 xerrb,
@@ -450,7 +450,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufb, yerr_uncorrb * 2 ** 0.5, rtol=0.06)
 
         covb = [
-            util.convert_corr_to_cov(np.eye(len(xerrb.flatten())), xerrb)
+            cm.convert_corr_to_cov(np.eye(len(xerrb.flatten())), xerrb)
             for xerrb in xerrsb
         ]
         ufb, ucorrb = prop.propagate_cov(
@@ -462,7 +462,7 @@ class TestMCPropagation(unittest.TestCase):
     def test_propagate_cov_1D_3var(self):
         prop = MCPropagation(20000)
         covc = [
-            util.convert_corr_to_cov(np.eye(len(xerrc.flatten())), xerrc)
+            cm.convert_corr_to_cov(np.eye(len(xerrc.flatten())), xerrc)
             for xerrc in xerrsc
         ]
         ufc, ucorrc = prop.propagate_cov(functionc, xsc, covc, return_corr=True)
@@ -470,7 +470,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufc, yerr_uncorrc, rtol=0.06)
 
         covc = [
-            util.convert_corr_to_cov(
+            cm.convert_corr_to_cov(
                 np.ones((len(xerrc.flatten()), len(xerrc.flatten())))
                 + np.eye(len(xerrc)),
                 xerrc,
@@ -481,7 +481,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufc, yerr_uncorrc * 2 ** 0.5, rtol=0.06)
 
         covc = [
-            util.convert_corr_to_cov(np.eye(len(xerrc.flatten())), xerrc)
+            cm.convert_corr_to_cov(np.eye(len(xerrc.flatten())), xerrc)
             for xerrc in xerrsc
         ]
         ufc, ucorrc = prop.propagate_cov(
@@ -494,7 +494,7 @@ class TestMCPropagation(unittest.TestCase):
         prop = MCPropagation(20000)
 
         covd = [
-            util.convert_corr_to_cov(np.eye(len(xerrd.flatten())), xerrd)
+            cm.convert_corr_to_cov(np.eye(len(xerrd.flatten())), xerrd)
             for xerrd in xerrsd
         ]
         ufd, ucorrd, corr_out = prop.propagate_cov(
@@ -505,7 +505,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufd[1], yerr_uncorrd[1], rtol=0.06)
 
         covd = [
-            util.convert_corr_to_cov(
+            cm.convert_corr_to_cov(
                 np.ones((len(xerrd.flatten()), len(xerrd.flatten()))), xerrd
             )
             for xerrd in xerrsd

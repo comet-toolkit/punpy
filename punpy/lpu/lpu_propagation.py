@@ -2,6 +2,7 @@
 
 from multiprocessing import Pool
 
+import comet_maths as cm
 import numpy as np
 
 import punpy.utilities.utilities as util
@@ -312,7 +313,7 @@ class LPUPropagation:
 
         else:
             if Jx is None:
-                Jx = util.calculate_Jacobian(fun, xflat, Jx_diag, self.step)
+                Jx = cm.calculate_Jacobian(fun, xflat, Jx_diag, self.step)
 
             if corr_between is None:
                 corr_between = np.eye(len(x))
@@ -326,8 +327,8 @@ class LPUPropagation:
                 else:
                     corrs[i] = corr_x[i]
 
-            corr_x = util.calculate_flattened_corr(corrs, corr_between)
-            cov_x = util.convert_corr_to_cov(corr_x, u_xflat)
+            corr_x = cm.calculate_flattened_corr(corrs, corr_between)
+            cov_x = cm.convert_corr_to_cov(corr_x, u_xflat)
 
             return self.process_jacobian(
                 Jx,
@@ -392,8 +393,8 @@ class LPUPropagation:
         :return: uncertainties on measurand
         :rtype: array
         """
-        u_x = [util.uncertainty_from_covariance(cov_x[i]) for i in range(len(x))]
-        corr_x = [util.correlation_from_covariance(cov_x[i]) for i in range(len(x))]
+        u_x = [cm.uncertainty_from_covariance(cov_x[i]) for i in range(len(x))]
+        corr_x = [cm.correlation_from_covariance(cov_x[i]) for i in range(len(x))]
 
         for i in range(len(x)):
             if len(x[i].shape) > 1:
@@ -477,13 +478,13 @@ class LPUPropagation:
 
         else:
             if Jx is None:
-                Jx = util.calculate_Jacobian(fun, xflat, Jx_diag, self.step)
+                Jx = cm.calculate_Jacobian(fun, xflat, Jx_diag, self.step)
 
             if corr_between is None:
                 corr_between = np.eye(len(x))
 
-            corr_x = util.calculate_flattened_corr(corr_x, corr_between)
-            cov_x = util.convert_corr_to_cov(corr_x, u_xflat)
+            corr_x = cm.calculate_flattened_corr(corr_x, corr_between)
+            cov_x = cm.convert_corr_to_cov(corr_x, u_xflat)
 
             return self.process_jacobian(
                 Jx,
@@ -510,7 +511,7 @@ class LPUPropagation:
         covy = np.dot(np.dot(J, covx), J.T)
         u_func = np.diag(covy) ** 0.5
         if fixed_corr is None:
-            corr_y = util.convert_cov_to_corr(covy, u_func)
+            corr_y = cm.convert_cov_to_corr(covy, u_func)
         else:
             corr_y = fixed_corr
         if corr_axis >= 0:
@@ -543,7 +544,7 @@ class LPUPropagation:
                     return u_func, corr_y, J
             else:
                 # create an empty arrays and then populate it with the correlation matrix for each output parameter individually
-                corr_ys, corr_out = util.separate_flattened_corr(corr_y, output_vars)
+                corr_ys, corr_out = cm.separate_flattened_corr(corr_y, output_vars)
                 if not return_Jacobian:
                     return u_func, corr_ys, corr_out
                 else:
