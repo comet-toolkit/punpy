@@ -1,7 +1,7 @@
-from punpy.fiduceo.correlation_forms import bell_relative,triangular_relative
-from punpy.fiduceo.measurement_function import MeasurementFunction
+from punpy.digital_effects_table.measurement_function import MeasurementFunction
 from punpy.lpu.lpu_propagation import LPUPropagation
 from punpy.mc.mc_propagation import MCPropagation
+
 from ._version import get_versions
 
 """___Authorship___"""

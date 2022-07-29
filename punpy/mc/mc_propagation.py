@@ -6,7 +6,6 @@ from multiprocessing import Pool
 
 import comet_maths as cm
 import numpy as np
-
 import punpy.utilities.utilities as util
 
 """___Authorship___"""
@@ -253,6 +252,8 @@ class MCPropagation:
         :return: uncertainties on measurand
         :rtype: array
         """
+        if self.verbose:
+            print("starting propagation (%s s since creation of prop object)"%(time.time()-self.starttime))
         (
             yshapes,
             x,
@@ -384,9 +385,9 @@ class MCPropagation:
                 MC_data = samples
             else:
                 MC_data = np.empty(len(x), dtype=np.ndarray)
+
                 for i in range(len(x)):
                     MC_data[i] = cm.generate_sample(self.MCsteps, x, u_x, corr_x, i)
-
                 if corr_between is not None:
                     MC_data = cm.correlate_sample_corr(MC_data, corr_between)
                 if self.verbose:
@@ -597,7 +598,7 @@ class MCPropagation:
                         MC_data[i] = np.array(
                             [
                                 cm.generate_sample_cov(self.MCsteps,
-                                    x[i][:, j].flatten(), cov_x[i]
+                                    x[i][:, j].ravel(), cov_x[i]
                                 ).reshape(x[i][:, j].shape + (self.MCsteps,))
                                 for j in range(x[i].shape[1])
                             ]
@@ -605,11 +606,11 @@ class MCPropagation:
                         MC_data[i] = np.moveaxis(MC_data[i], 0, 1)
                     else:
                         MC_data[i] = cm.generate_sample_cov(self.MCsteps,
-                            x[i].flatten(), cov_x[i]
+                            x[i].ravel(), cov_x[i]
                         ).reshape(x[i].shape + (self.MCsteps,))
                 else:
                     MC_data[i] = cm.generate_sample_cov(self.MCsteps,
-                        x[i].flatten(), cov_x[i]
+                        x[i].ravel(), cov_x[i]
                     ).reshape(x[i].shape + (self.MCsteps,))
 
             if corr_between is not None:
@@ -1239,8 +1240,12 @@ class MCPropagation:
         else:
             u_func = np.empty(output_vars, dtype=object)
             for i in range(output_vars):
-                print(MC_y[i].shape,MC_y[i])
+                #print(MC_y[i].shape,MC_y[i])
                 u_func[i] = np.std(np.array(MC_y[i]), axis=-1, dtype=self.dtype)
+
+        if self.verbose:
+            print("std calculated (%s s since creation of prop object)"%(time.time()-self.starttime))
+
 
         if not return_corr:
             if return_samples:
@@ -1256,9 +1261,12 @@ class MCPropagation:
                             corr_y = cm.nearestPD_cholesky(
                                 corr_y, corr=True, return_cholesky=False
                             )
-                            print(corr_y)
                 else:
                     corr_y = fixed_corr
+
+                if self.verbose:
+                    print("corr calculated (%s s since creation of prop object)"%(time.time()-self.starttime))
+
                 if return_samples:
                     return u_func, corr_y, MC_y, data
                 else:
@@ -1292,6 +1300,10 @@ class MCPropagation:
                         corr_out = cm.nearestPD_cholesky(
                             corr_out, corr=True, return_cholesky=False
                         )
+
+                if self.verbose:
+                    print("corr calculated for output_var>1 (%s s since creation of prop object)"%(time.time()-self.starttime))
+
                 if return_samples:
                     return u_func, corr_ys, corr_out, MC_y, data
                 else:
