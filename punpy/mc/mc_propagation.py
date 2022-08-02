@@ -253,7 +253,10 @@ class MCPropagation:
         :rtype: array
         """
         if self.verbose:
-            print("starting propagation (%s s since creation of prop object)"%(time.time()-self.starttime))
+            print(
+                "starting propagation (%s s since creation of prop object)"
+                % (time.time() - self.starttime)
+            )
         (
             yshapes,
             x,
@@ -363,7 +366,10 @@ class MCPropagation:
                     refyvar,
                 )
                 if self.verbose:
-                    print("repeated measurement %s out of %s processed (%s s since creation of prop object)"%(i,n_repeats,time.time()-self.starttime))
+                    print(
+                        "repeated measurement %s out of %s processed (%s s since creation of prop object)"
+                        % (i, n_repeats, time.time() - self.starttime)
+                    )
 
             outs = self.finish_repeated_outs(
                 outs,
@@ -391,7 +397,10 @@ class MCPropagation:
                 if corr_between is not None:
                     MC_data = cm.correlate_sample_corr(MC_data, corr_between)
                 if self.verbose:
-                    print("samples generated (%s s since creation of prop object)"%(time.time()-self.starttime))
+                    print(
+                        "samples generated (%s s since creation of prop object)"
+                        % (time.time() - self.starttime)
+                    )
 
             return self.process_samples(
                 func,
@@ -592,25 +601,27 @@ class MCPropagation:
             MC_data = np.empty(len(x), dtype=np.ndarray)
             for i in range(len(x)):
                 if not hasattr(x[i], "__len__"):
-                    MC_data[i] = cm.generate_sample_systematic(self.MCsteps, x[i], cov_x[i])
+                    MC_data[i] = cm.generate_sample_systematic(
+                        self.MCsteps, x[i], cov_x[i]
+                    )
                 elif param_fixed is not None:
                     if param_fixed[i] and (len(x[i].shape) == 2):
                         MC_data[i] = np.array(
                             [
-                                cm.generate_sample_cov(self.MCsteps,
-                                    x[i][:, j].ravel(), cov_x[i]
+                                cm.generate_sample_cov(
+                                    self.MCsteps, x[i][:, j].ravel(), cov_x[i]
                                 ).reshape(x[i][:, j].shape + (self.MCsteps,))
                                 for j in range(x[i].shape[1])
                             ]
                         ).T
                         MC_data[i] = np.moveaxis(MC_data[i], 0, 1)
                     else:
-                        MC_data[i] = cm.generate_sample_cov(self.MCsteps,
-                            x[i].ravel(), cov_x[i]
+                        MC_data[i] = cm.generate_sample_cov(
+                            self.MCsteps, x[i].ravel(), cov_x[i]
                         ).reshape(x[i].shape + (self.MCsteps,))
                 else:
-                    MC_data[i] = cm.generate_sample_cov(self.MCsteps,
-                        x[i].ravel(), cov_x[i]
+                    MC_data[i] = cm.generate_sample_cov(
+                        self.MCsteps, x[i].ravel(), cov_x[i]
                     ).reshape(x[i].shape + (self.MCsteps,))
 
             if corr_between is not None:
@@ -1231,7 +1242,10 @@ class MCPropagation:
                     MC_y[i] = np.moveaxis(MC_y2[:, i], 0, -1)
 
         if self.verbose:
-            print("samples propagated (%s s since creation of prop object)"%(time.time()-self.starttime))
+            print(
+                "samples propagated (%s s since creation of prop object)"
+                % (time.time() - self.starttime)
+            )
 
         # if hasattr(MC_y[0,0], '__len__'):
         #     print(yshape,np.array(MC_y[0,0]).shape,np.array(MC_y[1,0]).shape,np.array(MC_y[2,0]).shape,np.array(MC_y[3,0]).shape)
@@ -1240,12 +1254,14 @@ class MCPropagation:
         else:
             u_func = np.empty(output_vars, dtype=object)
             for i in range(output_vars):
-                #print(MC_y[i].shape,MC_y[i])
+                # print(MC_y[i].shape,MC_y[i])
                 u_func[i] = np.std(np.array(MC_y[i]), axis=-1, dtype=self.dtype)
 
         if self.verbose:
-            print("std calculated (%s s since creation of prop object)"%(time.time()-self.starttime))
-
+            print(
+                "std calculated (%s s since creation of prop object)"
+                % (time.time() - self.starttime)
+            )
 
         if not return_corr:
             if return_samples:
@@ -1265,7 +1281,10 @@ class MCPropagation:
                     corr_y = fixed_corr
 
                 if self.verbose:
-                    print("corr calculated (%s s since creation of prop object)"%(time.time()-self.starttime))
+                    print(
+                        "corr calculated (%s s since creation of prop object)"
+                        % (time.time() - self.starttime)
+                    )
 
                 if return_samples:
                     return u_func, corr_y, MC_y, data
@@ -1302,10 +1321,12 @@ class MCPropagation:
                         )
 
                 if self.verbose:
-                    print("corr calculated for output_var>1 (%s s since creation of prop object)"%(time.time()-self.starttime))
+                    print(
+                        "corr calculated for output_var>1 (%s s since creation of prop object)"
+                        % (time.time() - self.starttime)
+                    )
 
                 if return_samples:
                     return u_func, corr_ys, corr_out, MC_y, data
                 else:
                     return u_func, corr_ys, corr_out
-

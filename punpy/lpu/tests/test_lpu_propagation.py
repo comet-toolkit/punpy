@@ -7,7 +7,6 @@ import unittest
 import comet_maths as cm
 import numpy as np
 import numpy.testing as npt
-
 from punpy.lpu.lpu_propagation import LPUPropagation
 
 """___Authorship___"""
@@ -300,8 +299,7 @@ class TestLPUPropagation(unittest.TestCase):
         prop = LPUPropagation()
 
         cov = [
-            cm.convert_corr_to_cov(np.eye(len(xerr.flatten())), xerr)
-            for xerr in xerrs
+            cm.convert_corr_to_cov(np.eye(len(xerr.flatten())), xerr) for xerr in xerrs
         ]
 
         Jx = Jac_function(*xs)

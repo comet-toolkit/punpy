@@ -7,7 +7,6 @@ import unittest
 import comet_maths as cm
 import numpy as np
 import numpy.testing as npt
-
 from punpy.mc.mc_propagation import MCPropagation
 
 """___Authorship___"""
@@ -367,8 +366,7 @@ class TestMCPropagation(unittest.TestCase):
         prop = MCPropagation(25000)
 
         cov = [
-            cm.convert_corr_to_cov(np.eye(len(xerr.flatten())), xerr)
-            for xerr in xerrs
+            cm.convert_corr_to_cov(np.eye(len(xerr.flatten())), xerr) for xerr in xerrs
         ]
         uf, ucorr = prop.propagate_cov(function, xs, cov, return_corr=True)
         npt.assert_allclose(ucorr, np.eye(len(ucorr)), atol=0.06)
@@ -385,8 +383,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(uf, yerr_uncorr * 2 ** 0.5, rtol=0.06)
 
         cov = [
-            cm.convert_corr_to_cov(np.eye(len(xerr.flatten())), xerr)
-            for xerr in xerrs
+            cm.convert_corr_to_cov(np.eye(len(xerr.flatten())), xerr) for xerr in xerrs
         ]
         uf, ucorr = prop.propagate_cov(
             function, xs, cov, return_corr=True, corr_between=np.ones((2, 2))
