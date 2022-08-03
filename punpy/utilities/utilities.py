@@ -67,4 +67,3 @@ def select_repeated_x(x, u_x, param_fixed, i, repeat_dims, repeat_shape):
                     u_xb[j] = u_xb[j][ii]
 
     return xb, u_xb
-

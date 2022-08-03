@@ -74,10 +74,10 @@ It would also have been possible to use the keyword `return_corr` to get the mea
 
    # your uncertainties
    L0_ur = L0*0.05  # 5% random uncertainty
-   L0_us = np.ones(5)*0.03  # systematic uncertainty of 0.03 
+   L0_us = np.ones(5)*0.03  # systematic uncertainty of 0.03
                             # (common between bands)
    gains_ur = np.array([0.5,0.7,0.6,0.4,0.1])  # random uncertainty
-   gains_us = np.array([0.1,0.2,0.1,0.4,0.3])  # systematic uncertainty 
+   gains_us = np.array([0.1,0.2,0.1,0.4,0.3])  # systematic uncertainty
    # (different for each band but fully correlated)
    dark_ur = np.array([0.01,0.002,0.006,0.002,0.015])  # random uncertainty
 
@@ -407,6 +407,8 @@ This significantly speeds up the calculation as the off-diagonal elements of the
    print(L1_ur)
    print(L1_us)
    print("propogate_random took: ",t2-t1," s")
+
+
 
 2D input quantities and measurand
 ###################################
