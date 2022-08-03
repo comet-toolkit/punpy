@@ -234,7 +234,7 @@ class DigitalEffectsTableTemplates(ABC):
                 corrdim = ".".join(custom_corr_dims)
                 dim_sizes[corrdim] = 1
                 for cust_dim in custom_corr_dims:
-                    dim_sizes[corrdim] *= len(dim_sizes[cust_dim])
+                    dim_sizes[corrdim] *= dim_sizes[cust_dim]
 
             custom_err_corr_dict = {
                 "dtype": np.float32,

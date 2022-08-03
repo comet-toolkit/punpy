@@ -25,7 +25,7 @@ def read(filename):
 setup(
     #version=versioneer.get_version(),
     #cmdclass=versioneer.get_cmdclass(),
-    version='0.31',
+    version='0.32',
     name="punpy",
     url="https://github.com/comet-toolkit/punpy",
     license="LGPLv3",

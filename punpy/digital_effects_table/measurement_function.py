@@ -83,7 +83,7 @@ class MeasurementFunction(ABC):
         """
         pass
 
-    def propagate_ds(self, *args, store_rel_unc=True):
+    def propagate_ds(self, *args, store_rel_unc=False):
         """
         Function to propagate the uncertainties on the input quantities present in the
         digital effects tables provided as the input arguments, through the measurement
@@ -92,6 +92,8 @@ class MeasurementFunction(ABC):
 
         :param args: One or multiple digital effects tables with input quantities, defined with obsarray
         :type args: obsarray dataset(s)
+        :param store_rel_unc: Boolean defining whether relative uncertainties should be returned or not. Default to True (relative uncertaintie returned)
+        :type store_rel_unc: bool (optional)
         :return: digital effects table with uncertainties on measurand
         :rtype: obsarray dataset
         """
@@ -166,6 +168,8 @@ class MeasurementFunction(ABC):
 
         :param args: One or multiple digital effects tables with input quantities, defined with obsarray
         :type args: obsarray dataset(s)
+        :param store_rel_unc: Boolean defining whether relative uncertainties should be returned or not. Default to True (relative uncertaintie returned)
+        :type store_rel_unc: bool (optional)
         :return: digital effects table with uncertainties on measurand
         :rtype: obsarray dataset
         """
@@ -214,11 +218,15 @@ class MeasurementFunction(ABC):
         """
         Function to propagate the uncertainties on the input quantities present in the
         digital effects tables provided as the input arguments, through the measurement
-        function to produce an output digital effects table with the combined random,
-        systematic and structured uncertainties on the measurand
+        function to produce an output digital effects table with the uncertainties of specific
+        components listed in comp_list.
 
+        :param comp_list: list of uncertainty contributions to propagate
+        :rtype comp_list: list of strings or string
         :param args: One or multiple digital effects tables with input quantities, defined with obsarray
         :type args: obsarray dataset(s)
+        :param store_rel_unc: Boolean defining whether relative uncertainties should be returned or not. Default to True (relative uncertaintie returned)
+        :type store_rel_unc: bool (optional)
         :return: digital effects table with uncertainties on measurand
         :rtype: obsarray dataset
         """
@@ -227,6 +235,9 @@ class MeasurementFunction(ABC):
                 "starting propagate_ds_specific (%s s since creation of prop object)"
                 % (time.time() - self.prop.starttime)
             )
+
+        if isinstance(comp_list,str):
+            comp_list=[comp_list]
 
         # first calculate the measurand and propagate the uncertainties
         self.check_sizes(*args)
@@ -308,10 +319,26 @@ class MeasurementFunction(ABC):
         return self.propagate_ds_specific(comp_list, *args, store_rel_unc=store_rel_unc)
 
     def run(self, *args, expand=True):
+        """
+
+        :param args:
+        :type args:
+        :param expand:
+        :type expand:
+        :return:
+        :rtype:
+        """
         input_qty = self.get_input_qty(args, expand=expand)
         return self.meas_function(*input_qty)
 
     def check_sizes(self, *args):
+        """
+
+        :param args:
+        :type args:
+        :return:
+        :rtype:
+        """
         if self.ydims is None:
             for dataset in args:
                 try:
@@ -341,18 +368,30 @@ class MeasurementFunction(ABC):
             found = False
             for dataset in args:
                 if var in dataset.keys():
-                    if self.str_repeat_dims in dataset[var].dims:
+                    if all([self.str_repeat_dims[i] in dataset[var].dims for i in range(len(self.str_repeat_dims))]):
                         found = True
 
             if not found:
                 self.param_fixed[iv] = True
-                print(
-                    "Variable %s not found in repeat_dims. setting param_fixed to True"
-                    % (var)
-                )
+                if self.prop.verbose:
+                    print(
+                        "Variable %s not found in repeat_dims. setting param_fixed to True"
+                        % (var)
+                    )
 
 
     def find_repeat_dim_corr(self,form,*args,store_rel_unc=False):
+        """
+
+        :param form:
+        :type form:
+        :param args:
+        :type args:
+        :param store_rel_unc:
+        :type store_rel_unc:
+        :return:
+        :rtype:
+        """
         repeat_dims_errcorrs={}
         for repeat_dim in self.str_repeat_dims:
             repeat_dims_errcorrs[repeat_dim]={"dim": repeat_dim, "form": None, "params": [], "units": []}
@@ -544,13 +583,18 @@ class MeasurementFunction(ABC):
                 if var in dataset.keys():
                     inputs_unc[iv] = self.calculate_unc(form, dataset, var)
                     if inputs_unc[iv] is not None:
-                        inputs_unc[iv] = inputs_unc[iv] * dataset[var].values
+                        # this if else is to be removed when relative uncertainty implemented in obsarray
+                        if "pressure" in dataset.keys():
+                            inputs_unc[iv] = inputs_unc[iv]
+                        else:
+                            inputs_unc[iv] = inputs_unc[iv] * dataset[var].values
 
         if inputs_unc[iv] is None:
-            print(
-                "%s uncertainty for variable %s not found in provided datasets. Zero uncertainty assumed."
-                % (form, var)
-            )
+            if self.prop.verbose:
+                print(
+                    "%s uncertainty for variable %s not found in provided datasets. Zero uncertainty assumed."
+                    % (form, var)
+                )
         return inputs_unc
 
     def calculate_unc(self, form, ds, var):
@@ -585,10 +629,11 @@ class MeasurementFunction(ABC):
                 if var in dataset.keys():
                     inputs_corr[iv] = self.calculate_corr(form, dataset, var)
             if inputs_corr[iv] is None:
-                print(
-                    "%s error-correlation for variable %s not found in provided datasets."
-                    % (form, var)
-                )
+                if self.prop.verbose:
+                    print(
+                        "%s error-correlation for variable %s not found in provided datasets."
+                        % (form, var)
+                    )
 
         return inputs_corr
 
