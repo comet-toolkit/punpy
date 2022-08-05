@@ -5,7 +5,6 @@ from abc import ABC,abstractmethod
 
 import numpy as np
 import obsarray
-import xarray as xr
 from punpy.digital_effects_table.digital_effects_table_templates import (
     DigitalEffectsTableTemplates,)
 
@@ -84,7 +83,7 @@ class MeasurementFunction(ABC):
         """
         pass
 
-    def propagate_ds(self, *args, store_rel_unc=False):
+    def propagate_ds(self, *args, store_rel_unc=False,expand=False):
         """
         Function to propagate the uncertainties on the input quantities present in the
         digital effects tables provided as the input arguments, through the measurement
@@ -106,23 +105,23 @@ class MeasurementFunction(ABC):
 
         # first calculate the measurand and propagate the uncertainties
         self.check_sizes(*args)
-        y = self.run(*args)
+        y = self.run(*args,expand=expand)
 
-        u_rand_y = self.propagate_random(*args)
+        u_rand_y = self.propagate_random(*args,expand=expand)
         if self.prop.verbose:
             print(
                 "propagate_random done (%s s since creation of prop object)"
                 % (time.time() - self.prop.starttime)
             )
 
-        u_syst_y = self.propagate_systematic(*args)
+        u_syst_y = self.propagate_systematic(*args,expand=expand)
         if self.prop.verbose:
             print(
                 "propagate systematic done (%s s since creation of prop object)"
                 % (time.time() - self.prop.starttime)
             )
 
-        u_stru_y, corr_stru_y = self.propagate_structured(*args)
+        u_stru_y, corr_stru_y = self.propagate_structured(*args,expand=expand)
 
         dim_sizes = {}
         for id,dim in enumerate(self.ydims):
@@ -181,7 +180,7 @@ class MeasurementFunction(ABC):
 
         return ds_out
 
-    def propagate_ds_total(self, *args, store_rel_unc=False):
+    def propagate_ds_total(self, *args, store_rel_unc=False,expand=False):
         """
         Function to propagate the total uncertainties present in the digital effects
         tables in the input arguments, through the measurement function to produce
@@ -200,8 +199,8 @@ class MeasurementFunction(ABC):
                 % (time.time() - self.prop.starttime)
             )
 
-        y = self.run(*args)
-        u_tot_y, corr_tot_y = self.propagate_total(*args)
+        y = self.run(*args,expand=expand)
+        u_tot_y, corr_tot_y = self.propagate_total(*args,expand=expand)
 
         dim_sizes = {}
         for id,dim in enumerate(self.ydims):
@@ -242,7 +241,7 @@ class MeasurementFunction(ABC):
 
         return ds_out
 
-    def propagate_ds_specific(self, comp_list, *args, store_rel_unc=False):
+    def propagate_ds_specific(self, comp_list, *args, store_rel_unc=False,expand=False):
         """
         Function to propagate the uncertainties on the input quantities present in the
         digital effects tables provided as the input arguments, through the measurement
@@ -269,7 +268,7 @@ class MeasurementFunction(ABC):
 
         # first calculate the measurand and propagate the uncertainties
         self.check_sizes(*args)
-        y = self.run(*args)
+        y = self.run(*args,expand=expand)
 
         dim_sizes = {}
         for id,dim in enumerate(self.ydims):
@@ -288,18 +287,19 @@ class MeasurementFunction(ABC):
         for comp in comp_list:
             err_corr_comp=None
             if comp == "random":
-                u_comp_y = self.propagate_random(*args)
+                u_comp_y = self.propagate_random(*args,expand=expand)
 
             elif comp == "systematic":
-                u_comp_y = self.propagate_systematic(*args)
+                u_comp_y = self.propagate_systematic(*args,expand=expand)
 
             else:
                 u_comp_y, corr_comp_y = self.propagate_specific(
-                    comp, *args, return_corr=True
+                    comp, *args, return_corr=True,expand=expand
                 )
                 if corr_comp_y is not None:
-                    err_corr_comp="err_corr_" + comp + "_" + self.yvariable
                     ds_out[err_corr_comp].values = corr_comp_y
+                else:
+                    err_corr_comp="err_corr_" + comp + "_" + self.yvariable
 
             if u_comp_y is None:
                 if store_rel_unc:
@@ -321,7 +321,7 @@ class MeasurementFunction(ABC):
         return ds_out
 
 
-    def propagate_ds_all(self, *args, store_rel_unc=False):
+    def propagate_ds_all(self, *args, store_rel_unc=False,expand=False):
         """
         Function to propagate the uncertainties on the input quantities present in the
         digital effects tables provided as the input arguments, through the measurement
@@ -351,9 +351,9 @@ class MeasurementFunction(ABC):
                                 comp_name=comp_name[2::]
                             comp_list.append(comp_name)
         comp_list=np.unique(np.array(comp_list))
-        return self.propagate_ds_specific(comp_list, *args, store_rel_unc=store_rel_unc)
+        return self.propagate_ds_specific(comp_list, *args, store_rel_unc=store_rel_unc,expand=expand)
 
-    def run(self, *args, expand=True):
+    def run(self, *args, expand=False):
         """
 
         :param args:
@@ -594,7 +594,7 @@ class MeasurementFunction(ABC):
             output_vars=self.output_vars,
             )
 
-    def get_input_qty(self, *args, expand=True):
+    def get_input_qty(self, *args, expand=False):
         if len(self.xvariables) == 0:
             raise ValueError("Variables have not been specified.")
         else:
@@ -624,7 +624,7 @@ class MeasurementFunction(ABC):
 
             return inputs
 
-    def get_input_unc(self, form, *args, expand=True):
+    def get_input_unc(self, form, *args, expand=False):
         inputs_unc = np.empty(len(self.xvariables), dtype=object)
         for iv, var in enumerate(self.xvariables):
             inputs_unc[iv] = None
@@ -658,16 +658,15 @@ class MeasurementFunction(ABC):
         else:
             try:
                 uvar = "%s_%s" % (form, var)
-                data = ds[uvar]
+                data = ds[uvar].values
             except:
-                try:
-                    keys = np.array(list(dataset.keys()))
-                    uvar = keys[np.where("_%s_%s" % (form, var) in keys)]
-                    data = ds[uvar]
-                except:
+                keys = np.array(list(ds.keys()))
+                uvar_ids=[("_%s_%s" % (form, var) in key) and (key[0]=="u") for key in keys]
+                uvar = keys[uvar_ids]
+                if len(uvar)>0:
+                    data = ds[uvar].values
+                else:
                     data = None
-        if isinstance(data, xr.DataArray):
-            data = data.values
         return data
 
     def get_input_corr(self, form, *args):

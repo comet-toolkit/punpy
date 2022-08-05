@@ -217,7 +217,7 @@ class DigitalEffectsTableTemplates(ABC):
 
     def set_errcorr_shape(self, dims, dim_sizes, err_corr_name, str_repeat_dims=[],repeat_dim_err_corr=[]):
         """
-
+        Function to work out which di
         :param dims: list of dimensions
         :type dims: list
         :param u_xvar_ref: reference uncertainty component that is used to populate repeated dims
@@ -287,8 +287,8 @@ class DigitalEffectsTableTemplates(ABC):
         :rtype: xr.Dataset
         """
         ds[variable].attrs["unc_comps"].remove(u_comp)
-        ds.drop(u_comp)
+        ds=ds.drop(u_comp)
         if err_corr_comp is not None:
-            ds.drop(err_corr_comp)
+            ds=ds.drop(err_corr_comp)
 
         return ds
