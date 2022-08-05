@@ -297,7 +297,7 @@ class MeasurementFunction(ABC):
                     comp, *args, return_corr=True,expand=expand
                 )
                 if corr_comp_y is not None:
-                    ds_out[err_corr_comp].values = corr_comp_y
+                    ds_out["err_corr_" + comp + "_" + self.yvariable].values = corr_comp_y
                 else:
                     err_corr_comp="err_corr_" + comp + "_" + self.yvariable
 
@@ -658,16 +658,17 @@ class MeasurementFunction(ABC):
         else:
             try:
                 uvar = "%s_%s" % (form, var)
-                data = ds[uvar].values
+                data = ds[uvar]
             except:
                 keys = np.array(list(ds.keys()))
                 uvar_ids=[("_%s_%s" % (form, var) in key) and (key[0]=="u") for key in keys]
                 uvar = keys[uvar_ids]
                 if len(uvar)>0:
-                    data = ds[uvar].values
+                    data = ds[uvar[0]]
                 else:
                     data = None
-        return data
+        if data is not None:
+            return data.values
 
     def get_input_corr(self, form, *args):
         inputs_corr = np.empty(len(self.xvariables), dtype=object)
@@ -700,16 +701,28 @@ class MeasurementFunction(ABC):
         elif form == "rand":
             return "rand"
         elif form == "syst":
-            corrlen = len(dsu.values.ravel())
             return "syst"
         else:
             try:
                 uvar = "%s_%s" % (form, var)
+                data = ds[uvar]
+            except:
+                keys = np.array(list(ds.keys()))
+                uvar_ids=[("_%s_%s" % (form, var) in key) and (key[0]=="u") for key in keys]
+                uvar = keys[uvar_ids]
+                if len(uvar)>0:
+                    data = ds[uvar[0]]
+                else:
+                    data = None
+
+            try:
+                uvar = "%s_%s" % (form, var)
                 return dsu[uvar].err_corr_matrix().values
             except:
-                try:
-                    keys = np.array(list(dataset.keys()))
-                    uvar = keys[np.where("_%s_%s" % (form, var) in keys)]
-                    return dsu[uvar].err_corr_matrix().values
-                except:
+                keys = np.array(list(ds.keys()))
+                uvar_ids=[("_%s_%s" % (form, var) in key) and (key[0]=="u") for key in keys]
+                uvar = keys[uvar_ids]
+                if len(uvar)>0:
+                    return dsu[uvar[0]].err_corr_matrix().values
+                else:
                     return None
