@@ -197,6 +197,79 @@ class MCPropagation:
             refyvar=refyvar,
         )
 
+    def propagate_cov(
+            self,
+            func,
+            x,
+            cov_x,
+            param_fixed=None,
+            corr_between=None,
+            return_corr=True,
+            return_samples=False,
+            repeat_dims=-99,
+            corr_axis=-99,
+            fixed_corr_var=False,
+            output_vars=1,
+            PD_corr=True,
+            refyvar=0,
+    ):
+        """
+        Propagate uncertainties with given covariance matrix through measurement function with n input quantities.
+        Input quantities can be floats, vectors (1d-array) or images (2d-array).
+        The covariance matrix can represent the full covariance matrix between all measurements in all dimensions.
+        Alternatively if there are repeated measurements specified in repeat_dims, the covariance matrix is given
+        for the covariance along the dimension that is not one of the repeat_dims.
+
+        :param func: measurement function
+        :type func: function
+        :param x: list of input quantities (usually numpy arrays)
+        :type x: list[array]
+        :param cov_x: list of covariance matrices on input quantities (usually numpy arrays). In case the input quantity is an array of shape (m,o), the covariance matrix  is typically given as an array of shape (m*o,m*o).
+        :type cov_x: list[array]
+        :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
+        :type param_fixed: list of bools, optional
+        :param corr_between: covariance matrix (n,n) between input quantities, defaults to None
+        :type corr_between: array, optional
+        :param return_corr: set to True to return correlation matrix of measurand, defaults to True
+        :type return_corr: bool, optional
+        :param return_samples: set to True to return generated samples, defaults to False
+        :type return_samples: bool, optional
+        :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
+        :type repeat_dims: integer or list of 2 integers, optional
+        :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+        :type corr_axis: integer, optional
+        :param fixed_corr_var: set to integer to copy the correlation matrix of the dimiension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
+        :type fixed_corr_var: bool or integer, optional
+        :param output_vars: number of output parameters in the measurement function. Defaults to 1.
+        :type output_vars: integer, optional
+        :param PD_corr: set to True to make sure returned correlation matrices are positive semi-definite, default to True
+        :type PD_corr: bool, optional
+        :param refyvar: Index of output variable with reference shape (only relevant when output_vars>1; should be output variable with most dimensions; affects things like repeat_dims)
+        :type refyvar: int, optional
+        :return: uncertainties on measurand
+        :rtype: array
+        """
+        u_x = [cm.uncertainty_from_covariance(cov_x[i]) for i in range(len(x))]
+        corr_x = [cm.correlation_from_covariance(cov_x[i]) for i in range(len(x))]
+
+        return self.propagate_standard(
+            func,
+            x,
+            u_x,
+            corr_x,
+            param_fixed=param_fixed,
+            corr_between=corr_between,
+            samples=samples,
+            return_corr=return_corr,
+            return_samples=return_samples,
+            repeat_dims=repeat_dims,
+            corr_axis=corr_axis,
+            fixed_corr_var=fixed_corr_var,
+            output_vars=output_vars,
+            PD_corr=PD_corr,
+            refyvar=refyvar,
+        )
+
     def propagate_standard(
         self,
         func,
@@ -414,7 +487,7 @@ class MCPropagation:
                 output_vars,
             )
 
-    def propagate_cov(
+    def propagate_cov_flattened(
         self,
         func,
         x,

@@ -42,6 +42,11 @@ class DigitalEffectsTableTemplates(ABC):
             dims, dim_sizes, "err_corr_tot_" + self.yvariable, str_repeat_dims=str_repeat_dims, repeat_dim_err_corr=repeat_dim_err_corrs
         )
 
+        if store_rel_unc:
+            units="%"
+        else:
+            units=self.yunit
+
         template = {
             self.yvariable: {
                 "dtype": np.float32,
@@ -59,7 +64,7 @@ class DigitalEffectsTableTemplates(ABC):
                 "dtype": np.float32,
                 "dim": dims,
                 "attributes": {
-                    "units": self.yunit,
+                    "units": units,
                     "err_corr": [
                         {"dim": dim, "form": "random", "params": [], "units": []}
                         for dim in dims
@@ -70,7 +75,7 @@ class DigitalEffectsTableTemplates(ABC):
                 "dtype": np.float32,
                 "dim": dims,
                 "attributes": {
-                    "units": self.yunit,
+                    "units": units,
                     "err_corr": [
                         {"dim": dim, "form": "systematic", "params": [], "units": []}
                         for dim in dims
@@ -80,12 +85,14 @@ class DigitalEffectsTableTemplates(ABC):
             self.make_ucomp_name("str",store_rel_unc=store_rel_unc): {
                 "dtype": np.float32,
                 "dim": dims,
-                "attributes": {"units": self.yunit, "err_corr": err_corr},
+                "attributes": {"units": units, "err_corr": err_corr},
             },
         }
 
         if custom_err_corr is not None:
             template["err_corr_str_" + self.yvariable] = custom_err_corr
+
+
 
         return template
 
@@ -104,6 +111,11 @@ class DigitalEffectsTableTemplates(ABC):
             dims, dim_sizes, "err_corr_tot_" + self.yvariable, str_repeat_dims=str_repeat_dims, repeat_dim_err_corr=repeat_dim_err_corrs
         )
 
+        if store_rel_unc:
+            units="%"
+        else:
+            units=self.yunit
+
         template = {
             self.yvariable: {
                 "dtype": np.float32,
@@ -116,7 +128,7 @@ class DigitalEffectsTableTemplates(ABC):
             self.make_ucomp_name("tot",store_rel_unc=store_rel_unc): {
                 "dtype": np.float32,
                 "dim": dims,
-                "attributes": {"units": self.yunit, "err_corr": err_corr},
+                "attributes": {"units": units , "err_corr": err_corr},
             },
         }
         if custom_err_corr is not None:
@@ -135,6 +147,10 @@ class DigitalEffectsTableTemplates(ABC):
         :return: measurand digital effects table template to be used by obsarray
         :rtype: dict
         """
+        if store_rel_unc:
+            units="%"
+        else:
+            units=self.yunit
 
         template = {
             self.yvariable: {
@@ -155,7 +171,7 @@ class DigitalEffectsTableTemplates(ABC):
                 template[self.make_ucomp_name(comp,store_rel_unc=store_rel_unc)] = {
                     "dtype": np.float32,
                     "dim": dims,
-                    "attributes": {"units": self.yunit,
+                    "attributes": {"units": units,
                                    "err_corr": [
                                        {"dim": dim, "form": "random", "params": [], "units": []}
                                        for dim in dims
@@ -166,7 +182,7 @@ class DigitalEffectsTableTemplates(ABC):
                 template[self.make_ucomp_name(comp,store_rel_unc=store_rel_unc)] = {
                     "dtype": np.float32,
                     "dim": dims,
-                    "attributes": {"units": self.yunit,
+                    "attributes": {"units": units,
                                    "err_corr": [
                                        {"dim": dim, "form": "systematic", "params": [], "units": []}
                                        for dim in dims
@@ -181,7 +197,7 @@ class DigitalEffectsTableTemplates(ABC):
                 template[self.make_ucomp_name(comp,store_rel_unc=store_rel_unc)] = {
                     "dtype": np.float32,
                     "dim": dims,
-                    "attributes": {"units": self.yunit, "err_corr": err_corr},
+                    "attributes": {"units": units, "err_corr": err_corr},
                 }
                 if (custom_err_corr is not None):
                     template[
@@ -254,3 +270,25 @@ class DigitalEffectsTableTemplates(ABC):
             )
 
         return err_corr_list, custom_err_corr_dict
+
+    def remove_unc_component(self,ds,variable,u_comp,err_corr_comp=None):
+        """
+        Function to remove an uncertainty component from a dataset
+
+        :param ds: dataset from which uncertainty should be removed
+        :type ds: xr.Dataset
+        :param variable: variable from which uncertainty should be removed
+        :type variable: str
+        :param u_comp: name of uncertainty component that should be removed
+        :type u_comp: str
+        :param err_corr_comp: optionally, the name of the error correlation matrix component associated with this uncertainty component can be provided, so it is removed as well.
+        :type err_corr_comp: str
+        :return: dataset which uncertainty component removed
+        :rtype: xr.Dataset
+        """
+        ds[variable].attrs["unc_comps"].remove(u_comp)
+        ds.drop(u_comp)
+        if err_corr_comp is not None:
+            ds.drop(err_corr_comp)
+
+        return ds

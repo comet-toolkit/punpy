@@ -78,8 +78,9 @@ class MeasurementFunction(ABC):
 
     def setup(self,*args, **kwargs):
         """
-        meas_function is the measurement function itself, to be used in the uncertainty propagation.
-        This function must be overwritten by the user when creating their MeasurementFunction subclass.
+        This function is to provide a setup stage that canbe run before propagating uncertainties.
+        This allows to set up additional class attributes etc, without needing to edit the initialiser (which is quite specific to this class).
+        This function can optionally be overwritten by the user when creating their MeasurementFunction subclass.
         """
         pass
 
@@ -138,19 +139,39 @@ class MeasurementFunction(ABC):
         ds_out[self.yvariable].values = y
 
         if store_rel_unc:
-            ds_out["u_rel_ran_" + self.yvariable].values = u_rand_y / y
-            ds_out["u_rel_sys_" + self.yvariable].values = u_syst_y / y
-            ds_out["u_rel_str_" + self.yvariable].values = u_stru_y / y
-
-            ds_out["u_rel_ran_" + self.yvariable].attrs["units"] = "%"
-            ds_out["u_rel_sys_" + self.yvariable].attrs["units"] = "%"
-            ds_out["u_rel_str_" + self.yvariable].attrs["units"] = "%"
+            ucomp_ran="u_rel_ran_" + self.yvariable
+            ucomp_sys="u_rel_sys_" + self.yvariable
+            ucomp_str="u_rel_str_" + self.yvariable
         else:
-            ds_out["u_ran_" + self.yvariable].values = u_rand_y
-            ds_out["u_sys_" + self.yvariable].values = u_syst_y
-            ds_out["u_str_" + self.yvariable].values = u_stru_y
+            ucomp_ran="u_ran_" + self.yvariable
+            ucomp_sys="u_sys_" + self.yvariable
+            ucomp_str="u_str_" + self.yvariable
 
-        ds_out["err_corr_str_" + self.yvariable].values = corr_stru_y
+        if u_rand_y is None:
+            ds_out=self.templ.remove_unc_component(ds_out,self.yvariable,ucomp_ran)
+        else:
+            if store_rel_unc:
+                ds_out[ucomp_ran].values = u_rand_y / y
+            else:
+                ds_out[ucomp_ran].values = u_rand_y
+                
+        if u_syst_y is None:
+            ds_out=self.templ.remove_unc_component(ds_out,self.yvariable,ucomp_sys)
+        else:
+            if store_rel_unc:
+                ds_out[ucomp_sys].values = u_syst_y / y
+            else:
+                ds_out[ucomp_sys].values = u_syst_y
+
+        if u_stru_y is None:
+            ds_out=self.templ.remove_unc_component(ds_out,self.yvariable,ucomp_str,err_corr_comp="err_corr_str_" + self.yvariable)
+        else:
+            if store_rel_unc:
+                ds_out[ucomp_str].values = u_stru_y / y
+            else:
+                ds_out[ucomp_str].values = u_stru_y
+
+            ds_out["err_corr_str_" + self.yvariable].values = corr_stru_y
 
         if self.prop.verbose:
             print(
@@ -198,13 +219,20 @@ class MeasurementFunction(ABC):
 
         ds_out[self.yvariable].values = y
 
-        if store_rel_unc:
-            ds_out["u_rel_tot_" + self.yvariable].values = u_tot_y / y
-            ds_out["u_rel_tot_" + self.yvariable].attrs["units"] = "%"
-        else:
-            ds_out["u_tot_" + self.yvariable].values = u_tot_y
 
-        ds_out["err_corr_tot_" + self.yvariable].values = corr_tot_y
+        if store_rel_unc:
+            ucomp="u_rel_tot_" + self.yvariable
+        else:
+            ucomp="u_tot_" + self.yvariable
+            
+        if u_tot_y is None:
+            ds_out=self.templ.remove_unc_component(ds_out,self.yvariable,ucomp,err_corr_comp="err_corr_tot_" + self.yvariable)
+        else:
+            if store_rel_unc:
+                ds_out[ucomp].values = u_tot_y/y
+            else:
+                ds_out[ucomp].values = u_tot_y
+            ds_out["err_corr_tot_" + self.yvariable].values = corr_tot_y
 
         if self.prop.verbose:
             print(
@@ -258,6 +286,7 @@ class MeasurementFunction(ABC):
         ds_out[self.yvariable].values = y
 
         for comp in comp_list:
+            err_corr_comp=None
             if comp == "random":
                 u_comp_y = self.propagate_random(*args)
 
@@ -268,14 +297,20 @@ class MeasurementFunction(ABC):
                 u_comp_y, corr_comp_y = self.propagate_specific(
                     comp, *args, return_corr=True
                 )
-                ds_out["err_corr_" + comp + "_" + self.yvariable].values = corr_comp_y
+                if corr_comp_y is not None:
+                    err_corr_comp="err_corr_" + comp + "_" + self.yvariable
+                    ds_out[err_corr_comp].values = corr_comp_y
 
-            if store_rel_unc:
-                ds_out["u_rel_" + comp + "_" + self.yvariable].values = u_comp_y / y
-                ds_out["u_rel_" + comp + "_" + self.yvariable].attrs["units"] = "%"
-
+            if u_comp_y is None:
+                if store_rel_unc:
+                    ds_out=self.templ.remove_unc_component(ds_out,self.yvariable,"u_rel_" + comp + "_" + self.yvariable,err_corr_comp=err_corr_comp)
+                else:
+                    ds_out=self.templ.remove_unc_component(ds_out,self.yvariable,"u_" + comp + "_" + self.yvariable,err_corr_comp=err_corr_comp)
             else:
-                ds_out["u_" + comp + "_" + self.yvariable].values = u_comp_y
+                if store_rel_unc:
+                    ds_out["u_rel_" + comp + "_" + self.yvariable].values = u_comp_y / y
+                else:
+                    ds_out["u_" + comp + "_" + self.yvariable].values = u_comp_y
 
         if self.prop.verbose:
             print(
@@ -459,26 +494,31 @@ class MeasurementFunction(ABC):
                 "inputs extracted (%s s since creation of prop object)"
                 % (time.time() - self.prop.starttime)
             )
-
-        return self.prop.propagate_standard(
-            self.meas_function,
-            input_qty,
-            input_unc,
-            input_corr,
-            param_fixed=self.param_fixed,
-            corr_between=self.corr_between,
-            return_corr=True,
-            return_samples=False,
-            repeat_dims=self.num_repeat_dims,
-            corr_axis=self.corr_axis,
-            output_vars=self.output_vars,
-        )
+        if all([iu is None for iu in input_unc]):
+            return None, None
+        else:
+            return self.prop.propagate_standard(
+                self.meas_function,
+                input_qty,
+                input_unc,
+                input_corr,
+                param_fixed=self.param_fixed,
+                corr_between=self.corr_between,
+                return_corr=True,
+                return_samples=False,
+                repeat_dims=self.num_repeat_dims,
+                corr_axis=self.corr_axis,
+                output_vars=self.output_vars,
+            )
 
     def propagate_random(self, *args, expand=False):
         self.check_sizes(*args)
         input_qty = self.get_input_qty(args, expand=expand)
         input_unc = self.get_input_unc("rand", args, expand=expand)
-        return self.prop.propagate_random(
+        if all([iu is None for iu in input_unc]):
+            return None
+        else:
+            return self.prop.propagate_random(
             self.meas_function,
             input_qty,
             input_unc,
@@ -495,7 +535,10 @@ class MeasurementFunction(ABC):
         self.check_sizes(*args)
         input_qty = self.get_input_qty(args, expand=expand)
         input_unc = self.get_input_unc("syst", args, expand=expand)
-        return self.prop.propagate_systematic(
+        if all([iu is None for iu in input_unc]):
+            return None
+        else:
+            return self.prop.propagate_systematic(
             self.meas_function,
             input_qty,
             input_unc,
@@ -506,14 +549,17 @@ class MeasurementFunction(ABC):
             repeat_dims=self.num_repeat_dims,
             corr_axis=self.corr_axis,
             output_vars=self.output_vars,
-        )
+            )
 
     def propagate_structured(self, *args, expand=False):
         self.check_sizes(*args)
         input_qty = self.get_input_qty(args, expand=expand)
         input_unc = self.get_input_unc("stru", args, expand=expand)
         input_corr = self.get_input_corr("stru", args)
-        return self.prop.propagate_standard(
+        if all([iu is None for iu in input_unc]):
+            return None, None
+        else:
+            return self.prop.propagate_standard(
             self.meas_function,
             input_qty,
             input_unc,
@@ -525,13 +571,16 @@ class MeasurementFunction(ABC):
             repeat_dims=self.num_repeat_dims,
             corr_axis=self.corr_axis,
             output_vars=self.output_vars,
-        )
+            )
 
     def propagate_specific(self, form, *args, expand=False, return_corr=False):
         input_qty = self.get_input_qty(args, expand=expand)
         input_unc = self.get_input_unc(form, args, expand=expand)
         input_corr = self.get_input_corr(form, args)
-        return self.prop.propagate_standard(
+        if all([iu is None for iu in input_unc]):
+            return None, None
+        else:
+            return self.prop.propagate_standard(
             self.meas_function,
             input_qty,
             input_unc,
@@ -543,7 +592,7 @@ class MeasurementFunction(ABC):
             repeat_dims=self.num_repeat_dims,
             corr_axis=self.corr_axis,
             output_vars=self.output_vars,
-        )
+            )
 
     def get_input_qty(self, *args, expand=True):
         if len(self.xvariables) == 0:
