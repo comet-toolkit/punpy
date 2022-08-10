@@ -6,6 +6,7 @@ from multiprocessing import Pool
 
 import comet_maths as cm
 import numpy as np
+
 import punpy.utilities.utilities as util
 
 """___Authorship___"""
@@ -75,6 +76,8 @@ class MCPropagation:
         :type param_fixed: list of bools, optional
         :param corr_between: correlation matrix (n,n) between input quantities, defaults to None
         :type corr_between: array, optional
+        :param samples: allows to provide a Monte Carlo sample previously generated. This sample of input quantities will be used instead of generating one from the uncertainties and error-correlation. Defaults to None
+        :type samples: list[array], optional
         :param return_corr: set to True to return correlation matrix of measurand, defaults to False
         :type return_corr: bool, optional
         :param return_samples: set to True to return generated samples, defaults to False
@@ -154,6 +157,8 @@ class MCPropagation:
         :type param_fixed: list of bools, optional
         :param corr_between: correlation matrix (n,n) between input quantities, defaults to None
         :type corr_between: array, optional
+        :param samples: allows to provide a Monte Carlo sample previously generated. This sample of input quantities will be used instead of generating one from the uncertainties and error-correlation. Defaults to None
+        :type samples: list[array], optional
         :param return_corr: set to True to return correlation matrix of measurand, defaults to False
         :type return_corr: bool, optional
         :param return_samples: set to True to return generated samples, defaults to False
@@ -198,20 +203,21 @@ class MCPropagation:
         )
 
     def propagate_cov(
-            self,
-            func,
-            x,
-            cov_x,
-            param_fixed=None,
-            corr_between=None,
-            return_corr=True,
-            return_samples=False,
-            repeat_dims=-99,
-            corr_axis=-99,
-            fixed_corr_var=False,
-            output_vars=1,
-            PD_corr=True,
-            refyvar=0,
+        self,
+        func,
+        x,
+        cov_x,
+        param_fixed=None,
+        corr_between=None,
+        samples=None,
+        return_corr=True,
+        return_samples=False,
+        repeat_dims=-99,
+        corr_axis=-99,
+        fixed_corr_var=False,
+        output_vars=1,
+        PD_corr=True,
+        refyvar=0,
     ):
         """
         Propagate uncertainties with given covariance matrix through measurement function with n input quantities.
@@ -230,6 +236,8 @@ class MCPropagation:
         :type param_fixed: list of bools, optional
         :param corr_between: covariance matrix (n,n) between input quantities, defaults to None
         :type corr_between: array, optional
+        :param samples: allows to provide a Monte Carlo sample previously generated. This sample of input quantities will be used instead of generating one from the uncertainties and error-correlation. Defaults to None
+        :type samples: list[array], optional
         :param return_corr: set to True to return correlation matrix of measurand, defaults to True
         :type return_corr: bool, optional
         :param return_samples: set to True to return generated samples, defaults to False
@@ -249,7 +257,9 @@ class MCPropagation:
         :return: uncertainties on measurand
         :rtype: array
         """
-        u_x = [cm.uncertainty_from_covariance(cov_x[i]) for i in range(len(x))]
+        x = [np.atleast_1d(x[i]) for i in range(len(x))]
+        cov_x = [np.atleast_2d(cov_x[i]) for i in range(len(x))]
+        u_x = [cm.uncertainty_from_covariance(cov_x[i]).reshape(x[i].shape) for i in range(len(x))]
         corr_x = [cm.correlation_from_covariance(cov_x[i]) for i in range(len(x))]
 
         return self.propagate_standard(
@@ -306,6 +316,8 @@ class MCPropagation:
         :type param_fixed: list of bools, optional
         :param corr_between: correlation matrix (n,n) between input quantities, defaults to None
         :type corr_between: array, optional
+        :param samples: allows to provide a Monte Carlo sample previously generated. This sample of input quantities will be used instead of generating one from the uncertainties and error-correlation. Defaults to None
+        :type samples: list[array], optional
         :param return_corr: set to True to return correlation matrix of measurand, defaults to False
         :type return_corr: bool, optional
         :param return_samples: set to True to return generated samples, defaults to False
@@ -494,6 +506,7 @@ class MCPropagation:
         cov_x,
         param_fixed=None,
         corr_between=None,
+        samples=None,
         return_corr=True,
         return_samples=False,
         repeat_dims=-99,
@@ -520,6 +533,8 @@ class MCPropagation:
         :type param_fixed: list of bools, optional
         :param corr_between: covariance matrix (n,n) between input quantities, defaults to None
         :type corr_between: array, optional
+        :param samples: allows to provide a Monte Carlo sample previously generated. This sample of input quantities will be used instead of generating one from the uncertainties and error-correlation. Defaults to None
+        :type samples: list[array], optional
         :param return_corr: set to True to return correlation matrix of measurand, defaults to True
         :type return_corr: bool, optional
         :param return_samples: set to True to return generated samples, defaults to False
@@ -657,48 +672,39 @@ class MCPropagation:
             )
 
             return outs
-            # return self.combine_repeated_outs(
-            #     outs,
-            #     yshapes,
-            #     len(x),
-            #     n_repeats,
-            #     repeat_shape,
-            #     repeat_dims,
-            #     return_corr,
-            #     return_samples,
-            #     output_vars,
-            #     refyvar,
-            # )
 
         else:
-            MC_data = np.empty(len(x), dtype=np.ndarray)
-            for i in range(len(x)):
-                if not hasattr(x[i], "__len__"):
-                    MC_data[i] = cm.generate_sample_systematic(
-                        self.MCsteps, x[i], cov_x[i]
-                    )
-                elif param_fixed is not None:
-                    if param_fixed[i] and (len(x[i].shape) == 2):
-                        MC_data[i] = np.array(
-                            [
-                                cm.generate_sample_cov(
-                                    self.MCsteps, x[i][:, j].ravel(), cov_x[i]
-                                ).reshape(x[i][:, j].shape + (self.MCsteps,))
-                                for j in range(x[i].shape[1])
-                            ]
-                        ).T
-                        MC_data[i] = np.moveaxis(MC_data[i], 0, 1)
+            if samples is not None:
+                MC_data = samples
+            else:
+                MC_data = np.empty(len(x), dtype=np.ndarray)
+                for i in range(len(x)):
+                    if not hasattr(x[i], "__len__"):
+                        MC_data[i] = cm.generate_sample_systematic(
+                            self.MCsteps, x[i], cov_x[i]
+                        )
+                    elif param_fixed is not None:
+                        if param_fixed[i] and (len(x[i].shape) == 2):
+                            MC_data[i] = np.array(
+                                [
+                                    cm.generate_sample_cov(
+                                        self.MCsteps, x[i][:, j].ravel(), cov_x[i]
+                                    ).reshape(x[i][:, j].shape + (self.MCsteps,))
+                                    for j in range(x[i].shape[1])
+                                ]
+                            ).T
+                            MC_data[i] = np.moveaxis(MC_data[i], 0, 1)
+                        else:
+                            MC_data[i] = cm.generate_sample_cov(
+                                self.MCsteps, x[i].ravel(), cov_x[i]
+                            ).reshape(x[i].shape + (self.MCsteps,))
                     else:
                         MC_data[i] = cm.generate_sample_cov(
                             self.MCsteps, x[i].ravel(), cov_x[i]
                         ).reshape(x[i].shape + (self.MCsteps,))
-                else:
-                    MC_data[i] = cm.generate_sample_cov(
-                        self.MCsteps, x[i].ravel(), cov_x[i]
-                    ).reshape(x[i].shape + (self.MCsteps,))
 
-            if corr_between is not None:
-                MC_data = cm.correlate_sample_corr(MC_data, corr_between)
+                if corr_between is not None:
+                    MC_data = cm.correlate_sample_corr(MC_data, corr_between)
 
         return self.process_samples(
             func,

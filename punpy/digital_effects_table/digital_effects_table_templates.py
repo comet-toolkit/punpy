@@ -25,7 +25,14 @@ class DigitalEffectsTableTemplates(ABC):
         self.yvariable = yvariable
         self.yunit = yunit
 
-    def make_template_main(self, dims, dim_sizes, str_repeat_dims = [], store_rel_unc=False, repeat_dim_err_corrs=[]):
+    def make_template_main(
+        self,
+        dims,
+        dim_sizes,
+        str_repeat_dims=[],
+        store_unc_percent=False,
+        repeat_dim_err_corrs=[],
+    ):
         """
         Make the digital effects table template for the case where random, systematic and structured uncertainties are propagated seperately
 
@@ -39,13 +46,17 @@ class DigitalEffectsTableTemplates(ABC):
         :rtype: dict
         """
         err_corr, custom_err_corr = self.set_errcorr_shape(
-            dims, dim_sizes, "err_corr_tot_" + self.yvariable, str_repeat_dims=str_repeat_dims, repeat_dim_err_corr=repeat_dim_err_corrs
+            dims,
+            dim_sizes,
+            "err_corr_tot_" + self.yvariable,
+            str_repeat_dims=str_repeat_dims,
+            repeat_dim_err_corr=repeat_dim_err_corrs,
         )
 
-        if store_rel_unc:
-            units="%"
+        if store_unc_percent:
+            units = "%"
         else:
-            units=self.yunit
+            units = self.yunit
 
         template = {
             self.yvariable: {
@@ -54,13 +65,13 @@ class DigitalEffectsTableTemplates(ABC):
                 "attributes": {
                     "units": self.yunit,
                     "unc_comps": [
-                        self.make_ucomp_name("ran",store_rel_unc=store_rel_unc),
-                        self.make_ucomp_name("sys",store_rel_unc=store_rel_unc),
-                        self.make_ucomp_name("str",store_rel_unc=store_rel_unc),
+                        self.make_ucomp_name("ran", store_unc_percent=store_unc_percent),
+                        self.make_ucomp_name("sys", store_unc_percent=store_unc_percent),
+                        self.make_ucomp_name("str", store_unc_percent=store_unc_percent),
                     ],
                 },
             },
-            self.make_ucomp_name("ran",store_rel_unc=store_rel_unc): {
+            self.make_ucomp_name("ran", store_unc_percent=store_unc_percent): {
                 "dtype": np.float32,
                 "dim": dims,
                 "attributes": {
@@ -71,7 +82,7 @@ class DigitalEffectsTableTemplates(ABC):
                     ],
                 },
             },
-            self.make_ucomp_name("sys",store_rel_unc=store_rel_unc): {
+            self.make_ucomp_name("sys", store_unc_percent=store_unc_percent): {
                 "dtype": np.float32,
                 "dim": dims,
                 "attributes": {
@@ -82,7 +93,7 @@ class DigitalEffectsTableTemplates(ABC):
                     ],
                 },
             },
-            self.make_ucomp_name("str",store_rel_unc=store_rel_unc): {
+            self.make_ucomp_name("str", store_unc_percent=store_unc_percent): {
                 "dtype": np.float32,
                 "dim": dims,
                 "attributes": {"units": units, "err_corr": err_corr},
@@ -92,11 +103,16 @@ class DigitalEffectsTableTemplates(ABC):
         if custom_err_corr is not None:
             template["err_corr_str_" + self.yvariable] = custom_err_corr
 
-
-
         return template
 
-    def make_template_tot(self, dims, dim_sizes, str_repeat_dims=[], store_rel_unc=False, repeat_dim_err_corrs=[]):
+    def make_template_tot(
+        self,
+        dims,
+        dim_sizes,
+        str_repeat_dims=[],
+        store_unc_percent=False,
+        repeat_dim_err_corrs=[],
+    ):
         """
         Make the digital effects table template for the case where uncertainties are combined and only the total uncertainty is returned.
 
@@ -108,13 +124,17 @@ class DigitalEffectsTableTemplates(ABC):
         :rtype: dict
         """
         err_corr, custom_err_corr = self.set_errcorr_shape(
-            dims, dim_sizes, "err_corr_tot_" + self.yvariable, str_repeat_dims=str_repeat_dims, repeat_dim_err_corr=repeat_dim_err_corrs
+            dims,
+            dim_sizes,
+            "err_corr_tot_" + self.yvariable,
+            str_repeat_dims=str_repeat_dims,
+            repeat_dim_err_corr=repeat_dim_err_corrs,
         )
 
-        if store_rel_unc:
-            units="%"
+        if store_unc_percent:
+            units = "%"
         else:
-            units=self.yunit
+            units = self.yunit
 
         template = {
             self.yvariable: {
@@ -122,13 +142,15 @@ class DigitalEffectsTableTemplates(ABC):
                 "dim": dims,
                 "attributes": {
                     "units": self.yunit,
-                    "unc_comps": [self.make_ucomp_name("tot",store_rel_unc=store_rel_unc)],
+                    "unc_comps": [
+                        self.make_ucomp_name("tot", store_unc_percent=store_unc_percent)
+                    ],
                 },
             },
-            self.make_ucomp_name("tot",store_rel_unc=store_rel_unc): {
+            self.make_ucomp_name("tot", store_unc_percent=store_unc_percent): {
                 "dtype": np.float32,
                 "dim": dims,
-                "attributes": {"units": units , "err_corr": err_corr},
+                "attributes": {"units": units, "err_corr": err_corr},
             },
         }
         if custom_err_corr is not None:
@@ -136,7 +158,15 @@ class DigitalEffectsTableTemplates(ABC):
 
         return template
 
-    def make_template_specific(self, comp_list, dims, dim_sizes,str_repeat_dims=[], store_rel_unc=False, repeat_dim_err_corrs=[]):
+    def make_template_specific(
+        self,
+        comp_list,
+        dims,
+        dim_sizes,
+        str_repeat_dims=[],
+        store_unc_percent=False,
+        repeat_dim_err_corrs=[],
+    ):
         """
         Make the digital effects table template for the case where uncertainties are combined and only the total uncertainty is returned.
 
@@ -147,10 +177,10 @@ class DigitalEffectsTableTemplates(ABC):
         :return: measurand digital effects table template to be used by obsarray
         :rtype: dict
         """
-        if store_rel_unc:
-            units="%"
+        if store_unc_percent:
+            units = "%"
         else:
-            units=self.yunit
+            units = self.yunit
 
         template = {
             self.yvariable: {
@@ -159,55 +189,68 @@ class DigitalEffectsTableTemplates(ABC):
                 "attributes": {
                     "units": self.yunit,
                     "unc_comps": [
-                        self.make_ucomp_name(comp,store_rel_unc=store_rel_unc)
+                        self.make_ucomp_name(comp, store_unc_percent=store_unc_percent)
                         for comp in comp_list
                     ],
                 },
             },
         }
 
-        for ic,comp in enumerate(comp_list):
+        for ic, comp in enumerate(comp_list):
             if comp == "random":
-                template[self.make_ucomp_name(comp,store_rel_unc=store_rel_unc)] = {
+                template[self.make_ucomp_name(comp, store_unc_percent=store_unc_percent)] = {
                     "dtype": np.float32,
                     "dim": dims,
-                    "attributes": {"units": units,
-                                   "err_corr": [
-                                       {"dim": dim, "form": "random", "params": [], "units": []}
-                                       for dim in dims
-                                   ]},
+                    "attributes": {
+                        "units": units,
+                        "err_corr": [
+                            {"dim": dim, "form": "random", "params": [], "units": []}
+                            for dim in dims
+                        ],
+                    },
                 }
 
             elif comp == "systematic":
-                template[self.make_ucomp_name(comp,store_rel_unc=store_rel_unc)] = {
+                template[self.make_ucomp_name(comp, store_unc_percent=store_unc_percent)] = {
                     "dtype": np.float32,
                     "dim": dims,
-                    "attributes": {"units": units,
-                                   "err_corr": [
-                                       {"dim": dim, "form": "systematic", "params": [], "units": []}
-                                       for dim in dims
-                                   ]},
+                    "attributes": {
+                        "units": units,
+                        "err_corr": [
+                            {
+                                "dim": dim,
+                                "form": "systematic",
+                                "params": [],
+                                "units": [],
+                            }
+                            for dim in dims
+                        ],
+                    },
                 }
 
             else:
                 err_corr, custom_err_corr = self.set_errcorr_shape(
-                    dims, dim_sizes, "err_corr_tot_" + self.yvariable, str_repeat_dims=str_repeat_dims, repeat_dim_err_corr=repeat_dim_err_corrs[ic]
+                    dims,
+                    dim_sizes,
+                    "err_corr_tot_" + self.yvariable,
+                    str_repeat_dims=str_repeat_dims,
+                    repeat_dim_err_corr=repeat_dim_err_corrs[ic],
                 )
 
-                template[self.make_ucomp_name(comp,store_rel_unc=store_rel_unc)] = {
+                template[self.make_ucomp_name(comp, store_unc_percent=store_unc_percent)] = {
                     "dtype": np.float32,
                     "dim": dims,
                     "attributes": {"units": units, "err_corr": err_corr},
                 }
-                if (custom_err_corr is not None):
+                if custom_err_corr is not None:
                     template[
                         "err_corr_" + comp + "_" + self.yvariable
                     ] = custom_err_corr
 
         return template
 
-    def make_ucomp_name(self,ucomp,store_rel_unc=False,var=None):
-        if store_rel_unc:
+    def make_ucomp_name(self, ucomp, store_unc_percent=False, var=None):
+        if store_unc_percent:
             uvarname_start = "u_rel_"
         else:
             uvarname_start = "u_"
@@ -215,7 +258,9 @@ class DigitalEffectsTableTemplates(ABC):
             var = self.yvariable
         return uvarname_start + ucomp + "_" + var
 
-    def set_errcorr_shape(self, dims, dim_sizes, err_corr_name, str_repeat_dims=[],repeat_dim_err_corr=[]):
+    def set_errcorr_shape(
+        self, dims, dim_sizes, err_corr_name, str_repeat_dims=[], repeat_dim_err_corr=[]
+    ):
         """
         Function to work out which di
         :param dims: list of dimensions
@@ -240,12 +285,10 @@ class DigitalEffectsTableTemplates(ABC):
             else:
                 custom_corr_dims.append(dim)
 
-
-
         if len(custom_corr_dims) > 0:
-            if len(custom_corr_dims)==1:
-                corrdim=custom_corr_dims[0]
-                custom_corr_dims=custom_corr_dims[0]
+            if len(custom_corr_dims) == 1:
+                corrdim = custom_corr_dims[0]
+                custom_corr_dims = custom_corr_dims[0]
             else:
                 corrdim = ".".join(custom_corr_dims)
                 dim_sizes[corrdim] = 1
@@ -271,7 +314,7 @@ class DigitalEffectsTableTemplates(ABC):
 
         return err_corr_list, custom_err_corr_dict
 
-    def remove_unc_component(self,ds,variable,u_comp,err_corr_comp=None):
+    def remove_unc_component(self, ds, variable, u_comp, err_corr_comp=None):
         """
         Function to remove an uncertainty component from a dataset
 
@@ -287,8 +330,8 @@ class DigitalEffectsTableTemplates(ABC):
         :rtype: xr.Dataset
         """
         ds[variable].attrs["unc_comps"].remove(u_comp)
-        ds=ds.drop(u_comp)
+        ds = ds.drop(u_comp)
         if err_corr_comp is not None:
-            ds=ds.drop(err_corr_comp)
+            ds = ds.drop(err_corr_comp)
 
         return ds

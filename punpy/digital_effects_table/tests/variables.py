@@ -346,7 +346,7 @@ CAL_VARIABLES = {
                 },
             ],
         },
-        "encoding": {"dtype": np.uint16, "scale_factor": 0.0001, "offset": 0.0},
+        "encoding": {"dtype": np.uint16, "scale_factor": 0.01, "offset": 0.0},
     },
     "u_rel_systematic_corr_rad_irr_gains": {
         "dim": [WL_DIM],
@@ -364,7 +364,7 @@ CAL_VARIABLES = {
                 },
             ],
         },
-        "encoding": {"dtype": np.uint16, "scale_factor": 0.0001, "offset": 0.0},
+        "encoding": {"dtype": np.uint16, "scale_factor": 0.01, "offset": 0.0},
     },
     "corr_systematic_indep_gains": {
         "dim": [WL_DIM, WL_DIM],

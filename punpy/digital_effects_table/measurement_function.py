@@ -1,12 +1,17 @@
 """Use Monte Carlo to propagate uncertainties"""
 
+import copy
 import time
 from abc import ABC,abstractmethod
 
 import numpy as np
 import obsarray
+
+from punpy import MCPropagation
 from punpy.digital_effects_table.digital_effects_table_templates import (
     DigitalEffectsTableTemplates,)
+from punpy.digital_effects_table.measurement_function_utils import\
+    MeasurementFunctionUtils
 
 """___Authorship___"""
 __author__ = "Pieter De Vis"
@@ -19,10 +24,10 @@ __status__ = "Development"
 class MeasurementFunction(ABC):
     def __init__(
         self,
-        prop,
-        xvariables,
-        yvariable,
-        yunit,
+        prop=None,
+        xvariables=None,
+        yvariable=None,
+        yunit="",
         ydims=None,
         corr_between=None,
         param_fixed=None,
@@ -35,22 +40,39 @@ class MeasurementFunction(ABC):
         """
         Initialise MeasurementFunction
         """
-        self.prop = prop
+        if prop is None:
+            self.prop = MCPropagation(100)
 
-        self.xvariables = xvariables
-        self.yvariable = yvariable
-        self.templ = DigitalEffectsTableTemplates(
-            self.yvariable, yunit
-        )
+        else:
+            self.prop = prop
+
+        self.xvariables = None
+        if self.get_argument_names() is None:
+            self.xvariables = xvariables
+        else:
+            self.xvariables = self.get_argument_names()
+            if xvariables is not None:
+                if xvariables==self.xvariables:
+                    raise ValueError("punpy.MeasurementFunction: when specifying both xvariables and get_argument_names, they need to be the same!")
+
+        if self.xvariables is None:
+            raise ValueError("punpy.MeasurementFunction: You need to specify xvariables as keyword when initialising MeasurementFunction object, or add get_argument_names() as a function of the class.")
+
+        if yvariable is None:
+            self.yvariable="measurand"
+        else:
+            self.yvariable = yvariable
+
+        self.templ = DigitalEffectsTableTemplates(self.yvariable, yunit)
         self.ydims = ydims
 
         self.corr_between = corr_between
         self.output_vars = output_vars
 
         if refxvar is None:
-            self.refxvar = xvariables[0]
+            self.refxvar = self.xvariables[0]
         elif isinstance(refxvar, int):
-            self.refxvar = xvariables[refxvar]
+            self.refxvar = self.xvariables[refxvar]
         else:
             self.refxvar = refxvar
 
@@ -58,7 +80,7 @@ class MeasurementFunction(ABC):
             repeat_dims = [repeat_dims]
         self.repeat_dims = np.array(repeat_dims)
         self.num_repeat_dims = np.empty_like(self.repeat_dims, dtype=int)
-        self.str_repeat_dims = np.empty_like(self.repeat_dims, dtype='<U30')
+        self.str_repeat_dims = np.empty_like(self.repeat_dims, dtype="<U30")
 
         self.param_fixed = param_fixed
         if self.param_fixed is None:
@@ -67,15 +89,29 @@ class MeasurementFunction(ABC):
         self.corr_axis = corr_axis
         self.auto_simplify_corr = auto_simplify_corr
 
+        self.utils = MeasurementFunctionUtils(self.xvariables,self.str_repeat_dims,self.prop.verbose,self.templ)
+
+
     @abstractmethod
-    def meas_function(self,*args, **kwargs):
+    def meas_function(self, *args, **kwargs):
         """
         meas_function is the measurement function itself, to be used in the uncertainty propagation.
         This function must be overwritten by the user when creating their MeasurementFunction subclass.
         """
         pass
 
-    def setup(self,*args, **kwargs):
+    def get_argument_names(self):
+        """
+        This function allows to return the names of the input quantities as a list of strings.
+        Can optionally be overwritten to provide names instead of providing xvariables as a keyword.
+
+        :return: names of the input quantities
+        :rtype: list of strings
+        """
+        return None
+
+
+    def setup(self, *args, **kwargs):
         """
         This function is to provide a setup stage that canbe run before propagating uncertainties.
         This allows to set up additional class attributes etc, without needing to edit the initialiser (which is quite specific to this class).
@@ -83,7 +119,7 @@ class MeasurementFunction(ABC):
         """
         pass
 
-    def propagate_ds(self, *args, store_rel_unc=False,expand=False):
+    def propagate_ds(self, *args, store_unc_percent=False, expand=False):
         """
         Function to propagate the uncertainties on the input quantities present in the
         digital effects tables provided as the input arguments, through the measurement
@@ -92,8 +128,8 @@ class MeasurementFunction(ABC):
 
         :param args: One or multiple digital effects tables with input quantities, defined with obsarray
         :type args: obsarray dataset(s)
-        :param store_rel_unc: Boolean defining whether relative uncertainties should be returned or not. Default to True (relative uncertaintie returned)
-        :type store_rel_unc: bool (optional)
+        :param store_unc_percent: Boolean defining whether relative uncertainties should be returned or not. Default to True (relative uncertaintie returned)
+        :type store_unc_percent: bool (optional)
         :return: digital effects table with uncertainties on measurand
         :rtype: obsarray dataset
         """
@@ -105,68 +141,79 @@ class MeasurementFunction(ABC):
 
         # first calculate the measurand and propagate the uncertainties
         self.check_sizes(*args)
-        y = self.run(*args,expand=expand)
+        y = self.run(*args, expand=expand)
 
-        u_rand_y = self.propagate_random(*args,expand=expand)
+        u_rand_y = self.propagate_random(*args, expand=expand)
         if self.prop.verbose:
             print(
                 "propagate_random done (%s s since creation of prop object)"
                 % (time.time() - self.prop.starttime)
             )
 
-        u_syst_y = self.propagate_systematic(*args,expand=expand)
+        u_syst_y = self.propagate_systematic(*args, expand=expand)
         if self.prop.verbose:
             print(
                 "propagate systematic done (%s s since creation of prop object)"
                 % (time.time() - self.prop.starttime)
             )
 
-        u_stru_y, corr_stru_y = self.propagate_structured(*args,expand=expand)
+        u_stru_y, corr_stru_y = self.propagate_structured(*args, expand=expand)
 
         dim_sizes = {}
-        for id,dim in enumerate(self.ydims):
+        for id, dim in enumerate(self.ydims):
             dim_sizes[dim] = y.shape[id]
 
-        repeat_dim_err_corrs=self.find_repeat_dim_corr("str",*args,store_rel_unc=store_rel_unc)
+        repeat_dim_err_corrs = self.utils.find_repeat_dim_corr(
+            "str", *args, store_unc_percent=store_unc_percent
+        )
 
         template = self.templ.make_template_main(
-            self.ydims, dim_sizes, store_rel_unc=store_rel_unc, str_repeat_dims=self.str_repeat_dims,repeat_dim_err_corrs=repeat_dim_err_corrs
+            self.ydims,
+            dim_sizes,
+            store_unc_percent=store_unc_percent,
+            str_repeat_dims=self.str_repeat_dims,
+            repeat_dim_err_corrs=repeat_dim_err_corrs,
         )
         # create dataset template
         ds_out = obsarray.create_ds(template, dim_sizes)
 
         ds_out[self.yvariable].values = y
 
-        if store_rel_unc:
-            ucomp_ran="u_rel_ran_" + self.yvariable
-            ucomp_sys="u_rel_sys_" + self.yvariable
-            ucomp_str="u_rel_str_" + self.yvariable
+        if store_unc_percent:
+            ucomp_ran = "u_rel_ran_" + self.yvariable
+            ucomp_sys = "u_rel_sys_" + self.yvariable
+            ucomp_str = "u_rel_str_" + self.yvariable
         else:
-            ucomp_ran="u_ran_" + self.yvariable
-            ucomp_sys="u_sys_" + self.yvariable
-            ucomp_str="u_str_" + self.yvariable
+            ucomp_ran = "u_ran_" + self.yvariable
+            ucomp_sys = "u_sys_" + self.yvariable
+            ucomp_str = "u_str_" + self.yvariable
 
         if u_rand_y is None:
-            ds_out=self.templ.remove_unc_component(ds_out,self.yvariable,ucomp_ran)
+            ds_out = self.templ.remove_unc_component(ds_out, self.yvariable, ucomp_ran)
         else:
-            if store_rel_unc:
-                ds_out[ucomp_ran].values = u_rand_y / y
+            if store_unc_percent:
+                ds_out[ucomp_ran].values = u_rand_y / y * 100
             else:
                 ds_out[ucomp_ran].values = u_rand_y
-                
+
         if u_syst_y is None:
-            ds_out=self.templ.remove_unc_component(ds_out,self.yvariable,ucomp_sys)
+            ds_out = self.templ.remove_unc_component(ds_out, self.yvariable, ucomp_sys)
         else:
-            if store_rel_unc:
-                ds_out[ucomp_sys].values = u_syst_y / y
+            if store_unc_percent:
+                ds_out[ucomp_sys].values = u_syst_y / y * 100
             else:
                 ds_out[ucomp_sys].values = u_syst_y
 
         if u_stru_y is None:
-            ds_out=self.templ.remove_unc_component(ds_out,self.yvariable,ucomp_str,err_corr_comp="err_corr_str_" + self.yvariable)
+            ds_out = self.templ.remove_unc_component(
+                ds_out,
+                self.yvariable,
+                ucomp_str,
+                err_corr_comp="err_corr_str_" + self.yvariable,
+            )
         else:
-            if store_rel_unc:
-                ds_out[ucomp_str].values = u_stru_y / y
+            if store_unc_percent:
+                ds_out[ucomp_str].values = u_stru_y / y * 100
             else:
                 ds_out[ucomp_str].values = u_stru_y
 
@@ -180,7 +227,7 @@ class MeasurementFunction(ABC):
 
         return ds_out
 
-    def propagate_ds_total(self, *args, store_rel_unc=False,expand=False):
+    def propagate_ds_total(self, *args, store_unc_percent=False, expand=False):
         """
         Function to propagate the total uncertainties present in the digital effects
         tables in the input arguments, through the measurement function to produce
@@ -188,8 +235,8 @@ class MeasurementFunction(ABC):
 
         :param args: One or multiple digital effects tables with input quantities, defined with obsarray
         :type args: obsarray dataset(s)
-        :param store_rel_unc: Boolean defining whether relative uncertainties should be returned or not. Default to True (relative uncertaintie returned)
-        :type store_rel_unc: bool (optional)
+        :param store_unc_percent: Boolean defining whether relative uncertainties should be returned or not. Default to True (relative uncertaintie returned)
+        :type store_unc_percent: bool (optional)
         :return: digital effects table with uncertainties on measurand
         :rtype: obsarray dataset
         """
@@ -199,18 +246,23 @@ class MeasurementFunction(ABC):
                 % (time.time() - self.prop.starttime)
             )
 
-        y = self.run(*args,expand=expand)
-        u_tot_y, corr_tot_y = self.propagate_total(*args,expand=expand)
+        y = self.run(*args, expand=expand)
+        u_tot_y, corr_tot_y = self.propagate_total(*args, expand=expand)
 
         dim_sizes = {}
-        for id,dim in enumerate(self.ydims):
+        for id, dim in enumerate(self.ydims):
             dim_sizes[dim] = y.shape[id]
 
-
-        repeat_dim_err_corrs=self.find_repeat_dim_corr("tot",*args,store_rel_unc=store_rel_unc)
+        repeat_dim_err_corrs = self.utils.find_repeat_dim_corr(
+            "tot", *args, store_unc_percent=store_unc_percent
+        )
 
         template = self.templ.make_template_tot(
-            self.ydims, dim_sizes, store_rel_unc=store_rel_unc, str_repeat_dims=self.str_repeat_dims,repeat_dim_err_corrs=repeat_dim_err_corrs
+            self.ydims,
+            dim_sizes,
+            store_unc_percent=store_unc_percent,
+            str_repeat_dims=self.str_repeat_dims,
+            repeat_dim_err_corrs=repeat_dim_err_corrs,
         )
 
         # create dataset template
@@ -218,17 +270,21 @@ class MeasurementFunction(ABC):
 
         ds_out[self.yvariable].values = y
 
+        if store_unc_percent:
+            ucomp = "u_rel_tot_" + self.yvariable
+        else:
+            ucomp = "u_tot_" + self.yvariable
 
-        if store_rel_unc:
-            ucomp="u_rel_tot_" + self.yvariable
-        else:
-            ucomp="u_tot_" + self.yvariable
-            
         if u_tot_y is None:
-            ds_out=self.templ.remove_unc_component(ds_out,self.yvariable,ucomp,err_corr_comp="err_corr_tot_" + self.yvariable)
+            ds_out = self.templ.remove_unc_component(
+                ds_out,
+                self.yvariable,
+                ucomp,
+                err_corr_comp="err_corr_tot_" + self.yvariable,
+            )
         else:
-            if store_rel_unc:
-                ds_out[ucomp].values = u_tot_y/y
+            if store_unc_percent:
+                ds_out[ucomp].values = u_tot_y / y * 100
             else:
                 ds_out[ucomp].values = u_tot_y
             ds_out["err_corr_tot_" + self.yvariable].values = corr_tot_y
@@ -241,7 +297,9 @@ class MeasurementFunction(ABC):
 
         return ds_out
 
-    def propagate_ds_specific(self, comp_list, *args, store_rel_unc=False,expand=False):
+    def propagate_ds_specific(
+        self, comp_list, *args, store_unc_percent=False, expand=False
+    ):
         """
         Function to propagate the uncertainties on the input quantities present in the
         digital effects tables provided as the input arguments, through the measurement
@@ -252,8 +310,8 @@ class MeasurementFunction(ABC):
         :rtype comp_list: list of strings or string
         :param args: One or multiple digital effects tables with input quantities, defined with obsarray
         :type args: obsarray dataset(s)
-        :param store_rel_unc: Boolean defining whether relative uncertainties should be returned or not. Default to True (relative uncertaintie returned)
-        :type store_rel_unc: bool (optional)
+        :param store_unc_percent: Boolean defining whether relative uncertainties should be returned or not. Default to True (relative uncertaintie returned)
+        :type store_unc_percent: bool (optional)
         :return: digital effects table with uncertainties on measurand
         :rtype: obsarray dataset
         """
@@ -263,21 +321,29 @@ class MeasurementFunction(ABC):
                 % (time.time() - self.prop.starttime)
             )
 
-        if isinstance(comp_list,str):
-            comp_list=[comp_list]
+        if isinstance(comp_list, str):
+            comp_list = [comp_list]
 
         # first calculate the measurand and propagate the uncertainties
         self.check_sizes(*args)
-        y = self.run(*args,expand=expand)
+        y = self.run(*args, expand=expand)
 
         dim_sizes = {}
-        for id,dim in enumerate(self.ydims):
+        for id, dim in enumerate(self.ydims):
             dim_sizes[dim] = y.shape[id]
 
-        repeat_dim_err_corrs=[self.find_repeat_dim_corr(form,*args,store_rel_unc=store_rel_unc) for form in comp_list]
+        repeat_dim_err_corrs = [
+            self.utils.find_repeat_dim_corr(form, *args, store_unc_percent=store_unc_percent)
+            for form in comp_list
+        ]
 
         template = self.templ.make_template_specific(
-            comp_list, self.ydims, dim_sizes, store_rel_unc=store_rel_unc, str_repeat_dims=self.str_repeat_dims,repeat_dim_err_corrs=repeat_dim_err_corrs
+            comp_list,
+            self.ydims,
+            dim_sizes,
+            store_unc_percent=store_unc_percent,
+            str_repeat_dims=self.str_repeat_dims,
+            repeat_dim_err_corrs=repeat_dim_err_corrs,
         )
 
         # create dataset template
@@ -285,30 +351,42 @@ class MeasurementFunction(ABC):
         ds_out[self.yvariable].values = y
 
         for comp in comp_list:
-            err_corr_comp=None
+            err_corr_comp = None
             if comp == "random":
-                u_comp_y = self.propagate_random(*args,expand=expand)
+                u_comp_y = self.propagate_random(*args, expand=expand)
 
             elif comp == "systematic":
-                u_comp_y = self.propagate_systematic(*args,expand=expand)
+                u_comp_y = self.propagate_systematic(*args, expand=expand)
 
             else:
                 u_comp_y, corr_comp_y = self.propagate_specific(
-                    comp, *args, return_corr=True,expand=expand
+                    comp, *args, return_corr=True, expand=expand
                 )
                 if corr_comp_y is not None:
-                    ds_out["err_corr_" + comp + "_" + self.yvariable].values = corr_comp_y
+                    ds_out[
+                        "err_corr_" + comp + "_" + self.yvariable
+                    ].values = corr_comp_y
                 else:
-                    err_corr_comp="err_corr_" + comp + "_" + self.yvariable
+                    err_corr_comp = "err_corr_" + comp + "_" + self.yvariable
 
             if u_comp_y is None:
-                if store_rel_unc:
-                    ds_out=self.templ.remove_unc_component(ds_out,self.yvariable,"u_rel_" + comp + "_" + self.yvariable,err_corr_comp=err_corr_comp)
+                if store_unc_percent:
+                    ds_out = self.templ.remove_unc_component(
+                        ds_out,
+                        self.yvariable,
+                        "u_rel_" + comp + "_" + self.yvariable,
+                        err_corr_comp=err_corr_comp,
+                    )
                 else:
-                    ds_out=self.templ.remove_unc_component(ds_out,self.yvariable,"u_" + comp + "_" + self.yvariable,err_corr_comp=err_corr_comp)
+                    ds_out = self.templ.remove_unc_component(
+                        ds_out,
+                        self.yvariable,
+                        "u_" + comp + "_" + self.yvariable,
+                        err_corr_comp=err_corr_comp,
+                    )
             else:
-                if store_rel_unc:
-                    ds_out["u_rel_" + comp + "_" + self.yvariable].values = u_comp_y / y
+                if store_unc_percent:
+                    ds_out["u_rel_" + comp + "_" + self.yvariable].values = u_comp_y / y * 100
                 else:
                     ds_out["u_" + comp + "_" + self.yvariable].values = u_comp_y
 
@@ -320,8 +398,7 @@ class MeasurementFunction(ABC):
 
         return ds_out
 
-
-    def propagate_ds_all(self, *args, store_rel_unc=False,expand=False):
+    def propagate_ds_all(self, *args, store_unc_percent=False, expand=False):
         """
         Function to propagate the uncertainties on the input quantities present in the
         digital effects tables provided as the input arguments, through the measurement
@@ -334,24 +411,28 @@ class MeasurementFunction(ABC):
         :rtype: obsarray dataset
         """
 
-        comp_list=[]
+        comp_list = []
         for iv, var in enumerate(self.xvariables):
             for dataset in args:
                 if var in dataset.keys():
-                    comps=self.find_comps("tot",dataset,var,store_rel_unc=store_rel_unc)
+                    comps = self.utils.find_comps(
+                        "tot", dataset, var
+                    )
                     if comps is not None:
                         for comp in comps:
-                            if isinstance(comp,str):
-                                comp_name=comp
+                            if isinstance(comp, str):
+                                comp_name = comp
                             else:
-                                comp_name=comp.name
-                            comp_name=comp_name.replace("_"+var,"")
-                            comp_name=comp_name.replace("u_rel_","")
-                            if comp_name[0:2]=="u_":
-                                comp_name=comp_name[2::]
+                                comp_name = comp.name
+                            comp_name = comp_name.replace("_" + var, "")
+                            comp_name = comp_name.replace("u_rel_", "")
+                            if comp_name[0:2] == "u_":
+                                comp_name = comp_name[2::]
                             comp_list.append(comp_name)
-        comp_list=np.unique(np.array(comp_list))
-        return self.propagate_ds_specific(comp_list, *args, store_rel_unc=store_rel_unc,expand=expand)
+        comp_list = np.unique(np.array(comp_list))
+        return self.propagate_ds_specific(
+            comp_list, *args, store_unc_percent=store_unc_percent, expand=expand
+        )
 
     def run(self, *args, expand=False):
         """
@@ -363,7 +444,7 @@ class MeasurementFunction(ABC):
         :return:
         :rtype:
         """
-        input_qty = self.get_input_qty(args, expand=expand)
+        input_qty = self.utils.get_input_qty(args, expand=expand)
         return self.meas_function(*input_qty)
 
     def check_sizes(self, *args):
@@ -377,33 +458,43 @@ class MeasurementFunction(ABC):
         if self.ydims is None:
             for dataset in args:
                 try:
-                    self.ydims= dataset[self.refxvar].dims
+                    self.ydims = dataset[self.refxvar].dims
                 except:
                     continue
 
         for i in range(len(self.repeat_dims)):
             if isinstance(self.repeat_dims[i], str):
                 if not self.repeat_dims[i] in self.ydims:
-                    raise ValueError("punpy.measurement_function: The repeat_dim (%s) is not in the measurand dimensions (%s)."%(self.repeat_dims[i],self.ydims))
-                self.str_repeat_dims[i] = self.repeat_dims[i]
-                self.num_repeat_dims[i] = self.ydims.index(self.repeat_dims[i])
+                    raise ValueError(
+                        "punpy.measurement_function: The repeat_dim (%s) is not in the measurand dimensions (%s)."
+                        % (self.repeat_dims[i], self.ydims)
+                    )
+                self.str_repeat_dims[i] = copy.copy(self.repeat_dims[i])
+                self.num_repeat_dims[i] = copy.copy(self.ydims.index(self.repeat_dims[i]))
 
             elif isinstance(self.repeat_dims[i], (int, np.integer)):
                 self.num_repeat_dims[i] = self.repeat_dims[i]
                 if self.repeat_dims[i] < 0:
                     self.str_repeat_dims[i] = None
                 else:
-                    self.str_repeat_dims[i] = self.ydims[self.repeat_dims[i]]
+                    self.str_repeat_dims[i] = copy.copy(self.ydims[self.repeat_dims[i]])
             else:
                 raise ValueError(
                     "punpy.measurment_function: repeat_dims needs to be provided as ints or strings"
                 )
 
+        self.utils.str_repeat_dims = self.str_repeat_dims
+
         for iv, var in enumerate(self.xvariables):
             found = False
             for dataset in args:
                 if var in dataset.keys():
-                    if all([self.str_repeat_dims[i] in dataset[var].dims for i in range(len(self.str_repeat_dims))]):
+                    if all(
+                        [
+                            self.str_repeat_dims[i] in dataset[var].dims
+                            for i in range(len(self.str_repeat_dims))
+                        ]
+                    ):
                         found = True
 
             if not found:
@@ -414,81 +505,11 @@ class MeasurementFunction(ABC):
                         % (var)
                     )
 
-
-    def find_repeat_dim_corr(self,form,*args,store_rel_unc=False):
-        """
-
-        :param form:
-        :type form:
-        :param args:
-        :type args:
-        :param store_rel_unc:
-        :type store_rel_unc:
-        :return:
-        :rtype:
-        """
-        repeat_dims_errcorrs={}
-        for repeat_dim in self.str_repeat_dims:
-            repeat_dims_errcorrs[repeat_dim]={"dim": repeat_dim, "form": None, "params": [], "units": []}
-            for iv, var in enumerate(self.xvariables):
-                for dataset in args:
-                    if var in dataset.keys():
-                        comps=self.find_comps(form,dataset,var,store_rel_unc=store_rel_unc)
-                        if comps is None:
-                            continue
-                        elif (repeat_dim in dataset[var].dims):
-                            idim=dataset[var].dims.index(repeat_dim)
-                            for comp in comps:
-                                self.check_repeat_err_corr_same(repeat_dims_errcorrs[repeat_dim],dataset[comp],idim)
-                                repeat_dims_errcorrs[repeat_dim]["form"]=dataset[comp].attrs["err_corr_%s_form"%(idim+1)]
-                                repeat_dims_errcorrs[repeat_dim]["params"]=dataset[comp].attrs["err_corr_%s_params"%(idim+1)]
-                                repeat_dims_errcorrs[repeat_dim]["units"]=dataset[comp].attrs["err_corr_%s_units"%(idim+1)]
-                        else:
-                            self.check_repeat_err_corr_same(repeat_dims_errcorrs[repeat_dim],"systematic")
-                            repeat_dims_errcorrs[repeat_dim]["form"]="systematic"
-
-        return repeat_dims_errcorrs
-
-    def check_repeat_err_corr_same(self,repeat_dims_errcorr,uvar,idim=None):
-        if repeat_dims_errcorr["form"] is None:
-            pass
-
-        elif isinstance(uvar,str):
-            if repeat_dims_errcorr["form"]==uvar:
-                pass
-            else:
-                raise ValueError("punpy.measurement_function: Not all included uncertainty contributions have the same error correlation along the repeat_dims. Either don't use repeat_dims or use a different method, where components are propagated seperately.")
-        else:
-            if (repeat_dims_errcorr["form"]==uvar.attrs["err_corr_%s_form"%(idim+1)]) and (repeat_dims_errcorr["params"]==uvar.attrs["err_corr_%s_params"%(idim+1)]) and (repeat_dims_errcorr["units"]==uvar.attrs["err_corr_%s_units"%(idim+1)]):
-                pass
-            else:
-                raise ValueError("punpy.measurement_function: Not all included uncertainty contributions have the same error correlation along the repeat_dims. Either don't use repeat_dims or use a different method, where components are propagated seperately.")
-
-    def find_comps(self,form,dataset,var,store_rel_unc=False):
-        comps=dataset.unc[var].comps
-        if comps is None:
-            pass
-        elif form=="tot":
-            pass
-        elif form=="ran" or form=="random":
-            comps=dataset.unc[var].random_comps
-        elif form=="sys" or form=="systematic":
-            comps=dataset.unc[var].systematic_comps
-        elif form=="str":
-            comps=dataset.unc[var].structured_comps
-        else:
-            compname=self.templ.make_ucomp_name(form,store_rel_unc=store_rel_unc,var=var)
-            if compname in comps:
-                comps=[compname]
-            else:
-                comps=[]
-        return comps
-
     def propagate_total(self, *args, expand=False):
         self.check_sizes(*args)
-        input_qty = self.get_input_qty(args, expand=expand)
-        input_unc = self.get_input_unc("tot", args, expand=expand)
-        input_corr = self.get_input_corr("tot", args)
+        input_qty = self.utils.get_input_qty(args, expand=expand)
+        input_unc = self.utils.get_input_unc("tot", args, expand=expand)
+        input_corr = self.utils.get_input_corr("tot", args)
         if self.prop.verbose:
             print(
                 "inputs extracted (%s s since creation of prop object)"
@@ -513,216 +534,84 @@ class MeasurementFunction(ABC):
 
     def propagate_random(self, *args, expand=False):
         self.check_sizes(*args)
-        input_qty = self.get_input_qty(args, expand=expand)
-        input_unc = self.get_input_unc("rand", args, expand=expand)
+        input_qty = self.utils.get_input_qty(args, expand=expand)
+        input_unc = self.utils.get_input_unc("rand", args, expand=expand)
         if all([iu is None for iu in input_unc]):
             return None
         else:
             return self.prop.propagate_random(
-            self.meas_function,
-            input_qty,
-            input_unc,
-            param_fixed=self.param_fixed,
-            corr_between=self.corr_between,
-            return_corr=False,
-            return_samples=False,
-            repeat_dims=self.num_repeat_dims,
-            corr_axis=self.corr_axis,
-            output_vars=self.output_vars,
-        )
+                self.meas_function,
+                input_qty,
+                input_unc,
+                param_fixed=self.param_fixed,
+                corr_between=self.corr_between,
+                return_corr=False,
+                return_samples=False,
+                repeat_dims=self.num_repeat_dims,
+                corr_axis=self.corr_axis,
+                output_vars=self.output_vars,
+            )
 
     def propagate_systematic(self, *args, expand=False):
         self.check_sizes(*args)
-        input_qty = self.get_input_qty(args, expand=expand)
-        input_unc = self.get_input_unc("syst", args, expand=expand)
+        input_qty = self.utils.get_input_qty(args, expand=expand)
+        input_unc = self.utils.get_input_unc("syst", args, expand=expand)
         if all([iu is None for iu in input_unc]):
             return None
         else:
             return self.prop.propagate_systematic(
-            self.meas_function,
-            input_qty,
-            input_unc,
-            param_fixed=self.param_fixed,
-            corr_between=self.corr_between,
-            return_corr=False,
-            return_samples=False,
-            repeat_dims=self.num_repeat_dims,
-            corr_axis=self.corr_axis,
-            output_vars=self.output_vars,
+                self.meas_function,
+                input_qty,
+                input_unc,
+                param_fixed=self.param_fixed,
+                corr_between=self.corr_between,
+                return_corr=False,
+                return_samples=False,
+                repeat_dims=self.num_repeat_dims,
+                corr_axis=self.corr_axis,
+                output_vars=self.output_vars,
             )
 
     def propagate_structured(self, *args, expand=False):
         self.check_sizes(*args)
-        input_qty = self.get_input_qty(args, expand=expand)
-        input_unc = self.get_input_unc("stru", args, expand=expand)
-        input_corr = self.get_input_corr("stru", args)
+        input_qty = self.utils.get_input_qty(args, expand=expand)
+        input_unc = self.utils.get_input_unc("stru", args, expand=expand)
+        input_corr = self.utils.get_input_corr("stru", args)
         if all([iu is None for iu in input_unc]):
             return None, None
         else:
             return self.prop.propagate_standard(
-            self.meas_function,
-            input_qty,
-            input_unc,
-            input_corr,
-            param_fixed=self.param_fixed,
-            corr_between=self.corr_between,
-            return_corr=True,
-            return_samples=False,
-            repeat_dims=self.num_repeat_dims,
-            corr_axis=self.corr_axis,
-            output_vars=self.output_vars,
+                self.meas_function,
+                input_qty,
+                input_unc,
+                input_corr,
+                param_fixed=self.param_fixed,
+                corr_between=self.corr_between,
+                return_corr=True,
+                return_samples=False,
+                repeat_dims=self.num_repeat_dims,
+                corr_axis=self.corr_axis,
+                output_vars=self.output_vars,
             )
 
     def propagate_specific(self, form, *args, expand=False, return_corr=False):
-        input_qty = self.get_input_qty(args, expand=expand)
-        input_unc = self.get_input_unc(form, args, expand=expand)
-        input_corr = self.get_input_corr(form, args)
+        input_qty = self.utils.get_input_qty(args, expand=expand)
+        input_unc = self.utils.get_input_unc(form, args, expand=expand)
+        input_corr = self.utils.get_input_corr(form, args)
+        print(input_qty,input_unc)
         if all([iu is None for iu in input_unc]):
             return None, None
         else:
             return self.prop.propagate_standard(
-            self.meas_function,
-            input_qty,
-            input_unc,
-            input_corr,
-            param_fixed=self.param_fixed,
-            corr_between=self.corr_between,
-            return_corr=return_corr,
-            return_samples=False,
-            repeat_dims=self.num_repeat_dims,
-            corr_axis=self.corr_axis,
-            output_vars=self.output_vars,
+                self.meas_function,
+                input_qty,
+                input_unc,
+                input_corr,
+                param_fixed=self.param_fixed,
+                corr_between=self.corr_between,
+                return_corr=return_corr,
+                return_samples=False,
+                repeat_dims=self.num_repeat_dims,
+                corr_axis=self.corr_axis,
+                output_vars=self.output_vars,
             )
-
-    def get_input_qty(self, *args, expand=False):
-        if len(self.xvariables) == 0:
-            raise ValueError("Variables have not been specified.")
-        else:
-            inputs = np.empty(len(self.xvariables), dtype=object)
-            for iv, var in enumerate(self.xvariables):
-                found = False
-                for dataset in args[0]:
-                    try:
-                        inputs[iv] = dataset[var].values
-                        found = True
-                    except:
-                        continue
-                if not found:
-                    raise ValueError(
-                        "Variable %s not found in provided datasets." % (var)
-                    )
-
-            if expand:
-                datashape = inputs[0].shape
-                for i in range(len(inputs)):
-                    # if not self.param_fixed:
-                    if len(inputs[i].shape) < len(datashape):
-                        if inputs[i].shape[0] == datashape[1]:
-                            inputs[i] = np.tile(inputs[i], (datashape[0], 1))
-                        elif inputs[i].shape[0] == datashape[0]:
-                            inputs[i] = np.tile(inputs[i], (datashape[1], 1)).T
-
-            return inputs
-
-    def get_input_unc(self, form, *args, expand=False):
-        inputs_unc = np.empty(len(self.xvariables), dtype=object)
-        for iv, var in enumerate(self.xvariables):
-            inputs_unc[iv] = None
-            for dataset in args[0]:
-                if var in dataset.keys():
-                    inputs_unc[iv] = self.calculate_unc(form, dataset, var)
-                    if inputs_unc[iv] is not None:
-                        # this if else is to be removed when relative uncertainty implemented in obsarray
-                        if "pressure" in dataset.keys():
-                            inputs_unc[iv] = inputs_unc[iv]
-                        else:
-                            inputs_unc[iv] = inputs_unc[iv] * dataset[var].values
-
-        if inputs_unc[iv] is None:
-            if self.prop.verbose:
-                print(
-                    "%s uncertainty for variable %s not found in provided datasets. Zero uncertainty assumed."
-                    % (form, var)
-                )
-        return inputs_unc
-
-    def calculate_unc(self, form, ds, var):
-        if form == "tot":
-            data = ds.unc[var].total_unc()
-        elif form == "rand":
-            data = ds.unc[var].random_unc()
-        elif form == "syst":
-            data = ds.unc[var].systematic_unc()
-        elif form == "stru":
-            data = ds.unc[var].structured_unc()
-        else:
-            try:
-                uvar = "%s_%s" % (form, var)
-                data = ds[uvar]
-            except:
-                keys = np.array(list(ds.keys()))
-                uvar_ids=[("_%s_%s" % (form, var) in key) and (key[0]=="u") for key in keys]
-                uvar = keys[uvar_ids]
-                if len(uvar)>0:
-                    data = ds[uvar[0]]
-                else:
-                    data = None
-        if data is not None:
-            return data.values
-
-    def get_input_corr(self, form, *args):
-        inputs_corr = np.empty(len(self.xvariables), dtype=object)
-        for iv, var in enumerate(self.xvariables):
-            inputs_corr[iv] = None
-            for dataset in args[0]:
-                if var in dataset.keys():
-                    inputs_corr[iv] = self.calculate_corr(form, dataset, var)
-            if inputs_corr[iv] is None:
-                if self.prop.verbose:
-                    print(
-                        "%s error-correlation for variable %s not found in provided datasets."
-                        % (form, var)
-                    )
-
-        return inputs_corr
-
-    def calculate_corr(self, form, ds, var):
-        sli = list([slice(None)] * ds[var].ndim)
-        var_dims = ds[var].dims
-        for i in range(len(sli)):
-            if var_dims[i] in self.str_repeat_dims:
-                sli[i] = 0
-        dsu = ds.unc[var][tuple(sli)]
-
-        if form == "tot":
-            return dsu.total_err_corr_matrix().values
-        elif form == "stru":
-            return dsu.structured_err_corr_matrix().values
-        elif form == "rand":
-            return "rand"
-        elif form == "syst":
-            return "syst"
-        else:
-            try:
-                uvar = "%s_%s" % (form, var)
-                data = ds[uvar]
-            except:
-                keys = np.array(list(ds.keys()))
-                uvar_ids=[("_%s_%s" % (form, var) in key) and (key[0]=="u") for key in keys]
-                uvar = keys[uvar_ids]
-                if len(uvar)>0:
-                    data = ds[uvar[0]]
-                else:
-                    data = None
-
-            try:
-                uvar = "%s_%s" % (form, var)
-                return dsu[uvar].err_corr_matrix().values
-            except:
-                keys = np.array(list(ds.keys()))
-                uvar_ids=[("_%s_%s" % (form, var) in key) and (key[0]=="u") for key in keys]
-                uvar = keys[uvar_ids]
-                if len(uvar)>0:
-                    return dsu[uvar[0]].err_corr_matrix().values
-                else:
-                    return None

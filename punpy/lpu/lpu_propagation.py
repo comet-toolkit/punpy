@@ -4,6 +4,7 @@ from multiprocessing import Pool
 
 import comet_maths as cm
 import numpy as np
+
 import punpy.utilities.utilities as util
 
 """___Authorship___"""
@@ -183,58 +184,59 @@ class LPUPropagation:
             Jx_diag=Jx_diag,
         )
 
-        def propagate_cov(
-                self,
-                func,
-                x,
-                cov_x,
-                param_fixed=None,
-                corr_between=None,
-                return_corr=False,
-                return_Jacobian=False,
-                repeat_dims=-99,
-                corr_axis=-99,
-                fixed_corr_var=False,
-                output_vars=1,
-                Jx=None,
-                Jx_diag=None,
-        ):
-            """
-            Propagate uncertainties with given covariance matrix through measurement function with n input quantities.
-            Input quantities can be floats, vectors (1d-array) or images (2d-array).
-            The covariance matrix can represent the full covariance matrix between all measurements in all dimensions.
-            Alternatively if there are repeated measurements specified in repeat_dims, the covariance matrix is given
-            for the covariance along the dimension that is not one of the repeat_dims.
+    def propagate_cov(
+        self,
+        func,
+        x,
+        cov_x,
+        param_fixed=None,
+        corr_between=None,
+        return_corr=False,
+        return_Jacobian=False,
+        repeat_dims=-99,
+        corr_axis=-99,
+        fixed_corr_var=False,
+        output_vars=1,
+        Jx=None,
+        Jx_diag=None,
+    ):
+        """
+        Propagate uncertainties with given covariance matrix through measurement function with n input quantities.
+        Input quantities can be floats, vectors (1d-array) or images (2d-array).
+        The covariance matrix can represent the full covariance matrix between all measurements in all dimensions.
+        Alternatively if there are repeated measurements specified in repeat_dims, the covariance matrix is given
+        for the covariance along the dimension that is not one of the repeat_dims.
 
-            :param func: measurement function
-            :type func: function
-            :param x: list of input quantities (usually numpy arrays)
-            :type x: list[array]
-            :param cov_x: list of covariance matrices on input quantities (usually numpy arrays). In case the input quantity is an array of shape (m,o), the covariance matrix needs to be given as an array of shape (m*o,m*o).
-            :type cov_x: list[array]
-            :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
-            :type param_fixed: list of bools, optional
-            :param corr_between: covariance matrix (n,n) between input quantities, defaults to None
-            :type corr_between: array, optional
-            :param return_corr: set to True to return correlation matrix of measurand, defaults to True
-            :type return_corr: bool, optional
-            :param return_Jacobian: set to True to return Jacobian matrix, defaults to False
-            :type return_Jacobian: bool, optional
-            :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
-            :type repeat_dims: integer or list of 2 integers, optional
-            :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
-            :type corr_axis: integer, optional
-            :param fixed_corr_var: set to integer to copy the correlation matrix of the dimension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
-            :type fixed_corr_var: bool or integer, optional
-            :param output_vars: number of output parameters in the measurement function. Defaults to 1.
-            :type output_vars: integer, optional
-            :param Jx: Jacobian matrix, evaluated at x. This allows to give a precomputed jacobian matrix, which could potentially be calculated using analytical prescription. Defaults to None, in which case Jx is calculated numerically as part of the propagation.
-            :rtype Jx: array, optional
-            :param Jx_diag: Bool to indicate whether the Jacobian matrix can be described with semi-diagonal elements. With this we mean that the measurand has the same shape as each of the input quantities and the square jacobain between the measurand and each of the input quantities individually, only has diagonal elements. Defaults to False
-            :rtype Jx_diag: bool, optional
-            :return: uncertainties on measurand
-            :rtype: array
-            """
+        :param func: measurement function
+        :type func: function
+        :param x: list of input quantities (usually numpy arrays)
+        :type x: list[array]
+        :param cov_x: list of covariance matrices on input quantities (usually numpy arrays). In case the input quantity is an array of shape (m,o), the covariance matrix needs to be given as an array of shape (m*o,m*o).
+        :type cov_x: list[array]
+        :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
+        :type param_fixed: list of bools, optional
+        :param corr_between: covariance matrix (n,n) between input quantities, defaults to None
+        :type corr_between: array, optional
+        :param return_corr: set to True to return correlation matrix of measurand, defaults to True
+        :type return_corr: bool, optional
+        :param return_Jacobian: set to True to return Jacobian matrix, defaults to False
+        :type return_Jacobian: bool, optional
+        :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
+        :type repeat_dims: integer or list of 2 integers, optional
+        :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+        :type corr_axis: integer, optional
+        :param fixed_corr_var: set to integer to copy the correlation matrix of the dimension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
+        :type fixed_corr_var: bool or integer, optional
+        :param output_vars: number of output parameters in the measurement function. Defaults to 1.
+        :type output_vars: integer, optional
+        :param Jx: Jacobian matrix, evaluated at x. This allows to give a precomputed jacobian matrix, which could potentially be calculated using analytical prescription. Defaults to None, in which case Jx is calculated numerically as part of the propagation.
+        :rtype Jx: array, optional
+        :param Jx_diag: Bool to indicate whether the Jacobian matrix can be described with semi-diagonal elements. With this we mean that the measurand has the same shape as each of the input quantities and the square jacobain between the measurand and each of the input quantities individually, only has diagonal elements. Defaults to False
+        :rtype Jx_diag: bool, optional
+        :return: uncertainties on measurand
+        :rtype: array
+        """
+
         u_x = [cm.uncertainty_from_covariance(cov_x[i]) for i in range(len(x))]
         corr_x = [cm.correlation_from_covariance(cov_x[i]) for i in range(len(x))]
 
@@ -392,9 +394,9 @@ class LPUPropagation:
             corrs = np.empty(len(x), dtype=object)
             for i in range(len(x)):
                 if corr_x[i] == "syst":
-                    corrs[i] = np.ones((len(x[i].flatten()), len(x[i].flatten())))
+                    corrs[i] = np.ones((len(x[i].ravel()), len(x[i].ravel())))
                 elif corr_x[i] == "rand":
-                    corrs[i] = np.eye(len(x[i].flatten()))
+                    corrs[i] = np.eye(len(x[i].ravel()))
                 else:
                     corrs[i] = corr_x[i]
 
@@ -417,13 +419,9 @@ class LPUPropagation:
         func,
         x,
         flat_cov_x,
-        param_fixed=None,
-        corr_between=None,
         return_corr=False,
         return_Jacobian=False,
-        repeat_dims=-99,
         corr_axis=-99,
-        fixed_corr_var=False,
         output_vars=1,
         Jx=None,
         Jx_diag=None,
@@ -439,12 +437,10 @@ class LPUPropagation:
         :type func: function
         :param x: list of input quantities (usually numpy arrays)
         :type x: list[array]
-        :param cov_x: list of covariance matrices on input quantities (usually numpy arrays). In case the input quantity is an array of shape (m,o), the covariance matrix needs to be given as an array of shape (m*o,m*o).
-        :type cov_x: list[array]
+        :param flat_cov_x: flattened covariance matrix on flattened (concatenated) input quantities (usually numpy arrays). In case there is n input quantity arrays of shape (m,o), the covariance matrix needs to be given as an array of shape (n*m*o,n*m*o).
+        :type flat_cov_x: list[array]
         :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
         :type param_fixed: list of bools, optional
-        :param corr_between: covariance matrix (n,n) between input quantities, defaults to None
-        :type corr_between: array, optional
         :param return_corr: set to True to return correlation matrix of measurand, defaults to True
         :type return_corr: bool, optional
         :param return_Jacobian: set to True to return Jacobian matrix, defaults to False
@@ -464,15 +460,6 @@ class LPUPropagation:
         :return: uncertainties on measurand
         :rtype: array
         """
-        u_x = [cm.uncertainty_from_covariance(cov_x[i]) for i in range(len(x))]
-        corr_x = [cm.correlation_from_covariance(cov_x[i]) for i in range(len(x))]
-
-        for i in range(len(x)):
-            if len(x[i].shape) > 1:
-                if len(u_x[i]) == len(x[i][:, 0]):
-                    u_x[i] = np.tile(u_x[i], (len(x[i][0]), 1)).T
-                else:
-                    u_x[i] = u_x[i].reshape(x[i].shape)
 
         (
             fun,
@@ -489,84 +476,28 @@ class LPUPropagation:
         ) = self.perform_checks(
             func,
             x,
-            u_x,
-            corr_x,
-            repeat_dims,
+            None,
+            None,
+            -99,
             corr_axis,
             output_vars,
-            fixed_corr_var,
+            False,
             Jx_diag,
-            param_fixed,
+            None,
         )
 
-        if n_repeats > 0:
-            inputs = np.empty(n_repeats, dtype=object)
-            for i in range(n_repeats):
-                xb, u_xb = util.select_repeated_x(
-                    x, u_x, param_fixed, i, repeat_dims, repeat_shape
-                )
-                if Jx is not None:
-                    Jxi = Jx[i]
-                else:
-                    Jxi = Jx
+        if Jx is None:
+            Jx = cm.calculate_Jacobian(fun, xflat, Jx_diag, self.step)
 
-                inputs[i] = [
-                    func,
-                    xb,
-                    cov_x,
-                    None,
-                    corr_between,
-                    return_corr,
-                    return_Jacobian,
-                    -99,
-                    corr_axis,
-                    fixed_corr_var,
-                    output_vars,
-                    Jxi,
-                    Jx_diag,
-                ]
-
-            if self.parallel_cores > 1:
-                pool = Pool(self.parallel_cores)
-                outs = pool.starmap(self.propagate_cov, inputs)
-                pool.close()
-
-            else:
-                outs = np.empty(n_repeats, dtype=object)
-                for i in range(n_repeats):
-                    outs[i] = self.propagate_cov(*inputs[i])
-
-            return self.combine_repeated_outs(
-                outs,
-                yshape,
-                n_repeats,
-                repeat_shape,
-                repeat_dims,
-                return_corr,
-                return_Jacobian,
-                output_vars,
-            )
-
-        else:
-            if Jx is None:
-                Jx = cm.calculate_Jacobian(fun, xflat, Jx_diag, self.step)
-
-            if corr_between is None:
-                corr_between = np.eye(len(x))
-
-            corr_x = cm.calculate_flattened_corr(corr_x, corr_between)
-            cov_x = cm.convert_corr_to_cov(corr_x, u_xflat)
-
-            return self.process_jacobian(
-                Jx,
-                cov_x,
-                yshape,
-                return_corr,
-                corr_axis,
-                fixed_corr,
-                output_vars,
-                return_Jacobian,
-            )
+        return self.process_jacobian(
+            Jx,
+            flat_cov_x,
+            yshape,
+            return_corr,
+            corr_axis,
+            output_vars=output_vars,
+            return_Jacobian=return_Jacobian,
+        )
 
     def process_jacobian(
         self,
@@ -789,8 +720,8 @@ class LPUPropagation:
                 print("corr_axis and repeat_axis keywords should not be the same.")
                 exit()
 
-        xflat = np.concatenate([xi.flatten() for xi in x])
-        u_xflat = np.concatenate([u_xi.flatten() for u_xi in u_x])
+        xflat = np.concatenate([xi.ravel() for xi in x])
+        u_xflat = np.concatenate([u_xi.ravel() for u_xi in u_x])
 
         if Jx_diag is None:
             Jx_diag = self.Jx_diag

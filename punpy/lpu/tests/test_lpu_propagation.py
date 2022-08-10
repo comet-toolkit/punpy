@@ -7,6 +7,7 @@ import unittest
 import comet_maths as cm
 import numpy as np
 import numpy.testing as npt
+
 from punpy.lpu.lpu_propagation import LPUPropagation
 
 """___Authorship___"""
@@ -299,7 +300,7 @@ class TestLPUPropagation(unittest.TestCase):
         prop = LPUPropagation()
 
         cov = [
-            cm.convert_corr_to_cov(np.eye(len(xerr.flatten())), xerr) for xerr in xerrs
+            cm.convert_corr_to_cov(np.eye(len(xerr.ravel())), xerr) for xerr in xerrs
         ]
 
         Jx = Jac_function(*xs)
@@ -309,7 +310,7 @@ class TestLPUPropagation(unittest.TestCase):
 
         cov = [
             cm.convert_corr_to_cov(
-                np.ones((len(xerr.flatten()), len(xerr.flatten()))), xerr
+                np.ones((len(xerr.ravel()), len(xerr.ravel()))), xerr
             )
             for xerr in xerrs
         ]
@@ -328,7 +329,7 @@ class TestLPUPropagation(unittest.TestCase):
         prop = LPUPropagation(parallel_cores=2)
 
         covb = [
-            cm.convert_corr_to_cov(np.eye(len(xerrb.flatten())), xerrb)
+            cm.convert_corr_to_cov(np.eye(len(xerrb.ravel())), xerrb)
             for xerrb in xerrsb
         ]
         ufb, ucorrb = prop.propagate_cov(
@@ -338,20 +339,9 @@ class TestLPUPropagation(unittest.TestCase):
         npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.01)
 
         covb = [
-            cm.convert_corr_to_cov(np.eye(len(xerrb[:, 0].flatten())), xerrb[:, 0])
-            for xerrb in xerrsb
-        ]
-
-        ufb, ucorrb = prop.propagate_cov(
-            functionb, xsb, covb, return_corr=True, repeat_dims=1, Jx_diag=True
-        )
-        npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.06)
-        npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
-
-        covb = [
             cm.convert_corr_to_cov(
-                np.ones((len(xerrb.flatten()), len(xerrb.flatten())))
-                + np.eye(len(xerrb.flatten())),
+                np.ones((len(xerrb.ravel()), len(xerrb.ravel())))
+                + np.eye(len(xerrb.ravel())),
                 xerrb,
             )
             for xerrb in xerrsb
@@ -362,7 +352,7 @@ class TestLPUPropagation(unittest.TestCase):
         npt.assert_allclose(ufb, yerr_uncorrb * 2 ** 0.5, rtol=0.01)
 
         covb = [
-            cm.convert_corr_to_cov(np.eye(len(xerrb.flatten())), xerrb)
+            cm.convert_corr_to_cov(np.eye(len(xerrb.ravel())), xerrb)
             for xerrb in xerrsb
         ]
         ufb, ucorrb = prop.propagate_cov(
@@ -381,7 +371,7 @@ class TestLPUPropagation(unittest.TestCase):
         Jx = Jac_functionc(*xsc)
 
         covc = [
-            cm.convert_corr_to_cov(np.eye(len(xerrc.flatten())), xerrc)
+            cm.convert_corr_to_cov(np.eye(len(xerrc.ravel())), xerrc)
             for xerrc in xerrsc
         ]
         ufc, ucorrc = prop.propagate_cov(functionc, xsc, covc, return_corr=True, Jx=Jx)
@@ -390,8 +380,7 @@ class TestLPUPropagation(unittest.TestCase):
 
         covc = [
             cm.convert_corr_to_cov(
-                np.ones((len(xerrc.flatten()), len(xerrc.flatten())))
-                + np.eye(len(xerrc)),
+                np.ones((len(xerrc.ravel()), len(xerrc.ravel()))) + np.eye(len(xerrc)),
                 xerrc,
             )
             for xerrc in xerrsc
@@ -400,7 +389,7 @@ class TestLPUPropagation(unittest.TestCase):
         npt.assert_allclose(ufc, yerr_uncorrc * 2 ** 0.5, rtol=0.01)
 
         covc = [
-            cm.convert_corr_to_cov(np.eye(len(xerrc.flatten())), xerrc)
+            cm.convert_corr_to_cov(np.eye(len(xerrc.ravel())), xerrc)
             for xerrc in xerrsc
         ]
         ufc, ucorrc = prop.propagate_cov(
@@ -413,7 +402,7 @@ class TestLPUPropagation(unittest.TestCase):
         prop = LPUPropagation()
 
         covd = [
-            cm.convert_corr_to_cov(np.eye(len(xerrd.flatten())), xerrd)
+            cm.convert_corr_to_cov(np.eye(len(xerrd.ravel())), xerrd)
             for xerrd in xerrsd
         ]
         ufd, ucorrd, corr_out = prop.propagate_cov(
@@ -424,7 +413,7 @@ class TestLPUPropagation(unittest.TestCase):
 
         covd = [
             cm.convert_corr_to_cov(
-                np.ones((len(xerrd.flatten()), len(xerrd.flatten()))), xerrd
+                np.ones((len(xerrd.ravel()), len(xerrd.ravel()))), xerrd
             )
             for xerrd in xerrsd
         ]
@@ -437,7 +426,7 @@ class TestLPUPropagation(unittest.TestCase):
     def test_propagate_syst_corr_2D(self):
         prop = LPUPropagation()
 
-        corrb = [np.eye(len(xerrb[0].flatten())) for xerrb in xerrsb]
+        corrb = [np.eye(len(xerrb[0].ravel())) for xerrb in xerrsb]
         ufb, ucorrb = prop.propagate_systematic(
             functionb,
             xsb,
@@ -461,8 +450,7 @@ class TestLPUPropagation(unittest.TestCase):
         npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.01)
 
         corrb = [
-            np.ones((len(xerrb[0].flatten()), len(xerrb[0].flatten())))
-            for xerrb in xerrsb
+            np.ones((len(xerrb[0].ravel()), len(xerrb[0].ravel()))) for xerrb in xerrsb
         ]
         ufb, ucorrb = prop.propagate_systematic(
             functionb,
@@ -489,7 +477,7 @@ class TestLPUPropagation(unittest.TestCase):
     def test_propagate_syst_corr_3D_2out(self):
         prop = LPUPropagation()
 
-        corrd = [np.eye(len(xerrd[:, 0, 0].flatten())) for xerrd in xerrsd]
+        corrd = [np.eye(len(xerrd[:, 0, 0].ravel())) for xerrd in xerrsd]
         ufd, ucorrd, corr_out = prop.propagate_systematic(
             functiond,
             xsd,
@@ -504,7 +492,7 @@ class TestLPUPropagation(unittest.TestCase):
         npt.assert_allclose(ufd, yerr_uncorrd, rtol=0.01)
 
         corrd = [
-            np.ones((len(xerrd[:, 0, 0].flatten()), len(xerrd[:, 0, 0].flatten())))
+            np.ones((len(xerrd[:, 0, 0].ravel()), len(xerrd[:, 0, 0].ravel())))
             for xerrd in xerrsd
         ]
 
@@ -536,8 +524,7 @@ class TestLPUPropagation(unittest.TestCase):
     def test_perform_checks(self):
         prop = LPUPropagation()
         corrc = [
-            np.ones((len(xerrc[0].flatten()), len(xerrc[0].flatten())))
-            for xerrc in xerrsc
+            np.ones((len(xerrc[0].ravel()), len(xerrc[0].ravel()))) for xerrc in xerrsc
         ]
         corrd = [
             np.ones((len(xerrd[0].flatten()), len(xerrd[0].flatten())))
