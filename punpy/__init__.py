@@ -1,6 +1,6 @@
-from punpy.digital_effects_table.measurement_function import MeasurementFunction
 from punpy.lpu.lpu_propagation import LPUPropagation
 from punpy.mc.mc_propagation import MCPropagation
+from punpy.digital_effects_table.measurement_function import MeasurementFunction
 
 from ._version import get_versions
 
