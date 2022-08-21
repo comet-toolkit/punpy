@@ -4,7 +4,6 @@ from multiprocessing import Pool
 
 import comet_maths as cm
 import numpy as np
-
 import punpy.utilities.utilities as util
 
 """___Authorship___"""
@@ -16,7 +15,7 @@ __status__ = "Development"
 
 
 class LPUPropagation:
-    def __init__(self, parallel_cores=0, Jx_diag=False, step=None):
+    def __init__(self, parallel_cores=0, Jx_diag=False, step=None, verbose=False):
         """
         Initialise Law of Propagation of Uncertainty Propagator
 
@@ -29,6 +28,7 @@ class LPUPropagation:
         self.parallel_cores = parallel_cores
         self.Jx_diag = Jx_diag
         self.step = step
+        self.verbose = verbose
 
     def propagate_random(
         self,

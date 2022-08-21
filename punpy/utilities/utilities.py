@@ -1,7 +1,5 @@
 """Use Monte Carlo to propagate uncertainties"""
 
-import warnings
-
 import numpy as np
 
 """___Authorship___"""
@@ -48,22 +46,14 @@ def select_repeated_x(x, u_x, param_fixed, i, repeat_dims, repeat_shape):
                 repeat_axis = repeat_dims[idim]
                 ii = index[idim]
                 if len(xb[j].shape) > repeat_axis:
-                    if repeat_axis == 0:
+                    sli = tuple([ii if (idim == repeat_axis) else slice(None) for idim in range(xb[j].ndim)])
+                    xb[j] = xb[j][sli]
+                    u_xb[j] = u_xb[j][sli]
+                elif len(xb[j])>1:
+                    try:
                         xb[j] = xb[j][ii]
                         u_xb[j] = u_xb[j][ii]
-                    elif repeat_axis == 1:
-                        xb[j] = xb[j][:, ii]
-                        u_xb[j] = u_xb[j][:, ii]
-                    elif repeat_axis == 2:
-                        xb[j] = xb[j][:, :, ii]
-                        u_xb[j] = u_xb[j][:, :, ii]
-                    else:
-                        warnings.warn(
-                            "The repeat axis is too large to be dealt with by the"
-                            "current version of punpy."
-                        )
-                else:
-                    xb[j] = xb[j][ii]
-                    u_xb[j] = u_xb[j][ii]
+                    except:
+                        pass
 
     return xb, u_xb

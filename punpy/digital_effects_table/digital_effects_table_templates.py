@@ -3,6 +3,7 @@
 from abc import ABC
 
 import numpy as np
+import xarray as xr
 
 """___Authorship___"""
 __author__ = "Pieter De Vis"
@@ -330,8 +331,30 @@ class DigitalEffectsTableTemplates(ABC):
         :rtype: xr.Dataset
         """
         ds[variable].attrs["unc_comps"].remove(u_comp)
-        ds = ds.drop(u_comp)
-        if err_corr_comp is not None:
-            ds = ds.drop(err_corr_comp)
-
+        try:
+            ds = ds.drop(u_comp)
+            if err_corr_comp is not None:
+                ds = ds.drop(err_corr_comp)
+        except:
+            pass
         return ds
+
+    def join_with_preexisting_ds(self,ds,ds_pre,drop=None):
+        """
+        Function to combine digital effects table, with previously populated dataset.
+        Only the measurand is overwritten.
+
+        :param ds: digital effects table for measurand, created by punpy
+        :type ds: xarray.Dataset
+        :param ds_pre: previously populated dataset, to be combined with digital effects table
+        :type ds_pre: xarray.Dataset
+        :param drop: list of variables to drop
+        :param drop: List(str)
+        :return: merged digital effects table
+        :rtype: xarray.Dataset
+        """
+        if drop is not None:
+            if drop in ds_pre.variables:
+                ds_pre=ds_pre.drop(drop)
+        ds_out=xr.merge([ds,ds_pre])
+        return ds_out

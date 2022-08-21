@@ -1,5 +1,6 @@
 """Use Monte Carlo to propagate uncertainties"""
 
+import comet_maths as cm
 import numpy as np
 
 """___Authorship___"""
@@ -16,8 +17,9 @@ class MeasurementFunctionUtils():
         self.verbose=verbose
         self.str_repeat_dims=str_repeat_dims
         self.templ=templ
+        self.repeat_dims_form="structured"
 
-    def find_repeat_dim_corr(self, form, *args, store_unc_percent=False):
+    def find_repeat_dim_corr(self, form, *args, store_unc_percent=False, ydims=None):
         """
 
         :param form:
@@ -41,16 +43,20 @@ class MeasurementFunctionUtils():
                 for dataset in args:
                     if var in dataset.keys():
                         comps = self.find_comps(
-                            form, dataset, var, store_unc_percent=store_unc_percent
+                            form, dataset, var, store_unc_percent=store_unc_percent, ydims=ydims
                         )
                         if comps is None:
+                            continue
+                        elif len(comps)==0:
                             continue
                         elif repeat_dim in dataset[var].dims:
                             idim = dataset[var].dims.index(repeat_dim)
                             for comp in comps:
                                 self.check_repeat_err_corr_same(
                                     repeat_dims_errcorrs[repeat_dim],
-                                    dataset[comp],
+                                    dataset[
+                                        comp
+                                    ],
                                     idim,
                                 )
                                 repeat_dims_errcorrs[repeat_dim]["form"] = dataset[
@@ -102,18 +108,53 @@ class MeasurementFunctionUtils():
                     "punpy.measurement_function: Not all included uncertainty contributions have the same error correlation along the repeat_dims. Either don't use repeat_dims or use a different method, where components are propagated seperately."
                 )
 
-    def find_comps(self, form, dataset, var, store_unc_percent=False):
+    def set_repeat_dims_form(self,repeat_dims_errcorrs):
+        try:
+            if np.all([repeat_dims_errcorrs[repeat_dim]["form"]=="random" for repeat_dim in self.str_repeat_dims]):
+                self.repeat_dims_form="random"
+
+            elif np.all([repeat_dims_errcorrs[repeat_dim]["form"]=="systematic" for repeat_dim in self.str_repeat_dims]):
+                self.repeat_dims_form="systematic"
+
+            else:
+                self.repeat_dims_form="structured"
+        except:
+            if np.all([repeat_dims_errcorrs[0][repeat_dim]["form"]=="random" for repeat_dim in self.str_repeat_dims]):
+                self.repeat_dims_form="random"
+
+            elif np.all([repeat_dims_errcorrs[0][repeat_dim]["form"]=="systematic" for repeat_dim in self.str_repeat_dims]):
+                self.repeat_dims_form="systematic"
+
+            else:
+                self.repeat_dims_form="structured"
+
+    def find_comps(self, form, dataset, var, store_unc_percent=False, ydims=None):
         comps = dataset.unc[var].comps
         if comps is None:
             pass
         elif form == "tot":
-            pass
+            comps = list(comps.variables.mapping.keys())
         elif form == "ran" or form == "random":
             comps = dataset.unc[var].random_comps
+            if comps is not None:
+                comps = list(comps.variables.mapping.keys())
+            if len(dataset[var].dims)<len(ydims):
+                comps=[]
         elif form == "sys" or form == "systematic":
             comps = dataset.unc[var].systematic_comps
+            if comps is not None:
+                comps = list(comps.variables.mapping.keys())
         elif form == "str":
             comps = dataset.unc[var].structured_comps
+            if comps is not None:
+                comps = list(comps.variables.mapping.keys())
+            else:
+                comps=[]
+            if len(dataset[var].dims)<len(ydims):
+                comps_rand = dataset.unc[var].random_comps
+                if comps_rand is not None:
+                    comps.append(*list(comps_rand.variables.mapping.keys()))
+
         else:
             compname = self.templ.make_ucomp_name(
                 form, store_unc_percent=store_unc_percent, var=var
@@ -124,53 +165,64 @@ class MeasurementFunctionUtils():
                 comps = []
         return comps
 
-    def get_input_qty(self, *args, expand=False):
+    def get_input_qty(self, *args, ydims=None, sizes_dict=None, expand=False):
+
         if len(self.xvariables) == 0:
             raise ValueError("Variables have not been specified.")
-        else:
-            inputs = np.empty(len(self.xvariables), dtype=object)
-            for iv, var in enumerate(self.xvariables):
-                found = False
-                for dataset in args[0]:
-                    try:
+
+        if expand:
+            if sizes_dict is None:
+                raise ValueError("sizes_dict should be set when using expand.")
+            if ydims is None:
+                raise ValueError("ydims should be set when using expand.")
+            datashape = [sizes_dict[dim] for dim in ydims]
+
+        inputs = np.empty(len(self.xvariables), dtype=object)
+        for iv, var in enumerate(self.xvariables):
+            found = False
+            for dataset in args[0]:
+                if hasattr(dataset,"variables"):
+                    if var in dataset.variables:
                         inputs[iv] = dataset[var].values
                         found = True
-                    except:
-                        continue
-                if not found:
-                    raise ValueError(
-                        "Variable %s not found in provided datasets." % (var)
-                    )
+                        if expand:
+                            if inputs[iv].shape!=datashape:
+                                add_dims=[dim for dim in ydims if dim not in dataset[var].dims]
+                                for dim in add_dims:
+                                    tileshape=np.ones(len(ydims),dtype=int)
+                                    if len(inputs[iv].shape)!=len(datashape):
+                                        tileshape[0]=sizes_dict[dim]
+                                        inputs[iv] = np.moveaxis(np.tile(inputs[iv], tileshape),0,ydims.index(dim))
+                                    else:
+                                        tileshape[ydims.index(dim)]=sizes_dict[dim]
+                                        inputs[iv] = np.tile(inputs[iv], tileshape)
+            if not found:
+                raise ValueError(
+                    "Variable %s not found in provided datasets." % (var)
+                )
 
-            if expand:
-                datashape = inputs[0].shape
-                for i in range(len(inputs)):
-                    # if not self.param_fixed:
-                    if len(inputs[i].shape) < len(datashape):
-                        if inputs[i].shape[0] == datashape[1]:
-                            inputs[i] = np.tile(inputs[i], (datashape[0], 1))
-                        elif inputs[i].shape[0] == datashape[0]:
-                            inputs[i] = np.tile(inputs[i], (datashape[1], 1)).T
+        return inputs
 
-            return inputs
-
-    def get_input_unc(self, form, *args, expand=False):
+    def get_input_unc(self, form, *args, ydims=None, sizes_dict=None, expand=False):
         inputs_unc = np.empty(len(self.xvariables), dtype=object)
         for iv, var in enumerate(self.xvariables):
             inputs_unc[iv] = None
             for dataset in args[0]:
                 if var in dataset.keys():
-                    inputs_unc[iv] = self.calculate_unc(form, dataset, var)
-                    if inputs_unc[iv] is not None:
-                        # this if else is to be removed when relative uncertainty implemented in obsarray
-                        inputs_unc[iv] = inputs_unc[iv]
+                    if ydims is not None:
+                        if len(dataset[var].dims)<len(ydims):
+                            inputs_unc[iv] = self.calculate_unc_missingdim(form, dataset, var, expand=expand,sizes_dict=sizes_dict,ydims=ydims)
+                        else:
+                            inputs_unc[iv] = self.calculate_unc(form, dataset, var)
 
-        if inputs_unc[iv] is None:
-            if self.verbose:
-                print(
-                    "%s uncertainty for variable %s not found in provided datasets. Zero uncertainty assumed."
-                    % (form, var)
-                )
+            if np.count_nonzero(inputs_unc[iv])==0:
+                inputs_unc[iv]=None
+            if inputs_unc[iv] is None:
+                if self.verbose:
+                    print(
+                        "%s uncertainty for variable %s not found in provided datasets. Zero uncertainty assumed."
+                        % (form, var)
+                    )
         return inputs_unc
 
     def calculate_unc(self, form, ds, var):
@@ -206,13 +258,58 @@ class MeasurementFunctionUtils():
         if data is not None:
             return data.values
 
-    def get_input_corr(self, form, *args):
+    def calculate_unc_missingdim(self, form, ds, var, ydims=None, sizes_dict=None, expand=False):
+        if expand:
+            if sizes_dict is None:
+                raise ValueError("sizes_dict should be set when using expand.")
+            if ydims is None:
+                raise ValueError("ydims should be set when using expand.")
+            datashape = [sizes_dict[dim] for dim in ydims]
+
+        if (form == "rand") and (self.repeat_dims_form != "random"):
+            out = None
+        elif (form == "syst") and (self.repeat_dims_form != "systematic"):
+            out = None
+        elif form == "stru":
+            ustru=self.calculate_unc("stru", ds, var)
+            if self.repeat_dims_form != "random":
+                urand=self.calculate_unc("rand", ds, var)
+            else:
+                urand = None
+            if self.repeat_dims_form != "systematic":
+                usyst=self.calculate_unc("syst", ds, var)
+            else:
+                usyst = None
+
+            out = [ucomp**2 for ucomp in [ustru,urand,usyst] if ucomp is not None]
+
+            out = np.sum(out,axis=0)**0.5
+        else:
+            out = self.calculate_unc(form, ds, var)
+
+        if expand and (out is not None):
+            add_dims=[dim for dim in ydims if dim not in ds[var].dims]
+            for dim in add_dims:
+                tileshape=np.ones(len(ydims),dtype=int)
+                if len(out.shape)!=len(datashape):
+                    tileshape[0]=sizes_dict[dim]
+                    out = np.moveaxis(np.tile(out, tileshape),0,ydims.index(dim))
+                else:
+                    tileshape[ydims.index(dim)]=sizes_dict[dim]
+                    out = np.tile(out, tileshape)
+        return out
+
+
+    def get_input_corr(self, form, *args, ydims=None, sizes_dict=None, expand=False):
         inputs_corr = np.empty(len(self.xvariables), dtype=object)
         for iv, var in enumerate(self.xvariables):
             inputs_corr[iv] = None
             for dataset in args[0]:
                 if var in dataset.keys():
-                    inputs_corr[iv] = self.calculate_corr(form, dataset, var)
+                    if len(dataset[var].dims)<len(ydims):
+                        inputs_corr[iv] = self.calculate_corr_missingdim(form, dataset, var, expand=expand,sizes_dict=sizes_dict,ydims=ydims)
+                    else:
+                        inputs_corr[iv] = self.calculate_corr(form, dataset, var)
             if inputs_corr[iv] is None:
                 if self.verbose:
                     print(
@@ -266,3 +363,38 @@ class MeasurementFunctionUtils():
                     return dsu[uvar[0]].err_corr_matrix().values
                 else:
                     return None
+
+    def calculate_corr_missingdim(self, form, ds, var, ydims=None, sizes_dict=None, expand=False):
+        sli = [slice(None) if (ydim not in self.str_repeat_dims) else 0 for ydim in ds[var].dims]
+        dsu = ds.unc[var][tuple(sli)]
+        vardims= [ydim for ydim in ds[var].dims if (ydim not in self.str_repeat_dims)]
+
+        outdims=[ydim for ydim in ydims if ydim not in self.str_repeat_dims]
+        missingdims=[ydim for ydim in ydims if ((ydim not in ds[var].dims) and (ydim not in self.str_repeat_dims))]
+        missingshape=[sizes_dict[dim] for dim in missingdims]
+        missinglen=np.prod(missingshape)
+
+        if form == "rand":
+            return None
+        elif form == "stru":
+            cov_stru=dsu.structured_err_cov_matrix()
+            unc_rand = dsu.random_unc()
+            if unc_rand is None:
+                out=cm.correlation_from_covariance(cov_stru.values)
+            else:
+                corr_rand = np.eye(np.prod(unc_rand.shape))
+                if cov_stru is None:
+                    out = corr_rand
+                else:
+                    cov_rand = cm.convert_corr_to_cov(corr_rand,unc_rand.values)
+                    out=cm.correlation_from_covariance(cov_stru.values+cov_rand)
+
+        else:
+            out = self.calculate_corr(form, ds, var)
+
+        if expand and (out is not None):
+            out_1 = cm.expand_errcorr_dims(out,vardims,outdims,sizes_dict)
+            out_2 = cm.expand_errcorr_dims(np.ones((missinglen,missinglen)),missingdims,outdims,sizes_dict)
+            out= out_1.dot(out_2)
+
+        return out

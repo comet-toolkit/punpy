@@ -6,7 +6,6 @@ from multiprocessing import Pool
 
 import comet_maths as cm
 import numpy as np
-
 import punpy.utilities.utilities as util
 
 """___Authorship___"""
@@ -865,20 +864,16 @@ class MCPropagation:
             repeat_shape = (n_repeats,)  # repeat_dims = -99
         else:
             repeat_dims = -np.sort(-np.array(repeat_dims))
-            n_repeats = yshape[repeat_dims[0]] * yshape[repeat_dims[1]]
-            repeat_shape = (yshape[repeat_dims[0]], yshape[repeat_dims[1]])
-            if corr_axis > repeat_dims[0]:
-                corr_axis -= 1
-            elif corr_axis == repeat_dims[0]:
-                raise ValueError(
-                    "punpy.mc_propagation: corr_axis and repeat_axis keywords should not be the same."
-                )
-            if corr_axis > repeat_dims[1]:
-                corr_axis -= 1
-            elif corr_axis == repeat_dims[1]:
-                raise ValueError(
-                    "punpy.mc_propagation: corr_axis and repeat_axis keywords should not be the same."
-                )
+            repeat_shape = tuple([yshape[repeat_dim] for repeat_dim in repeat_dims])
+            n_repeats = np.prod(repeat_shape)
+            for repeat_dim in repeat_dims:
+                if corr_axis > repeat_dim:
+                    corr_axis -= 1
+                elif corr_axis == repeat_dim:
+                    raise ValueError(
+                        "punpy.mc_propagation: corr_axis and repeat_axis keywords should not be the same."
+                    )
+
         return (
             yshapes,
             x,
@@ -1166,9 +1161,9 @@ class MCPropagation:
 
         else:
             if output_vars == 1:
-                u_func = u_func.reshape(repeat_shape + (-1,))
-                u_func = np.moveaxis(u_func, 0, repeat_dims[0])
-                u_func = np.moveaxis(u_func, 0, repeat_dims[1])
+                u_func = u_func.reshape(repeat_shape + u_func[0].shape)
+                for repeat_dim in repeat_dims:
+                    u_func = np.moveaxis(u_func, 0, repeat_dim)
             else:
                 u_funcb = u_func[:]
                 u_func = np.empty(output_vars, dtype=object)

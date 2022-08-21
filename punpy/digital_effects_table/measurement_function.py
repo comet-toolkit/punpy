@@ -6,7 +6,6 @@ from abc import ABC,abstractmethod
 
 import numpy as np
 import obsarray
-
 from punpy import MCPropagation
 from punpy.digital_effects_table.digital_effects_table_templates import (
     DigitalEffectsTableTemplates,)
@@ -36,6 +35,7 @@ class MeasurementFunction(ABC):
         corr_axis=-99,
         auto_simplify_corr=False,
         refxvar=None,
+        sizes_dict=None,
     ):
         """
         Initialise MeasurementFunction
@@ -52,19 +52,24 @@ class MeasurementFunction(ABC):
         else:
             self.xvariables = self.get_argument_names()
             if xvariables is not None:
-                if xvariables==self.xvariables:
+                if xvariables!=self.xvariables:
                     raise ValueError("punpy.MeasurementFunction: when specifying both xvariables and get_argument_names, they need to be the same!")
 
         if self.xvariables is None:
             raise ValueError("punpy.MeasurementFunction: You need to specify xvariables as keyword when initialising MeasurementFunction object, or add get_argument_names() as a function of the class.")
 
         if yvariable is None:
-            self.yvariable="measurand"
+            self.yvariable, yunit = self.get_measurand_name()
         else:
             self.yvariable = yvariable
+            yvar=self.get_measurand_name()[0]
+            if yvar!="measurand":
+                if yvariable!=yvar:
+                    raise ValueError("punpy.MeasurementFunction: when specifying both yvariable and get_measurand_name, they need to be the same!")
 
         self.templ = DigitalEffectsTableTemplates(self.yvariable, yunit)
         self.ydims = ydims
+        self.sizes_dict = sizes_dict
 
         self.corr_between = corr_between
         self.output_vars = output_vars
@@ -110,6 +115,19 @@ class MeasurementFunction(ABC):
         """
         return None
 
+    def get_measurand_name(self):
+        """
+        This function allows to return the name and unit of the measurand as strings.
+        Can optionally be overwritten to provide names instead of providing yvariable as a keyword.
+
+        :return: name of the measurand, unit
+        :rtype: tuple(str, str)
+        """
+        return "measurand", ""
+
+    def update_measurand(self,measurand,measurand_unit):
+        self.yvariable = measurand
+        self.templ = DigitalEffectsTableTemplates(self.yvariable, measurand_unit)
 
     def setup(self, *args, **kwargs):
         """
@@ -119,7 +137,7 @@ class MeasurementFunction(ABC):
         """
         pass
 
-    def propagate_ds(self, *args, store_unc_percent=False, expand=False):
+    def propagate_ds(self, *args, store_unc_percent=False, expand=False, ds_out_pre=None):
         """
         Function to propagate the uncertainties on the input quantities present in the
         digital effects tables provided as the input arguments, through the measurement
@@ -140,7 +158,7 @@ class MeasurementFunction(ABC):
             )
 
         # first calculate the measurand and propagate the uncertainties
-        self.check_sizes(*args)
+        self.check_sizes(*args, expand=expand)
         y = self.run(*args, expand=expand)
 
         u_rand_y = self.propagate_random(*args, expand=expand)
@@ -159,23 +177,30 @@ class MeasurementFunction(ABC):
 
         u_stru_y, corr_stru_y = self.propagate_structured(*args, expand=expand)
 
-        dim_sizes = {}
-        for id, dim in enumerate(self.ydims):
-            dim_sizes[dim] = y.shape[id]
 
         repeat_dim_err_corrs = self.utils.find_repeat_dim_corr(
-            "str", *args, store_unc_percent=store_unc_percent
+            "str", *args, store_unc_percent=store_unc_percent, ydims=self.ydims
         )
+
+        self.utils.set_repeat_dims_form(repeat_dim_err_corrs)
+
+
+        if self.sizes_dict is None:
+            self.sizes_dict = {}
+            for id, dim in enumerate(self.ydims):
+                self.sizes_dict[dim] = y.shape[id]
 
         template = self.templ.make_template_main(
             self.ydims,
-            dim_sizes,
+            self.sizes_dict,
             store_unc_percent=store_unc_percent,
             str_repeat_dims=self.str_repeat_dims,
             repeat_dim_err_corrs=repeat_dim_err_corrs,
         )
+
+
         # create dataset template
-        ds_out = obsarray.create_ds(template, dim_sizes)
+        ds_out = obsarray.create_ds(template, self.sizes_dict)
 
         ds_out[self.yvariable].values = y
 
@@ -219,6 +244,9 @@ class MeasurementFunction(ABC):
 
             ds_out["err_corr_str_" + self.yvariable].values = corr_stru_y
 
+        if ds_out_pre is not None:
+            self.templ.join_with_preexisting_ds(ds_out,ds_out_pre,drop=self.yvariable)
+
         if self.prop.verbose:
             print(
                 "finishing propagate_ds (%s s since creation of prop object)"
@@ -227,7 +255,7 @@ class MeasurementFunction(ABC):
 
         return ds_out
 
-    def propagate_ds_total(self, *args, store_unc_percent=False, expand=False):
+    def propagate_ds_total(self, *args, store_unc_percent=False, expand=False, ds_out_pre=None):
         """
         Function to propagate the total uncertainties present in the digital effects
         tables in the input arguments, through the measurement function to produce
@@ -249,24 +277,27 @@ class MeasurementFunction(ABC):
         y = self.run(*args, expand=expand)
         u_tot_y, corr_tot_y = self.propagate_total(*args, expand=expand)
 
-        dim_sizes = {}
-        for id, dim in enumerate(self.ydims):
-            dim_sizes[dim] = y.shape[id]
+        if self.sizes_dict is None:
+            self.sizes_dict = {}
+            for id, dim in enumerate(self.ydims):
+                self.sizes_dict[dim] = y.shape[id]
 
         repeat_dim_err_corrs = self.utils.find_repeat_dim_corr(
-            "tot", *args, store_unc_percent=store_unc_percent
+            "tot", *args, store_unc_percent=store_unc_percent, ydims=self.ydims
         )
+
+        self.utils.set_repeat_dims_form(repeat_dim_err_corrs)
 
         template = self.templ.make_template_tot(
             self.ydims,
-            dim_sizes,
+            self.sizes_dict,
             store_unc_percent=store_unc_percent,
             str_repeat_dims=self.str_repeat_dims,
             repeat_dim_err_corrs=repeat_dim_err_corrs,
         )
 
         # create dataset template
-        ds_out = obsarray.create_ds(template, dim_sizes)
+        ds_out = obsarray.create_ds(template, self.sizes_dict)
 
         ds_out[self.yvariable].values = y
 
@@ -289,6 +320,9 @@ class MeasurementFunction(ABC):
                 ds_out[ucomp].values = u_tot_y
             ds_out["err_corr_tot_" + self.yvariable].values = corr_tot_y
 
+        if ds_out_pre is not None:
+            self.templ.join_with_preexisting_ds(ds_out,ds_out_pre,drop=self.yvariable)
+
         if self.prop.verbose:
             print(
                 "finishing propagate_ds_total (%s s since creation of prop object)"
@@ -298,7 +332,7 @@ class MeasurementFunction(ABC):
         return ds_out
 
     def propagate_ds_specific(
-        self, comp_list, *args, store_unc_percent=False, expand=False
+        self, comp_list, *args, store_unc_percent=False, expand=False, ds_out_pre=None
     ):
         """
         Function to propagate the uncertainties on the input quantities present in the
@@ -325,29 +359,32 @@ class MeasurementFunction(ABC):
             comp_list = [comp_list]
 
         # first calculate the measurand and propagate the uncertainties
-        self.check_sizes(*args)
+        self.check_sizes(*args, expand=expand)
         y = self.run(*args, expand=expand)
 
-        dim_sizes = {}
-        for id, dim in enumerate(self.ydims):
-            dim_sizes[dim] = y.shape[id]
+        if self.sizes_dict is None:
+            self.sizes_dict = {}
+            for id, dim in enumerate(self.ydims):
+                self.sizes_dict[dim] = y.shape[id]
 
         repeat_dim_err_corrs = [
-            self.utils.find_repeat_dim_corr(form, *args, store_unc_percent=store_unc_percent)
+            self.utils.find_repeat_dim_corr(form, *args, store_unc_percent=store_unc_percent, ydims=self.ydims)
             for form in comp_list
         ]
+
+        self.utils.set_repeat_dims_form(repeat_dim_err_corrs)
 
         template = self.templ.make_template_specific(
             comp_list,
             self.ydims,
-            dim_sizes,
+            self.sizes_dict,
             store_unc_percent=store_unc_percent,
             str_repeat_dims=self.str_repeat_dims,
             repeat_dim_err_corrs=repeat_dim_err_corrs,
         )
 
         # create dataset template
-        ds_out = obsarray.create_ds(template, dim_sizes)
+        ds_out = obsarray.create_ds(template, self.sizes_dict)
         ds_out[self.yvariable].values = y
 
         for comp in comp_list:
@@ -390,6 +427,10 @@ class MeasurementFunction(ABC):
                 else:
                     ds_out["u_" + comp + "_" + self.yvariable].values = u_comp_y
 
+
+        if ds_out_pre is not None:
+            self.templ.join_with_preexisting_ds(ds_out,ds_out_pre,drop=self.yvariable)
+
         if self.prop.verbose:
             print(
                 "finishing propagate_ds_specific (%s s since creation of prop object)"
@@ -398,7 +439,7 @@ class MeasurementFunction(ABC):
 
         return ds_out
 
-    def propagate_ds_all(self, *args, store_unc_percent=False, expand=False):
+    def propagate_ds_all(self, *args, store_unc_percent=False, expand=False, ds_out_pre=None):
         """
         Function to propagate the uncertainties on the input quantities present in the
         digital effects tables provided as the input arguments, through the measurement
@@ -431,7 +472,7 @@ class MeasurementFunction(ABC):
                             comp_list.append(comp_name)
         comp_list = np.unique(np.array(comp_list))
         return self.propagate_ds_specific(
-            comp_list, *args, store_unc_percent=store_unc_percent, expand=expand
+            comp_list, *args, store_unc_percent=store_unc_percent, expand=expand, ds_out_pre=ds_out_pre
         )
 
     def run(self, *args, expand=False):
@@ -444,10 +485,10 @@ class MeasurementFunction(ABC):
         :return:
         :rtype:
         """
-        input_qty = self.utils.get_input_qty(args, expand=expand)
+        input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
         return self.meas_function(*input_qty)
 
-    def check_sizes(self, *args):
+    def check_sizes(self, *args, expand=False):
         """
 
         :param args:
@@ -484,32 +525,32 @@ class MeasurementFunction(ABC):
                 )
 
         self.utils.str_repeat_dims = self.str_repeat_dims
+        if not expand:
+            for iv, var in enumerate(self.xvariables):
+                found = False
+                for dataset in args:
+                    if var in dataset.keys():
+                        if all(
+                            [
+                                self.str_repeat_dims[i] in dataset[var].dims
+                                for i in range(len(self.str_repeat_dims))
+                            ]
+                        ):
+                            found = True
 
-        for iv, var in enumerate(self.xvariables):
-            found = False
-            for dataset in args:
-                if var in dataset.keys():
-                    if all(
-                        [
-                            self.str_repeat_dims[i] in dataset[var].dims
-                            for i in range(len(self.str_repeat_dims))
-                        ]
-                    ):
-                        found = True
-
-            if not found:
-                self.param_fixed[iv] = True
-                if self.prop.verbose:
-                    print(
-                        "Variable %s not found in repeat_dims. setting param_fixed to True"
-                        % (var)
-                    )
+                if not found:
+                    self.param_fixed[iv] = True
+                    if self.prop.verbose:
+                        print(
+                            "Variable %s not found in repeat_dims. setting param_fixed to True"
+                            % (var)
+                        )
 
     def propagate_total(self, *args, expand=False):
-        self.check_sizes(*args)
-        input_qty = self.utils.get_input_qty(args, expand=expand)
-        input_unc = self.utils.get_input_unc("tot", args, expand=expand)
-        input_corr = self.utils.get_input_corr("tot", args)
+        self.check_sizes(*args, expand=expand)
+        input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
+        input_unc = self.utils.get_input_unc("tot", args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
+        input_corr = self.utils.get_input_corr("tot", args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
         if self.prop.verbose:
             print(
                 "inputs extracted (%s s since creation of prop object)"
@@ -533,9 +574,9 @@ class MeasurementFunction(ABC):
             )
 
     def propagate_random(self, *args, expand=False):
-        self.check_sizes(*args)
-        input_qty = self.utils.get_input_qty(args, expand=expand)
-        input_unc = self.utils.get_input_unc("rand", args, expand=expand)
+        self.check_sizes(*args, expand=expand)
+        input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
+        input_unc = self.utils.get_input_unc("rand", args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
         if all([iu is None for iu in input_unc]):
             return None
         else:
@@ -553,9 +594,9 @@ class MeasurementFunction(ABC):
             )
 
     def propagate_systematic(self, *args, expand=False):
-        self.check_sizes(*args)
-        input_qty = self.utils.get_input_qty(args, expand=expand)
-        input_unc = self.utils.get_input_unc("syst", args, expand=expand)
+        self.check_sizes(*args, expand=expand)
+        input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
+        input_unc = self.utils.get_input_unc("syst", args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
         if all([iu is None for iu in input_unc]):
             return None
         else:
@@ -573,10 +614,10 @@ class MeasurementFunction(ABC):
             )
 
     def propagate_structured(self, *args, expand=False):
-        self.check_sizes(*args)
-        input_qty = self.utils.get_input_qty(args, expand=expand)
-        input_unc = self.utils.get_input_unc("stru", args, expand=expand)
-        input_corr = self.utils.get_input_corr("stru", args)
+        self.check_sizes(*args, expand=expand)
+        input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
+        input_unc = self.utils.get_input_unc("stru", args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
+        input_corr = self.utils.get_input_corr("stru", args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
         if all([iu is None for iu in input_unc]):
             return None, None
         else:
@@ -595,9 +636,9 @@ class MeasurementFunction(ABC):
             )
 
     def propagate_specific(self, form, *args, expand=False, return_corr=False):
-        input_qty = self.utils.get_input_qty(args, expand=expand)
-        input_unc = self.utils.get_input_unc(form, args, expand=expand)
-        input_corr = self.utils.get_input_corr(form, args)
+        input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
+        input_unc = self.utils.get_input_unc(form, args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
+        input_corr = self.utils.get_input_corr(form, args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
         print(input_qty,input_unc)
         if all([iu is None for iu in input_unc]):
             return None, None

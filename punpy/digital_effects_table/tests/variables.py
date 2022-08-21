@@ -468,7 +468,7 @@ L1A_RAD_VARIABLES = {
         "attributes": {
             "standard_name": "random relative uncertainty on radiance",
             "long_name": "random relative uncertainty on upwelling radiance",
-            "units": "-",
+            "units": "%",
             "err_corr": [
                 {"dim": SCAN_DIM, "form": "random", "params": [], "units": []},
                 {"dim": WL_DIM, "form": "random", "params": [], "units": []},
@@ -482,7 +482,7 @@ L1A_RAD_VARIABLES = {
         "attributes": {
             "standard_name": "independent systematic relative uncertainty on radiance",
             "long_name": "the systematic relative uncertainty component on radiance that is not correlated with irradiance",
-            "units": "-",
+            "units": "%",
             "err_corr": [
                 {"dim": SCAN_DIM, "form": "systematic", "params": [], "units": []},
                 {
