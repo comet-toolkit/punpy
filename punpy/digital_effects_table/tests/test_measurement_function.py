@@ -7,7 +7,6 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 import xarray as xr
-
 from punpy import MeasurementFunction,MCPropagation
 
 """___Authorship___"""
@@ -209,7 +208,7 @@ class TestMeasurementFunction(unittest.TestCase):
             "u_rel_systematic_indep", L0data, calib_data
         )
         u_y_syst_corr = hmf.propagate_specific(
-            "u_rel_systematic_corr_rad_irr", L0data, calib_data
+            "u_rel_systematic_corr_rad_irr", L0data, calib_data, return_corr=False
         )
 
         u_y_syst = (u_y_syst_indep ** 2 + u_y_syst_corr ** 2) ** 0.5

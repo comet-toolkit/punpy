@@ -192,7 +192,9 @@ class MeasurementFunctionUtils():
                                     tileshape=np.ones(len(ydims),dtype=int)
                                     if len(inputs[iv].shape)!=len(datashape):
                                         tileshape[0]=sizes_dict[dim]
-                                        inputs[iv] = np.moveaxis(np.tile(inputs[iv], tileshape),0,ydims.index(dim))
+                                        inputs[iv] = np.tile(inputs[iv], tileshape)
+                                        for idim2,dim2 in enumerate(add_dims):  
+                                            inputs[iv] = np.moveaxis(inputs[iv],idim2,ydims.index(dim2))
                                     else:
                                         tileshape[ydims.index(dim)]=sizes_dict[dim]
                                         inputs[iv] = np.tile(inputs[iv], tileshape)

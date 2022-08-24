@@ -137,7 +137,7 @@ class MeasurementFunction(ABC):
         """
         pass
 
-    def propagate_ds(self, *args, store_unc_percent=False, expand=False, ds_out_pre=None):
+    def propagate_ds(self, *args, store_unc_percent=False, expand=False, ds_out_pre=None, include_corr=True):
         """
         Function to propagate the uncertainties on the input quantities present in the
         digital effects tables provided as the input arguments, through the measurement
@@ -175,8 +175,11 @@ class MeasurementFunction(ABC):
                 % (time.time() - self.prop.starttime)
             )
 
-        u_stru_y, corr_stru_y = self.propagate_structured(*args, expand=expand)
-
+        if include_corr:
+            u_stru_y, corr_stru_y = self.propagate_structured(*args, expand=expand, return_corr=include_corr)
+        else:
+            u_stru_y = self.propagate_structured(*args, expand=expand, return_corr=include_corr)
+            corr_stru_y = None
 
         repeat_dim_err_corrs = self.utils.find_repeat_dim_corr(
             "str", *args, store_unc_percent=store_unc_percent, ydims=self.ydims
@@ -242,7 +245,10 @@ class MeasurementFunction(ABC):
             else:
                 ds_out[ucomp_str].values = u_stru_y
 
-            ds_out["err_corr_str_" + self.yvariable].values = corr_stru_y
+            if include_corr:
+                ds_out["err_corr_str_" + self.yvariable].values = corr_stru_y
+            else:
+                ds_out.drop("err_corr_str_" + self.yvariable)
 
         if ds_out_pre is not None:
             self.templ.join_with_preexisting_ds(ds_out,ds_out_pre,drop=self.yvariable)
@@ -255,7 +261,7 @@ class MeasurementFunction(ABC):
 
         return ds_out
 
-    def propagate_ds_total(self, *args, store_unc_percent=False, expand=False, ds_out_pre=None):
+    def propagate_ds_total(self, *args, store_unc_percent=False, expand=False, ds_out_pre=None, include_corr=True):
         """
         Function to propagate the total uncertainties present in the digital effects
         tables in the input arguments, through the measurement function to produce
@@ -275,7 +281,12 @@ class MeasurementFunction(ABC):
             )
 
         y = self.run(*args, expand=expand)
-        u_tot_y, corr_tot_y = self.propagate_total(*args, expand=expand)
+
+        if include_corr:
+            u_tot_y, corr_tot_y = self.propagate_total(*args, expand=expand, return_corr=include_corr)
+        else:
+            u_tot_y = self.propagate_total(*args, expand=expand, return_corr=include_corr)
+            corr_tot_y = None
 
         if self.sizes_dict is None:
             self.sizes_dict = {}
@@ -318,7 +329,11 @@ class MeasurementFunction(ABC):
                 ds_out[ucomp].values = u_tot_y / y * 100
             else:
                 ds_out[ucomp].values = u_tot_y
-            ds_out["err_corr_tot_" + self.yvariable].values = corr_tot_y
+
+            if include_corr:
+                ds_out["err_corr_tot_" + self.yvariable].values = corr_tot_y
+            else:
+                ds_out.drop("err_corr_tot_" + self.yvariable)
 
         if ds_out_pre is not None:
             self.templ.join_with_preexisting_ds(ds_out,ds_out_pre,drop=self.yvariable)
@@ -332,7 +347,7 @@ class MeasurementFunction(ABC):
         return ds_out
 
     def propagate_ds_specific(
-        self, comp_list, *args, store_unc_percent=False, expand=False, ds_out_pre=None
+        self, comp_list, *args, store_unc_percent=False, expand=False, ds_out_pre=None, include_corr=True
     ):
         """
         Function to propagate the uncertainties on the input quantities present in the
@@ -396,15 +411,23 @@ class MeasurementFunction(ABC):
                 u_comp_y = self.propagate_systematic(*args, expand=expand)
 
             else:
-                u_comp_y, corr_comp_y = self.propagate_specific(
-                    comp, *args, return_corr=True, expand=expand
-                )
+                if include_corr:
+                    u_comp_y, corr_comp_y = self.propagate_specific(
+                        comp, *args, return_corr=include_corr, expand=expand
+                    )
+                else:
+                    u_comp_y = self.propagate_specific(
+                        comp, *args, return_corr=include_corr, expand=expand
+                    )
+                    corr_comp_y = None
+
                 if corr_comp_y is not None:
                     ds_out[
                         "err_corr_" + comp + "_" + self.yvariable
                     ].values = corr_comp_y
                 else:
-                    err_corr_comp = "err_corr_" + comp + "_" + self.yvariable
+                    ds_out.drop("err_corr_" + comp + "_" + self.yvariable)
+                    err_corr_comp = None
 
             if u_comp_y is None:
                 if store_unc_percent:
@@ -439,7 +462,7 @@ class MeasurementFunction(ABC):
 
         return ds_out
 
-    def propagate_ds_all(self, *args, store_unc_percent=False, expand=False, ds_out_pre=None):
+    def propagate_ds_all(self, *args, store_unc_percent=False, expand=False, ds_out_pre=None, include_corr=True):
         """
         Function to propagate the uncertainties on the input quantities present in the
         digital effects tables provided as the input arguments, through the measurement
@@ -472,7 +495,7 @@ class MeasurementFunction(ABC):
                             comp_list.append(comp_name)
         comp_list = np.unique(np.array(comp_list))
         return self.propagate_ds_specific(
-            comp_list, *args, store_unc_percent=store_unc_percent, expand=expand, ds_out_pre=ds_out_pre
+            comp_list, *args, store_unc_percent=store_unc_percent, expand=expand, ds_out_pre=ds_out_pre, include_corr=include_corr
         )
 
     def run(self, *args, expand=False):
@@ -546,7 +569,7 @@ class MeasurementFunction(ABC):
                             % (var)
                         )
 
-    def propagate_total(self, *args, expand=False):
+    def propagate_total(self, *args, expand=False,return_corr=True):
         self.check_sizes(*args, expand=expand)
         input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
         input_unc = self.utils.get_input_unc("tot", args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
@@ -566,12 +589,13 @@ class MeasurementFunction(ABC):
                 input_corr,
                 param_fixed=self.param_fixed,
                 corr_between=self.corr_between,
-                return_corr=True,
+                return_corr=return_corr,
                 return_samples=False,
                 repeat_dims=self.num_repeat_dims,
                 corr_axis=self.corr_axis,
                 output_vars=self.output_vars,
             )
+
 
     def propagate_random(self, *args, expand=False):
         self.check_sizes(*args, expand=expand)
@@ -613,7 +637,7 @@ class MeasurementFunction(ABC):
                 output_vars=self.output_vars,
             )
 
-    def propagate_structured(self, *args, expand=False):
+    def propagate_structured(self, *args, expand=False, return_corr=True):
         self.check_sizes(*args, expand=expand)
         input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
         input_unc = self.utils.get_input_unc("stru", args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
@@ -628,7 +652,7 @@ class MeasurementFunction(ABC):
                 input_corr,
                 param_fixed=self.param_fixed,
                 corr_between=self.corr_between,
-                return_corr=True,
+                return_corr=return_corr,
                 return_samples=False,
                 repeat_dims=self.num_repeat_dims,
                 corr_axis=self.corr_axis,
