@@ -91,7 +91,7 @@ class MeasurementFunctionUtils:
 
         return repeat_dims_errcorrs
 
-    def check_repeat_err_corr_same(self, repeat_dims_errcorr, uvar, idim):
+    def check_repeat_err_corr_same(self, repeat_dims_errcorr, uvar, idim=None):
         """
         Function to check whether the err_corr along the repeated dim for specific uncertainty variable is the same as the current errcorr dictionary.
 
@@ -99,7 +99,7 @@ class MeasurementFunctionUtils:
         :type repeat_dims_errcorr: dict
         :param uvar: Uncertainty variable to check
         :type uvar: xarray.dataarray
-        :param idim: index of the current dimension.
+        :param idim: index of the current dimension. Defaults to None.
         :type idim: int
         :return: None
         :rtype: None
