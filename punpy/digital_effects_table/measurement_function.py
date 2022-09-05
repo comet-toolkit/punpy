@@ -6,6 +6,7 @@ from abc import ABC,abstractmethod
 
 import numpy as np
 import obsarray
+
 from punpy import MCPropagation
 from punpy.digital_effects_table.digital_effects_table_templates import (
     DigitalEffectsTableTemplates,)
@@ -131,7 +132,7 @@ class MeasurementFunction(ABC):
 
     def setup(self, *args, **kwargs):
         """
-        This function is to provide a setup stage that canbe run before propagating uncertainties.
+        This function is to provide a setup stage that can be run before propagating uncertainties.
         This allows to set up additional class attributes etc, without needing to edit the initialiser (which is quite specific to this class).
         This function can optionally be overwritten by the user when creating their MeasurementFunction subclass.
         """
@@ -148,6 +149,12 @@ class MeasurementFunction(ABC):
         :type args: obsarray dataset(s)
         :param store_unc_percent: Boolean defining whether relative uncertainties should be returned or not. Default to True (relative uncertaintie returned)
         :type store_unc_percent: bool (optional)
+        :param expand: boolean to indicate whether the input quantities should be expanded/broadcasted to the shape of the measurand. Defaults to False.
+        :type expand: bool (optional)
+        :param ds_out_pre: Pre-existing output dataset in which the measurand & uncertainty variables should be saved. Defaults to None, in which case a new dataset is created.
+        :type ds_out_pre: xarray.dataset (optional)
+        :param include_corr: boolean to indicate whether the output dataset should include the correlation matrices. Defaults to True.
+        :type include_corr: bool (optional)
         :return: digital effects table with uncertainties on measurand
         :rtype: obsarray dataset
         """
@@ -271,6 +278,12 @@ class MeasurementFunction(ABC):
         :type args: obsarray dataset(s)
         :param store_unc_percent: Boolean defining whether relative uncertainties should be returned or not. Default to True (relative uncertaintie returned)
         :type store_unc_percent: bool (optional)
+        :param expand: boolean to indicate whether the input quantities should be expanded/broadcasted to the shape of the measurand. Defaults to False.
+        :type expand: bool (optional)
+        :param ds_out_pre: Pre-existing output dataset in which the measurand & uncertainty variables should be saved. Defaults to None, in which case a new dataset is created.
+        :type ds_out_pre: xarray.dataset (optional)
+        :param include_corr: boolean to indicate whether the output dataset should include the correlation matrices. Defaults to True.
+        :type include_corr: bool (optional)
         :return: digital effects table with uncertainties on measurand
         :rtype: obsarray dataset
         """
@@ -361,6 +374,12 @@ class MeasurementFunction(ABC):
         :type args: obsarray dataset(s)
         :param store_unc_percent: Boolean defining whether relative uncertainties should be returned or not. Default to True (relative uncertaintie returned)
         :type store_unc_percent: bool (optional)
+        :param expand: boolean to indicate whether the input quantities should be expanded/broadcasted to the shape of the measurand. Defaults to False.
+        :type expand: bool (optional)
+        :param ds_out_pre: Pre-existing output dataset in which the measurand & uncertainty variables should be saved. Defaults to None, in which case a new dataset is created.
+        :type ds_out_pre: xarray.dataset (optional)
+        :param include_corr: boolean to indicate whether the output dataset should include the correlation matrices. Defaults to True.
+        :type include_corr: bool (optional)
         :return: digital effects table with uncertainties on measurand
         :rtype: obsarray dataset
         """
@@ -471,6 +490,14 @@ class MeasurementFunction(ABC):
 
         :param args: One or multiple digital effects tables with input quantities, defined with obsarray
         :type args: obsarray dataset(s)
+        :param store_unc_percent: Boolean defining whether relative uncertainties should be returned or not. Default to True (relative uncertaintie returned)
+        :type store_unc_percent: bool (optional)
+        :param expand: boolean to indicate whether the input quantities should be expanded/broadcasted to the shape of the measurand. Defaults to False.
+        :type expand: bool (optional)
+        :param ds_out_pre: Pre-existing output dataset in which the measurand & uncertainty variables should be saved. Defaults to None, in which case a new dataset is created.
+        :type ds_out_pre: xarray.dataset (optional)
+        :param include_corr: boolean to indicate whether the output dataset should include the correlation matrices. Defaults to True.
+        :type include_corr: bool (optional)
         :return: digital effects table with uncertainties on measurand
         :rtype: obsarray dataset
         """
@@ -500,24 +527,28 @@ class MeasurementFunction(ABC):
 
     def run(self, *args, expand=False):
         """
+        Function to calculate the measurand by running input quantities through measurement function.
 
-        :param args:
-        :type args:
-        :param expand:
-        :type expand:
-        :return:
-        :rtype:
+        :param args: One or multiple digital effects tables with input quantities, defined with obsarray
+        :type args: obsarray dataset(s)
+        :param expand: boolean to indicate whether the input quantities should be expanded/broadcasted to the shape of the measurand. Defaults to False.
+        :type expand: bool (optional)
+        :return: measurand
+        :rtype: numpy.ndarray
         """
         input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
         return self.meas_function(*input_qty)
 
     def check_sizes(self, *args, expand=False):
         """
+        Function to check the sizes of the input quantities and measurand and perform some checks and preprocessing
 
-        :param args:
-        :type args:
-        :return:
-        :rtype:
+        :param args: One or multiple digital effects tables with input quantities, defined with obsarray
+        :type args: obsarray dataset(s)
+        :param expand: boolean to indicate whether the input quantities should be expanded/broadcasted to the shape of the measurand. Defaults to False.
+        :type expand: bool (optional)
+        :return: None
+        :rtype: None
         """
         if self.ydims is None:
             for dataset in args:
@@ -570,6 +601,18 @@ class MeasurementFunction(ABC):
                         )
 
     def propagate_total(self, *args, expand=False,return_corr=True):
+        """
+        Function to propagate uncertainties for the total uncertainty component.
+
+        :param args: One or multiple digital effects tables with input quantities, defined with obsarray
+        :type args: obsarray dataset(s)
+        :param expand: boolean to indicate whether the input quantities should be expanded/broadcasted to the shape of the measurand. Defaults to False.
+        :type expand: bool (optional)
+        :param return_corr:  boolean to indicate whether the measurand error-correlation matrices should be returned. Defaults to True.
+        :type return_corr: bool (optional)
+        :return: uncertainty on measurand for total uncertainty component, error-correlation matrix of measurand for total uncertainty component
+        :rtype: tuple(numpy.ndarray, numpy.ndarray)
+        """
         self.check_sizes(*args, expand=expand)
         input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
         input_unc = self.utils.get_input_unc("tot", args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
@@ -598,6 +641,16 @@ class MeasurementFunction(ABC):
 
 
     def propagate_random(self, *args, expand=False):
+        """
+        Function to propagate uncertainties for the random uncertainty component.
+
+        :param args: One or multiple digital effects tables with input quantities, defined with obsarray
+        :type args: obsarray dataset(s)
+        :param expand: boolean to indicate whether the input quantities should be expanded/broadcasted to the shape of the measurand. Defaults to False.
+        :type expand: bool (optional)
+        :return: uncertainty on measurand for random uncertainty component
+        :rtype: numpy.ndarray
+        """
         self.check_sizes(*args, expand=expand)
         input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
         input_unc = self.utils.get_input_unc("rand", args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
@@ -618,6 +671,16 @@ class MeasurementFunction(ABC):
             )
 
     def propagate_systematic(self, *args, expand=False):
+        """
+        Function to propagate uncertainties for the systemtic uncertainty component.
+
+        :param args: One or multiple digital effects tables with input quantities, defined with obsarray
+        :type args: obsarray dataset(s)
+        :param expand: boolean to indicate whether the input quantities should be expanded/broadcasted to the shape of the measurand. Defaults to False.
+        :type expand: bool (optional)
+        :return: uncertainty on measurand for systematic uncertainty component
+        :rtype: numpy.ndarray
+        """
         self.check_sizes(*args, expand=expand)
         input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
         input_unc = self.utils.get_input_unc("syst", args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
@@ -638,6 +701,18 @@ class MeasurementFunction(ABC):
             )
 
     def propagate_structured(self, *args, expand=False, return_corr=True):
+        """
+        Function to propagate uncertainties for the structured uncertainty component.
+
+        :param args: One or multiple digital effects tables with input quantities, defined with obsarray
+        :type args: obsarray dataset(s)
+        :param expand: boolean to indicate whether the input quantities should be expanded/broadcasted to the shape of the measurand. Defaults to False.
+        :type expand: bool (optional)
+        :param return_corr:  boolean to indicate whether the measurand error-correlation matrices should be returned. Defaults to True.
+        :type return_corr: bool (optional)
+        :return: uncertainty on measurand for structured uncertainty component, error-correlation matrix of measurand for structured uncertainty component
+        :rtype: tuple(numpy.ndarray, numpy.ndarray)
+        """
         self.check_sizes(*args, expand=expand)
         input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
         input_unc = self.utils.get_input_unc("stru", args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
@@ -660,6 +735,20 @@ class MeasurementFunction(ABC):
             )
 
     def propagate_specific(self, form, *args, expand=False, return_corr=False):
+        """
+        Function to propagate uncertainties for a specific uncertainty component.
+
+        :param form: name or type of uncertainty component
+        :type form: str
+        :param args: One or multiple digital effects tables with input quantities, defined with obsarray
+        :type args: obsarray dataset(s)
+        :param expand: boolean to indicate whether the input quantities should be expanded/broadcasted to the shape of the measurand. Defaults to False.
+        :type expand: bool (optional)
+        :param return_corr:  boolean to indicate whether the measurand error-correlation matrices should be returned. Defaults to True.
+        :type return_corr: bool (optional)
+        :return: uncertainty on measurand for specific uncertainty component, error-correlation matrix of measurand for specific uncertainty component
+        :rtype: tuple(numpy.ndarray, numpy.ndarray)
+        """
         input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
         input_unc = self.utils.get_input_unc(form, args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
         input_corr = self.utils.get_input_corr(form, args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
