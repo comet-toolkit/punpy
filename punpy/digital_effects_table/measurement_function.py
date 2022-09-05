@@ -6,12 +6,11 @@ from abc import ABC,abstractmethod
 
 import numpy as np
 import obsarray
-
-from punpy import MCPropagation
 from punpy.digital_effects_table.digital_effects_table_templates import (
     DigitalEffectsTableTemplates,)
 from punpy.digital_effects_table.measurement_function_utils import (
     MeasurementFunctionUtils,)
+from punpy.mc.mc_propagation import MCPropagation
 
 """___Authorship___"""
 __author__ = "Pieter De Vis"
