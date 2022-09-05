@@ -7,6 +7,7 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 import xarray as xr
+
 from punpy import MeasurementFunction,MCPropagation
 
 """___Authorship___"""
@@ -47,6 +48,8 @@ class HypernetsMF(MeasurementFunction):
             "non_linearity_coefficients",
             "integration_time",
         ]
+
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 calib_data = xr.open_dataset(os.path.join(dir_path, "det_hypernets_cal.nc"))
 L0data = xr.open_dataset(os.path.join(dir_path, "det_hypernets_l0.nc"))
@@ -190,7 +193,7 @@ class TestMeasurementFunction(unittest.TestCase):
             L1data["u_rel_random_irradiance"].values[mask][
                 np.where(np.isfinite(u_y_rand[mask]))
             ],
-            (u_y_rand[mask] / y[mask] *100)[np.where(np.isfinite(u_y_rand[mask]))],
+            (u_y_rand[mask] / y[mask] * 100)[np.where(np.isfinite(u_y_rand[mask]))],
             rtol=0.03,
             atol=0.2,
         )
@@ -216,17 +219,17 @@ class TestMeasurementFunction(unittest.TestCase):
 
         npt.assert_allclose(
             L1data["u_rel_systematic_indep_irradiance"].values[mask],
-            u_y_syst_indep[mask] / y[mask]*100,
+            u_y_syst_indep[mask] / y[mask] * 100,
             rtol=0.03,
             atol=0.2,
-            )
+        )
 
         npt.assert_allclose(
             L1data["u_rel_systematic_corr_rad_irr_irradiance"].values[mask],
-            u_y_syst_corr[mask] / y[mask]*100,
+            u_y_syst_corr[mask] / y[mask] * 100,
             rtol=0.03,
             atol=0.3,
-            )
+        )
 
         npt.assert_allclose(
             L1data["u_rel_systematic_indep_irradiance"].values[mask],
@@ -264,13 +267,13 @@ class TestMeasurementFunction(unittest.TestCase):
 
         npt.assert_allclose(
             ds_main["u_rel_ran_irradiance"][mask],
-            u_y_rand[mask] / y[mask]*100,
+            u_y_rand[mask] / y[mask] * 100,
             rtol=0.03,
             atol=0.2,
         )
         npt.assert_allclose(
             ds_main["u_rel_str_irradiance"][mask],
-            u_y_syst[mask] / y[mask]*100,
+            u_y_syst[mask] / y[mask] * 100,
             rtol=0.03,
             atol=0.2,
         )

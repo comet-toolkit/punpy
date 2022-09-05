@@ -10,8 +10,8 @@ import obsarray
 from punpy import MCPropagation
 from punpy.digital_effects_table.digital_effects_table_templates import (
     DigitalEffectsTableTemplates,)
-from punpy.digital_effects_table.measurement_function_utils import\
-    MeasurementFunctionUtils
+from punpy.digital_effects_table.measurement_function_utils import (
+    MeasurementFunctionUtils,)
 
 """___Authorship___"""
 __author__ = "Pieter De Vis"
@@ -34,12 +34,36 @@ class MeasurementFunction(ABC):
         output_vars=1,
         repeat_dims=-99,
         corr_axis=-99,
-        auto_simplify_corr=False,
         refxvar=None,
         sizes_dict=None,
     ):
         """
         Initialise MeasurementFunction
+
+        :param prop: punpy MC propagation or LPU propagation object. Defaults to None, in which case a MC propagation object with 100 MC steps is used.
+        :type prop: punpy.MCPropagation or punpy. LPUPropagation
+        :param xvariables: list of input quantity names, in same order as arguments in measurement function and with same exact names as provided in input datasets. Defaults to None, in which case get_argument_names function is used.
+        :type xvariables: list(str), optional
+        :param yvariable: name of measurand. Defaults to None, in which case get_measurand_name function is used.
+        :type yvariable: str, optional
+        :param yunit: unit of measurand. Defaults to "" (unitless).
+        :type yunit: str, optional
+        :param ydims: list of dimensions of the measurand, in correct order. Default to None, in which case it is assumed to be the same as refxvar (see below) input quantity.
+        :type ydims: list(str), optional
+        :param corr_between: Allows to specify the (average) error correlation coefficient between the various input quantities. Defaults to None, in which case no error-correlation is assumed.
+        :type corr_between: numpy.ndarray , optional
+        :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
+        :type param_fixed: list of bools, optional
+        :param output_vars: number of output parameters in the measurement function. Defaults to 1.
+        :type output_vars: integer, optional
+        :param repeat_dims: Used to select the axis which has repeated measurements. Axis can be specified using the name(s) of the dimension, or their index in the ydims. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
+        :type repeat_dims: str or int or list(str) or list(int), optional
+        :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+        :type corr_axis: integer, optional
+        :param refxvar: name of reference input quantity that has the same shape as measurand. Defaults to None
+        :type refxvar: string, optional
+        :param sizes_dict: Dictionary with sizes of each of the dimensions of the measurand. Defaults to None, in which cases sizes come from input quantites.
+        :type sizes_dict: dict, optional
         """
         if prop is None:
             self.prop = MCPropagation(100)
@@ -53,20 +77,26 @@ class MeasurementFunction(ABC):
         else:
             self.xvariables = self.get_argument_names()
             if xvariables is not None:
-                if xvariables!=self.xvariables:
-                    raise ValueError("punpy.MeasurementFunction: when specifying both xvariables and get_argument_names, they need to be the same!")
+                if xvariables != self.xvariables:
+                    raise ValueError(
+                        "punpy.MeasurementFunction: when specifying both xvariables and get_argument_names, they need to be the same!"
+                    )
 
         if self.xvariables is None:
-            raise ValueError("punpy.MeasurementFunction: You need to specify xvariables as keyword when initialising MeasurementFunction object, or add get_argument_names() as a function of the class.")
+            raise ValueError(
+                "punpy.MeasurementFunction: You need to specify xvariables as keyword when initialising MeasurementFunction object, or add get_argument_names() as a function of the class."
+            )
 
         if yvariable is None:
             self.yvariable, yunit = self.get_measurand_name()
         else:
             self.yvariable = yvariable
-            yvar=self.get_measurand_name()[0]
-            if yvar!="measurand":
-                if yvariable!=yvar:
-                    raise ValueError("punpy.MeasurementFunction: when specifying both yvariable and get_measurand_name, they need to be the same!")
+            yvar = self.get_measurand_name()[0]
+            if yvar != "measurand":
+                if yvariable != yvar:
+                    raise ValueError(
+                        "punpy.MeasurementFunction: when specifying both yvariable and get_measurand_name, they need to be the same!"
+                    )
 
         self.templ = DigitalEffectsTableTemplates(self.yvariable, yunit)
         self.ydims = ydims
@@ -93,10 +123,11 @@ class MeasurementFunction(ABC):
             self.param_fixed = [False] * len(self.xvariables)
 
         self.corr_axis = corr_axis
-        self.auto_simplify_corr = auto_simplify_corr
+        # self.auto_simplify_corr = auto_simplify_corr
 
-        self.utils = MeasurementFunctionUtils(self.xvariables,self.str_repeat_dims,self.prop.verbose,self.templ)
-
+        self.utils = MeasurementFunctionUtils(
+            self.xvariables, self.str_repeat_dims, self.prop.verbose, self.templ
+        )
 
     @abstractmethod
     def meas_function(self, *args, **kwargs):
@@ -126,7 +157,7 @@ class MeasurementFunction(ABC):
         """
         return "measurand", ""
 
-    def update_measurand(self,measurand,measurand_unit):
+    def update_measurand(self, measurand, measurand_unit):
         self.yvariable = measurand
         self.templ = DigitalEffectsTableTemplates(self.yvariable, measurand_unit)
 
@@ -138,7 +169,14 @@ class MeasurementFunction(ABC):
         """
         pass
 
-    def propagate_ds(self, *args, store_unc_percent=False, expand=False, ds_out_pre=None, include_corr=True):
+    def propagate_ds(
+        self,
+        *args,
+        store_unc_percent=False,
+        expand=False,
+        ds_out_pre=None,
+        include_corr=True
+    ):
         """
         Function to propagate the uncertainties on the input quantities present in the
         digital effects tables provided as the input arguments, through the measurement
@@ -183,9 +221,13 @@ class MeasurementFunction(ABC):
             )
 
         if include_corr:
-            u_stru_y, corr_stru_y = self.propagate_structured(*args, expand=expand, return_corr=include_corr)
+            u_stru_y, corr_stru_y = self.propagate_structured(
+                *args, expand=expand, return_corr=include_corr
+            )
         else:
-            u_stru_y = self.propagate_structured(*args, expand=expand, return_corr=include_corr)
+            u_stru_y = self.propagate_structured(
+                *args, expand=expand, return_corr=include_corr
+            )
             corr_stru_y = None
 
         repeat_dim_err_corrs = self.utils.find_repeat_dim_corr(
@@ -193,7 +235,6 @@ class MeasurementFunction(ABC):
         )
 
         self.utils.set_repeat_dims_form(repeat_dim_err_corrs)
-
 
         if self.sizes_dict is None:
             self.sizes_dict = {}
@@ -207,7 +248,6 @@ class MeasurementFunction(ABC):
             str_repeat_dims=self.str_repeat_dims,
             repeat_dim_err_corrs=repeat_dim_err_corrs,
         )
-
 
         # create dataset template
         ds_out = obsarray.create_ds(template, self.sizes_dict)
@@ -258,7 +298,7 @@ class MeasurementFunction(ABC):
                 ds_out.drop("err_corr_str_" + self.yvariable)
 
         if ds_out_pre is not None:
-            self.templ.join_with_preexisting_ds(ds_out,ds_out_pre,drop=self.yvariable)
+            self.templ.join_with_preexisting_ds(ds_out, ds_out_pre, drop=self.yvariable)
 
         if self.prop.verbose:
             print(
@@ -268,7 +308,14 @@ class MeasurementFunction(ABC):
 
         return ds_out
 
-    def propagate_ds_total(self, *args, store_unc_percent=False, expand=False, ds_out_pre=None, include_corr=True):
+    def propagate_ds_total(
+        self,
+        *args,
+        store_unc_percent=False,
+        expand=False,
+        ds_out_pre=None,
+        include_corr=True
+    ):
         """
         Function to propagate the total uncertainties present in the digital effects
         tables in the input arguments, through the measurement function to produce
@@ -296,9 +343,13 @@ class MeasurementFunction(ABC):
         y = self.run(*args, expand=expand)
 
         if include_corr:
-            u_tot_y, corr_tot_y = self.propagate_total(*args, expand=expand, return_corr=include_corr)
+            u_tot_y, corr_tot_y = self.propagate_total(
+                *args, expand=expand, return_corr=include_corr
+            )
         else:
-            u_tot_y = self.propagate_total(*args, expand=expand, return_corr=include_corr)
+            u_tot_y = self.propagate_total(
+                *args, expand=expand, return_corr=include_corr
+            )
             corr_tot_y = None
 
         if self.sizes_dict is None:
@@ -349,7 +400,7 @@ class MeasurementFunction(ABC):
                 ds_out.drop("err_corr_tot_" + self.yvariable)
 
         if ds_out_pre is not None:
-            self.templ.join_with_preexisting_ds(ds_out,ds_out_pre,drop=self.yvariable)
+            self.templ.join_with_preexisting_ds(ds_out, ds_out_pre, drop=self.yvariable)
 
         if self.prop.verbose:
             print(
@@ -360,7 +411,13 @@ class MeasurementFunction(ABC):
         return ds_out
 
     def propagate_ds_specific(
-        self, comp_list, *args, store_unc_percent=False, expand=False, ds_out_pre=None, include_corr=True
+        self,
+        comp_list,
+        *args,
+        store_unc_percent=False,
+        expand=False,
+        ds_out_pre=None,
+        include_corr=True
     ):
         """
         Function to propagate the uncertainties on the input quantities present in the
@@ -402,7 +459,9 @@ class MeasurementFunction(ABC):
                 self.sizes_dict[dim] = y.shape[id]
 
         repeat_dim_err_corrs = [
-            self.utils.find_repeat_dim_corr(form, *args, store_unc_percent=store_unc_percent, ydims=self.ydims)
+            self.utils.find_repeat_dim_corr(
+                form, *args, store_unc_percent=store_unc_percent, ydims=self.ydims
+            )
             for form in comp_list
         ]
 
@@ -465,13 +524,14 @@ class MeasurementFunction(ABC):
                     )
             else:
                 if store_unc_percent:
-                    ds_out["u_rel_" + comp + "_" + self.yvariable].values = u_comp_y / y * 100
+                    ds_out["u_rel_" + comp + "_" + self.yvariable].values = (
+                        u_comp_y / y * 100
+                    )
                 else:
                     ds_out["u_" + comp + "_" + self.yvariable].values = u_comp_y
 
-
         if ds_out_pre is not None:
-            self.templ.join_with_preexisting_ds(ds_out,ds_out_pre,drop=self.yvariable)
+            self.templ.join_with_preexisting_ds(ds_out, ds_out_pre, drop=self.yvariable)
 
         if self.prop.verbose:
             print(
@@ -481,7 +541,14 @@ class MeasurementFunction(ABC):
 
         return ds_out
 
-    def propagate_ds_all(self, *args, store_unc_percent=False, expand=False, ds_out_pre=None, include_corr=True):
+    def propagate_ds_all(
+        self,
+        *args,
+        store_unc_percent=False,
+        expand=False,
+        ds_out_pre=None,
+        include_corr=True
+    ):
         """
         Function to propagate the uncertainties on the input quantities present in the
         digital effects tables provided as the input arguments, through the measurement
@@ -506,9 +573,7 @@ class MeasurementFunction(ABC):
         for iv, var in enumerate(self.xvariables):
             for dataset in args:
                 if var in dataset.keys():
-                    comps = self.utils.find_comps(
-                        "tot", dataset, var
-                    )
+                    comps = self.utils.find_comps("tot", dataset, var)
                     if comps is not None:
                         for comp in comps:
                             if isinstance(comp, str):
@@ -522,7 +587,12 @@ class MeasurementFunction(ABC):
                             comp_list.append(comp_name)
         comp_list = np.unique(np.array(comp_list))
         return self.propagate_ds_specific(
-            comp_list, *args, store_unc_percent=store_unc_percent, expand=expand, ds_out_pre=ds_out_pre, include_corr=include_corr
+            comp_list,
+            *args,
+            store_unc_percent=store_unc_percent,
+            expand=expand,
+            ds_out_pre=ds_out_pre,
+            include_corr=include_corr
         )
 
     def run(self, *args, expand=False):
@@ -536,7 +606,9 @@ class MeasurementFunction(ABC):
         :return: measurand
         :rtype: numpy.ndarray
         """
-        input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
+        input_qty = self.utils.get_input_qty(
+            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+        )
         return self.meas_function(*input_qty)
 
     def check_sizes(self, *args, expand=False):
@@ -565,7 +637,9 @@ class MeasurementFunction(ABC):
                         % (self.repeat_dims[i], self.ydims)
                     )
                 self.str_repeat_dims[i] = copy.copy(self.repeat_dims[i])
-                self.num_repeat_dims[i] = copy.copy(self.ydims.index(self.repeat_dims[i]))
+                self.num_repeat_dims[i] = copy.copy(
+                    self.ydims.index(self.repeat_dims[i])
+                )
 
             elif isinstance(self.repeat_dims[i], (int, np.integer)):
                 self.num_repeat_dims[i] = self.repeat_dims[i]
@@ -600,7 +674,7 @@ class MeasurementFunction(ABC):
                             % (var)
                         )
 
-    def propagate_total(self, *args, expand=False,return_corr=True):
+    def propagate_total(self, *args, expand=False, return_corr=True):
         """
         Function to propagate uncertainties for the total uncertainty component.
 
@@ -614,9 +688,15 @@ class MeasurementFunction(ABC):
         :rtype: tuple(numpy.ndarray, numpy.ndarray)
         """
         self.check_sizes(*args, expand=expand)
-        input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
-        input_unc = self.utils.get_input_unc("tot", args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
-        input_corr = self.utils.get_input_corr("tot", args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
+        input_qty = self.utils.get_input_qty(
+            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+        )
+        input_unc = self.utils.get_input_unc(
+            "tot", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+        )
+        input_corr = self.utils.get_input_corr(
+            "tot", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+        )
         if self.prop.verbose:
             print(
                 "inputs extracted (%s s since creation of prop object)"
@@ -639,7 +719,6 @@ class MeasurementFunction(ABC):
                 output_vars=self.output_vars,
             )
 
-
     def propagate_random(self, *args, expand=False):
         """
         Function to propagate uncertainties for the random uncertainty component.
@@ -652,8 +731,12 @@ class MeasurementFunction(ABC):
         :rtype: numpy.ndarray
         """
         self.check_sizes(*args, expand=expand)
-        input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
-        input_unc = self.utils.get_input_unc("rand", args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
+        input_qty = self.utils.get_input_qty(
+            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+        )
+        input_unc = self.utils.get_input_unc(
+            "rand", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+        )
         if all([iu is None for iu in input_unc]):
             return None
         else:
@@ -682,8 +765,12 @@ class MeasurementFunction(ABC):
         :rtype: numpy.ndarray
         """
         self.check_sizes(*args, expand=expand)
-        input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
-        input_unc = self.utils.get_input_unc("syst", args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
+        input_qty = self.utils.get_input_qty(
+            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+        )
+        input_unc = self.utils.get_input_unc(
+            "syst", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+        )
         if all([iu is None for iu in input_unc]):
             return None
         else:
@@ -714,9 +801,15 @@ class MeasurementFunction(ABC):
         :rtype: tuple(numpy.ndarray, numpy.ndarray)
         """
         self.check_sizes(*args, expand=expand)
-        input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
-        input_unc = self.utils.get_input_unc("stru", args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
-        input_corr = self.utils.get_input_corr("stru", args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
+        input_qty = self.utils.get_input_qty(
+            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+        )
+        input_unc = self.utils.get_input_unc(
+            "stru", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+        )
+        input_corr = self.utils.get_input_corr(
+            "stru", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+        )
         if all([iu is None for iu in input_unc]):
             return None, None
         else:
@@ -749,10 +842,16 @@ class MeasurementFunction(ABC):
         :return: uncertainty on measurand for specific uncertainty component, error-correlation matrix of measurand for specific uncertainty component
         :rtype: tuple(numpy.ndarray, numpy.ndarray)
         """
-        input_qty = self.utils.get_input_qty(args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
-        input_unc = self.utils.get_input_unc(form, args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
-        input_corr = self.utils.get_input_corr(form, args, expand=expand,sizes_dict=self.sizes_dict,ydims=self.ydims)
-        print(input_qty,input_unc)
+        input_qty = self.utils.get_input_qty(
+            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+        )
+        input_unc = self.utils.get_input_unc(
+            form, args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+        )
+        input_corr = self.utils.get_input_corr(
+            form, args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+        )
+        print(input_qty, input_unc)
         if all([iu is None for iu in input_unc]):
             return None, None
         else:

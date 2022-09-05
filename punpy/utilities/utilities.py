@@ -46,10 +46,15 @@ def select_repeated_x(x, u_x, param_fixed, i, repeat_dims, repeat_shape):
                 repeat_axis = repeat_dims[idim]
                 ii = index[idim]
                 if len(xb[j].shape) > repeat_axis:
-                    sli = tuple([ii if (idim == repeat_axis) else slice(None) for idim in range(xb[j].ndim)])
+                    sli = tuple(
+                        [
+                            ii if (idim == repeat_axis) else slice(None)
+                            for idim in range(xb[j].ndim)
+                        ]
+                    )
                     xb[j] = xb[j][sli]
                     u_xb[j] = u_xb[j][sli]
-                elif len(xb[j])>1:
+                elif len(xb[j]) > 1:
                     try:
                         xb[j] = xb[j][ii]
                         u_xb[j] = u_xb[j][ii]

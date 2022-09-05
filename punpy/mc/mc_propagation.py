@@ -6,6 +6,7 @@ from multiprocessing import Pool
 
 import comet_maths as cm
 import numpy as np
+
 import punpy.utilities.utilities as util
 
 """___Authorship___"""
@@ -258,7 +259,10 @@ class MCPropagation:
         """
         x = [np.atleast_1d(x[i]) for i in range(len(x))]
         cov_x = [np.atleast_2d(cov_x[i]) for i in range(len(x))]
-        u_x = [cm.uncertainty_from_covariance(cov_x[i]).reshape(x[i].shape) for i in range(len(x))]
+        u_x = [
+            cm.uncertainty_from_covariance(cov_x[i]).reshape(x[i].shape)
+            for i in range(len(x))
+        ]
         corr_x = [cm.correlation_from_covariance(cov_x[i]) for i in range(len(x))]
 
         return self.propagate_standard(

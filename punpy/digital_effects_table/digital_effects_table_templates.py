@@ -66,9 +66,15 @@ class DigitalEffectsTableTemplates(ABC):
                 "attributes": {
                     "units": self.yunit,
                     "unc_comps": [
-                        self.make_ucomp_name("ran", store_unc_percent=store_unc_percent),
-                        self.make_ucomp_name("sys", store_unc_percent=store_unc_percent),
-                        self.make_ucomp_name("str", store_unc_percent=store_unc_percent),
+                        self.make_ucomp_name(
+                            "ran", store_unc_percent=store_unc_percent
+                        ),
+                        self.make_ucomp_name(
+                            "sys", store_unc_percent=store_unc_percent
+                        ),
+                        self.make_ucomp_name(
+                            "str", store_unc_percent=store_unc_percent
+                        ),
                     ],
                 },
             },
@@ -199,7 +205,9 @@ class DigitalEffectsTableTemplates(ABC):
 
         for ic, comp in enumerate(comp_list):
             if comp == "random":
-                template[self.make_ucomp_name(comp, store_unc_percent=store_unc_percent)] = {
+                template[
+                    self.make_ucomp_name(comp, store_unc_percent=store_unc_percent)
+                ] = {
                     "dtype": np.float32,
                     "dim": dims,
                     "attributes": {
@@ -212,7 +220,9 @@ class DigitalEffectsTableTemplates(ABC):
                 }
 
             elif comp == "systematic":
-                template[self.make_ucomp_name(comp, store_unc_percent=store_unc_percent)] = {
+                template[
+                    self.make_ucomp_name(comp, store_unc_percent=store_unc_percent)
+                ] = {
                     "dtype": np.float32,
                     "dim": dims,
                     "attributes": {
@@ -238,7 +248,9 @@ class DigitalEffectsTableTemplates(ABC):
                     repeat_dim_err_corr=repeat_dim_err_corrs[ic],
                 )
 
-                template[self.make_ucomp_name(comp, store_unc_percent=store_unc_percent)] = {
+                template[
+                    self.make_ucomp_name(comp, store_unc_percent=store_unc_percent)
+                ] = {
                     "dtype": np.float32,
                     "dim": dims,
                     "attributes": {"units": units, "err_corr": err_corr},
@@ -339,7 +351,7 @@ class DigitalEffectsTableTemplates(ABC):
             pass
         return ds
 
-    def join_with_preexisting_ds(self,ds,ds_pre,drop=None):
+    def join_with_preexisting_ds(self, ds, ds_pre, drop=None):
         """
         Function to combine digital effects table, with previously populated dataset.
         Only the measurand is overwritten.
@@ -355,6 +367,6 @@ class DigitalEffectsTableTemplates(ABC):
         """
         if drop is not None:
             if drop in ds_pre.variables:
-                ds_pre=ds_pre.drop(drop)
-        ds_out=xr.merge([ds,ds_pre])
+                ds_pre = ds_pre.drop(drop)
+        ds_out = xr.merge([ds, ds_pre])
         return ds_out
