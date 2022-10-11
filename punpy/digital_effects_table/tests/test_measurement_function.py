@@ -118,7 +118,7 @@ class TestMeasurementFunction(unittest.TestCase):
         )
 
     def test_hypernets_repeat_dim(self):
-        prop = MCPropagation(3000, dtype="float32", parallel_cores=0, verbose=False)
+        prop = MCPropagation(3000, dtype="float32", parallel_cores=1, verbose=False)
 
         hmf = HypernetsMF(
             prop=prop,
@@ -147,7 +147,7 @@ class TestMeasurementFunction(unittest.TestCase):
         )
 
         u_y_syst_indep = hmf.propagate_specific(
-            "u_rel_systematic_indep", L0data, calib_data
+            "systematic_indep", L0data, calib_data
         )
         u_y_syst_corr = hmf.propagate_specific(
             "u_rel_systematic_corr_rad_irr", L0data, calib_data
@@ -157,14 +157,17 @@ class TestMeasurementFunction(unittest.TestCase):
         u_y_tot = (u_y_syst_indep ** 2 + u_y_syst_corr ** 2 + u_y_rand ** 2) ** 0.5
 
         ds_tot = hmf.propagate_ds_total(L0data, calib_data, store_unc_percent=True)
+        mask = np.where(
+            (np.isfinite(u_y_tot / y) & np.isfinite(ds_tot["u_rel_tot_irradiance"]))
+        )[0]
         npt.assert_allclose(
             ds_tot["u_rel_tot_irradiance"][mask],
-            u_y_tot[mask] / y[mask],
-            rtol=0.03,
-            atol=0.002,
+            u_y_tot[mask] / y[mask] * 100,
+            rtol=0.05,
+            atol=0.05,
         )
 
-    def test_hypernets_repeat_dim(self):
+    def test_hypernets_repeat_dim2(self):
         prop = MCPropagation(3000, dtype="float32", parallel_cores=0, verbose=False)
 
         hmf = HypernetsMF(
@@ -174,7 +177,7 @@ class TestMeasurementFunction(unittest.TestCase):
             corr_between=None,
             output_vars=1,
             repeat_dims="scan",
-            corr_axis=-99,
+            corr_dims=-99,
         )
         hmf.setup(0.1)
         y = hmf.run(calib_data, L0data)
@@ -206,6 +209,8 @@ class TestMeasurementFunction(unittest.TestCase):
             calib_data,
             store_unc_percent=True,
         )
+
+        ds_main.to_netcdf("propagate_ds_example.nc")
 
         u_y_syst_indep = hmf.propagate_specific(
             "u_rel_systematic_indep", L0data, calib_data

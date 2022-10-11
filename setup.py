@@ -5,6 +5,7 @@ from distutils.core import setup
 
 from setuptools import find_packages
 
+exec(open('punpy/_version.py').read())
 
 # from Cython.Build import cythonize
 
@@ -23,9 +24,7 @@ def read(filename):
 #     ]
 
 setup(
-    #version=versioneer.get_version(),
-    #cmdclass=versioneer.get_cmdclass(),
-    version='0.32',
+    version=__version__,
     name="punpy",
     url="https://github.com/comet-toolkit/punpy",
     license="LGPLv3",
@@ -34,7 +33,7 @@ setup(
     description="Propagating UNcertainties in PYthon",
     long_description=read("README.md"),
     packages=find_packages(exclude=("tests",)),
-    install_requires=["comet_maths>=0.11", "obsarray", "numpy", "numdifftools==0.9.39","scipy","xarray","netcdf4"],
+    install_requires=["comet_maths>=0.13", "obsarray", "numpy", "numdifftools==0.9.39","scipy","xarray","netcdf4"],
     extras_require={"dev": ["pre-commit", "tox", "sphinx", "sphinx_rtd_theme"]},
     # ext_modules=cythonize(extensions),
 )

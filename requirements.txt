@@ -4,6 +4,7 @@ matplotlib >= 3.1.0
 numdifftools==0.9.39
 xarray
 scipy
+obsarray
 
 # for docs
 sphinx==3.0.1

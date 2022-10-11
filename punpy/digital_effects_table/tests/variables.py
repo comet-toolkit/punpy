@@ -340,7 +340,7 @@ CAL_VARIABLES = {
             "err_corr": [
                 {
                     "dim": WL_DIM,
-                    "form": "custom",
+                    "form": "err_corr_matrix",
                     "params": ["corr_systematic_indep_gains"],
                     "units": [],
                 },
@@ -358,7 +358,7 @@ CAL_VARIABLES = {
             "err_corr": [
                 {
                     "dim": WL_DIM,
-                    "form": "custom",
+                    "form": "err_corr_matrix",
                     "params": ["corr_systematic_corr_rad_irr_gains"],
                     "units": [],
                 },
@@ -487,7 +487,7 @@ L1A_RAD_VARIABLES = {
                 {"dim": SCAN_DIM, "form": "systematic", "params": [], "units": []},
                 {
                     "dim": WL_DIM,
-                    "form": "custom",
+                    "form": "err_corr_matrix",
                     "params": ["corr_systematic_indep_radiance"],
                     "units": [],
                 },
@@ -506,7 +506,7 @@ L1A_RAD_VARIABLES = {
                 {"dim": SCAN_DIM, "form": "systematic", "params": [], "units": []},
                 {
                     "dim": WL_DIM,
-                    "form": "custom",
+                    "form": "err_corr_matrix",
                     "params": ["corr_systematic_corr_rad_irr_radiance"],
                     "units": [],
                 },
@@ -583,7 +583,7 @@ L1A_IRR_VARIABLES = {
                 {"dim": SCAN_DIM, "form": "systematic", "params": [], "units": []},
                 {
                     "dim": WL_DIM,
-                    "form": "custom",
+                    "form": "err_corr_matrix",
                     "params": ["corr_systematic_indep_irradiance"],
                     "units": [],
                 },
@@ -602,7 +602,7 @@ L1A_IRR_VARIABLES = {
                 {"dim": SCAN_DIM, "form": "systematic", "params": [], "units": []},
                 {
                     "dim": WL_DIM,
-                    "form": "custom",
+                    "form": "err_corr_matrix",
                     "params": ["corr_systematic_corr_rad_irr_irradiance"],
                     "units": [],
                 },
