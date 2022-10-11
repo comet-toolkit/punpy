@@ -12,14 +12,14 @@ __status__ = "Development"
 
 
 class MeasurementFunctionUtils:
-    def __init__(self, xvariables, str_repeat_dims, verbose, templ):
+    def __init__(self, xvariables, ydims, str_repeat_corr_dims, verbose, templ):
         """
         Initialise MeasurementFunctionUtils
 
         :param xvariables: list of input quantity names, in same order as arguments in measurement function and with same exact names as provided in input datasets.
         :type xvariables: list(str)
-        :param str_repeat_dims: list of dimension names to be used as repeated dims
-        :type str_repeat_dims: list(str)
+        :param str_repeat_corr_dims: list of dimension names to be used as repeated dims
+        :type str_repeat_corr_dims: list(str)
         :param verbose: boolean to set verbosity
         :type verbose: bool
         :param templ: templater object
@@ -27,7 +27,8 @@ class MeasurementFunctionUtils:
         """
         self.xvariables = xvariables
         self.verbose = verbose
-        self.str_repeat_dims = str_repeat_dims
+        self.ydims = ydims
+        self.str_repeat_corr_dims = str_repeat_corr_dims
         self.templ = templ
         self.repeat_dims_form = "structured"
 
@@ -45,49 +46,68 @@ class MeasurementFunctionUtils:
         :rtype: dict
         """
         repeat_dims_errcorrs = {}
-        for repeat_dim in self.str_repeat_dims:
-            repeat_dims_errcorrs[repeat_dim] = {
-                "dim": repeat_dim,
-                "form": None,
-                "params": [],
-                "units": [],
-            }
-            for iv, var in enumerate(self.xvariables):
-                for dataset in args:
-                    if var in dataset.keys():
-                        comps = self.find_comps(
-                            form,
-                            dataset,
-                            var,
-                            store_unc_percent=store_unc_percent,
-                            ydims=ydims,
-                        )
-                        if comps is None:
-                            continue
-                        elif len(comps) == 0:
-                            continue
-                        elif repeat_dim in dataset[var].dims:
-                            idim = dataset[var].dims.index(repeat_dim)
-                            for comp in comps:
-                                self.check_repeat_err_corr_same(
-                                    repeat_dims_errcorrs[repeat_dim],
-                                    dataset[comp],
-                                    idim,
+        for repeat_dim in self.ydims:
+            if repeat_dim in self.str_repeat_corr_dims:
+                repeat_dims_errcorrs[repeat_dim] = {
+                    "dim": repeat_dim,
+                    "form": None,
+                    "params": [],
+                    "units": [],
+                }
+                for iv, var in enumerate(self.xvariables):
+                    for dataset in args:
+                        if hasattr(dataset, "variables"):
+                            if var in dataset.variables:
+                                comps = self.find_comps(
+                                    form,
+                                    dataset,
+                                    var,
+                                    store_unc_percent=store_unc_percent,
+                                    ydims=ydims,
                                 )
-                                repeat_dims_errcorrs[repeat_dim]["form"] = dataset[
-                                    comp
-                                ].attrs["err_corr_%s_form" % (idim + 1)]
-                                repeat_dims_errcorrs[repeat_dim]["params"] = dataset[
-                                    comp
-                                ].attrs["err_corr_%s_params" % (idim + 1)]
-                                repeat_dims_errcorrs[repeat_dim]["units"] = dataset[
-                                    comp
-                                ].attrs["err_corr_%s_units" % (idim + 1)]
-                        else:
-                            self.check_repeat_err_corr_same(
-                                repeat_dims_errcorrs[repeat_dim], "systematic"
-                            )
-                            repeat_dims_errcorrs[repeat_dim]["form"] = "systematic"
+                                if comps is None:
+                                    continue
+                                elif len(comps) == 0:
+                                    continue
+                                elif repeat_dim in dataset[var].dims:
+                                    repeat_dims_errcorrs = (
+                                        self.set_repeat_dims_errcorrs(
+                                            comps,
+                                            dataset,
+                                            var,
+                                            repeat_dim,
+                                            repeat_dims_errcorrs,
+                                        )
+                                    )
+                                else:
+                                    self.check_repeat_err_corr_same(
+                                        repeat_dims_errcorrs[repeat_dim], "systematic"
+                                    )
+                                    repeat_dims_errcorrs[repeat_dim][
+                                        "form"
+                                    ] = "systematic"
+        return repeat_dims_errcorrs
+
+    def set_repeat_dims_errcorrs(
+        self, comps, dataset, var, repeat_dim, repeat_dims_errcorrs
+    ):
+        for comp in comps:
+            for idim in range(len(dataset[var].dims)):
+                if dataset[comp].attrs["err_corr_%s_dim" % (idim + 1)] == repeat_dim:
+                    self.check_repeat_err_corr_same(
+                        repeat_dims_errcorrs[repeat_dim],
+                        dataset[comp],
+                        idim,
+                    )
+                    repeat_dims_errcorrs[repeat_dim]["form"] = dataset[comp].attrs[
+                        "err_corr_%s_form" % (idim + 1)
+                    ]
+                    repeat_dims_errcorrs[repeat_dim]["params"] = dataset[comp].attrs[
+                        "err_corr_%s_params" % (idim + 1)
+                    ]
+                    repeat_dims_errcorrs[repeat_dim]["units"] = dataset[comp].attrs[
+                        "err_corr_%s_units" % (idim + 1)
+                    ]
 
         return repeat_dims_errcorrs
 
@@ -145,10 +165,13 @@ class MeasurementFunctionUtils:
         :rtype: None
         """
         try:
-            if np.all(
+            if len(self.str_repeat_corr_dims) == 0 or len(repeat_dims_errcorrs) == 0:
+                self.repeat_dims_form = "None"
+
+            elif np.all(
                 [
                     repeat_dims_errcorrs[repeat_dim]["form"] == "random"
-                    for repeat_dim in self.str_repeat_dims
+                    for repeat_dim in self.str_repeat_corr_dims
                 ]
             ):
                 self.repeat_dims_form = "random"
@@ -156,7 +179,7 @@ class MeasurementFunctionUtils:
             elif np.all(
                 [
                     repeat_dims_errcorrs[repeat_dim]["form"] == "systematic"
-                    for repeat_dim in self.str_repeat_dims
+                    for repeat_dim in self.str_repeat_corr_dims
                 ]
             ):
                 self.repeat_dims_form = "systematic"
@@ -167,7 +190,7 @@ class MeasurementFunctionUtils:
             if np.all(
                 [
                     repeat_dims_errcorrs[0][repeat_dim]["form"] == "random"
-                    for repeat_dim in self.str_repeat_dims
+                    for repeat_dim in self.str_repeat_corr_dims
                 ]
             ):
                 self.repeat_dims_form = "random"
@@ -175,7 +198,7 @@ class MeasurementFunctionUtils:
             elif np.all(
                 [
                     repeat_dims_errcorrs[0][repeat_dim]["form"] == "systematic"
-                    for repeat_dim in self.str_repeat_dims
+                    for repeat_dim in self.str_repeat_corr_dims
                 ]
             ):
                 self.repeat_dims_form = "systematic"
@@ -286,6 +309,10 @@ class MeasurementFunctionUtils:
                                     else:
                                         tileshape[ydims.index(dim)] = sizes_dict[dim]
                                         inputs[iv] = np.tile(inputs[iv], tileshape)
+                elif var in dataset.keys():
+                    inputs[iv] = dataset[var]
+                    found = True
+
             if not found:
                 raise ValueError("Variable %s not found in provided datasets." % (var))
 
@@ -312,19 +339,20 @@ class MeasurementFunctionUtils:
         for iv, var in enumerate(self.xvariables):
             inputs_unc[iv] = None
             for dataset in args[0]:
-                if var in dataset.keys():
-                    if ydims is not None:
-                        if len(dataset[var].dims) < len(ydims):
-                            inputs_unc[iv] = self.calculate_unc_missingdim(
-                                form,
-                                dataset,
-                                var,
-                                expand=expand,
-                                sizes_dict=sizes_dict,
-                                ydims=ydims,
-                            )
-                        else:
-                            inputs_unc[iv] = self.calculate_unc(form, dataset, var)
+                if hasattr(dataset, "variables"):
+                    if var in dataset.variables:
+                        if ydims is not None:
+                            if len(dataset[var].dims) < len(ydims):
+                                inputs_unc[iv] = self.calculate_unc_missingdim(
+                                    form,
+                                    dataset,
+                                    var,
+                                    expand=expand,
+                                    sizes_dict=sizes_dict,
+                                    ydims=ydims,
+                                )
+                            else:
+                                inputs_unc[iv] = self.calculate_unc(form, dataset, var)
 
             if np.count_nonzero(inputs_unc[iv]) == 0:
                 inputs_unc[iv] = None
@@ -369,6 +397,7 @@ class MeasurementFunctionUtils:
                     ("_%s_%s" % (form, var) in key) and (key[0] == "u") for key in keys
                 ]
                 uvar = keys[uvar_ids]
+
                 if len(uvar) > 0:
                     data = ds[uvar[0]]
                     if data.attrs["units"] == "%":
@@ -464,18 +493,19 @@ class MeasurementFunctionUtils:
         for iv, var in enumerate(self.xvariables):
             inputs_corr[iv] = None
             for dataset in args[0]:
-                if var in dataset.keys():
-                    if len(dataset[var].dims) < len(ydims):
-                        inputs_corr[iv] = self.calculate_corr_missingdim(
-                            form,
-                            dataset,
-                            var,
-                            expand=expand,
-                            sizes_dict=sizes_dict,
-                            ydims=ydims,
-                        )
-                    else:
-                        inputs_corr[iv] = self.calculate_corr(form, dataset, var)
+                if hasattr(dataset, "variables"):
+                    if var in dataset.variables:
+                        if len(dataset[var].dims) < len(ydims):
+                            inputs_corr[iv] = self.calculate_corr_missingdim(
+                                form,
+                                dataset,
+                                var,
+                                expand=expand,
+                                sizes_dict=sizes_dict,
+                                ydims=ydims,
+                            )
+                        else:
+                            inputs_corr[iv] = self.calculate_corr(form, dataset, var)
             if inputs_corr[iv] is None:
                 if self.verbose:
                     print(
@@ -501,10 +531,9 @@ class MeasurementFunctionUtils:
         sli = list([slice(None)] * ds[var].ndim)
         var_dims = ds[var].dims
         for i in range(len(sli)):
-            if var_dims[i] in self.str_repeat_dims:
+            if var_dims[i] in self.str_repeat_corr_dims:
                 sli[i] = 0
         dsu = ds.unc[var][tuple(sli)]
-
         if form == "tot":
             return dsu.total_err_corr_matrix().values
         elif form == "stru":
@@ -565,18 +594,21 @@ class MeasurementFunctionUtils:
         :rtype: np.ndarray
         """
         sli = [
-            slice(None) if (ydim not in self.str_repeat_dims) else 0
+            slice(None) if (ydim not in self.str_repeat_corr_dims) else 0
             for ydim in ds[var].dims
         ]
         dsu = ds.unc[var][tuple(sli)]
-        vardims = [ydim for ydim in ds[var].dims if (ydim not in self.str_repeat_dims)]
+        vardims = [
+            ydim for ydim in ds[var].dims if (ydim not in self.str_repeat_corr_dims)
+        ]
 
-        outdims = [ydim for ydim in ydims if ydim not in self.str_repeat_dims]
+        outdims = [ydim for ydim in ydims if ydim not in self.str_repeat_corr_dims]
         missingdims = [
             ydim
             for ydim in ydims
-            if ((ydim not in ds[var].dims) and (ydim not in self.str_repeat_dims))
+            if ((ydim not in ds[var].dims) and (ydim not in self.str_repeat_corr_dims))
         ]
+
         missingshape = [sizes_dict[dim] for dim in missingdims]
         missinglen = np.prod(missingshape)
 

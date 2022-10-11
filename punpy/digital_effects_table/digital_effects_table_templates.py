@@ -30,7 +30,7 @@ class DigitalEffectsTableTemplates(ABC):
         self,
         dims,
         dim_sizes,
-        str_repeat_dims=[],
+        str_repeat_corr_dims=[],
         store_unc_percent=False,
         repeat_dim_err_corrs=[],
     ):
@@ -41,8 +41,8 @@ class DigitalEffectsTableTemplates(ABC):
         :type dims: list
         :param u_xvar_ref: reference uncertainty component that is used to populate repeated dims
         :type u_xvar_ref: xarray.Variable
-        :param str_repeat_dims: set to (list of) string(s) with dimension name(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to [], for which there is no reduction in dimensionality..
-        :type str_repeat_dims: str or list of str, optional
+        :param str_repeat_corr_dims: set to (list of) string(s) with dimension name(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to [], for which there is no reduction in dimensionality..
+        :type str_repeat_corr_dims: str or list of str, optional
         :return: measurand digital effects table template to be used by obsarray
         :rtype: dict
         """
@@ -50,7 +50,7 @@ class DigitalEffectsTableTemplates(ABC):
             dims,
             dim_sizes,
             "err_corr_tot_" + self.yvariable,
-            str_repeat_dims=str_repeat_dims,
+            str_repeat_corr_dims=str_repeat_corr_dims,
             repeat_dim_err_corr=repeat_dim_err_corrs,
         )
 
@@ -116,7 +116,7 @@ class DigitalEffectsTableTemplates(ABC):
         self,
         dims,
         dim_sizes,
-        str_repeat_dims=[],
+        str_repeat_corr_dims=[],
         store_unc_percent=False,
         repeat_dim_err_corrs=[],
     ):
@@ -134,7 +134,7 @@ class DigitalEffectsTableTemplates(ABC):
             dims,
             dim_sizes,
             "err_corr_tot_" + self.yvariable,
-            str_repeat_dims=str_repeat_dims,
+            str_repeat_corr_dims=str_repeat_corr_dims,
             repeat_dim_err_corr=repeat_dim_err_corrs,
         )
 
@@ -170,9 +170,11 @@ class DigitalEffectsTableTemplates(ABC):
         comp_list,
         dims,
         dim_sizes,
-        str_repeat_dims=[],
+        str_repeat_corr_dims=[],
         store_unc_percent=False,
         repeat_dim_err_corrs=[],
+        simple_random=True,
+        simple_systematic=True,
     ):
         """
         Make the digital effects table template for the case where uncertainties are combined and only the total uncertainty is returned.
@@ -204,7 +206,7 @@ class DigitalEffectsTableTemplates(ABC):
         }
 
         for ic, comp in enumerate(comp_list):
-            if comp == "random":
+            if comp == "random" and simple_random:
                 template[
                     self.make_ucomp_name(comp, store_unc_percent=store_unc_percent)
                 ] = {
@@ -219,7 +221,7 @@ class DigitalEffectsTableTemplates(ABC):
                     },
                 }
 
-            elif comp == "systematic":
+            elif comp == "systematic" and simple_systematic:
                 template[
                     self.make_ucomp_name(comp, store_unc_percent=store_unc_percent)
                 ] = {
@@ -243,8 +245,8 @@ class DigitalEffectsTableTemplates(ABC):
                 err_corr, custom_err_corr = self.set_errcorr_shape(
                     dims,
                     dim_sizes,
-                    "err_corr_tot_" + self.yvariable,
-                    str_repeat_dims=str_repeat_dims,
+                    "err_corr_" + comp + "_" + self.yvariable,
+                    str_repeat_corr_dims=str_repeat_corr_dims,
                     repeat_dim_err_corr=repeat_dim_err_corrs[ic],
                 )
 
@@ -272,7 +274,13 @@ class DigitalEffectsTableTemplates(ABC):
         return uvarname_start + ucomp + "_" + var
 
     def set_errcorr_shape(
-        self, dims, dim_sizes, err_corr_name, str_repeat_dims=[], repeat_dim_err_corr=[]
+        self,
+        dims,
+        dim_sizes,
+        err_corr_name,
+        str_repeat_corr_dims=[],
+        str_corr_dims=[],
+        repeat_dim_err_corr=[],
     ):
         """
         Function to work out which di
@@ -282,8 +290,8 @@ class DigitalEffectsTableTemplates(ABC):
         :type u_xvar_ref: xarray.Variable
         :param err_corr_name:
         :type err_corr_name:
-        :param str_repeat_dims: set to (list of) string(s) with dimension name(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to [], for which there is no reduction in dimensionality..
-        :type str_repeat_dims: str or list of str, optional
+        :param str_repeat_corr_dims: set to (list of) string(s) with dimension name(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to [], for which there is no reduction in dimensionality..
+        :type str_repeat_corr_dims: str or list of str, optional
         :return: measurand digital effects table template to be used by obsarray
         :rtype: dict
         """
@@ -292,8 +300,9 @@ class DigitalEffectsTableTemplates(ABC):
         custom_err_corr_dict = None
 
         # loop through all dimensions, and copy the ones that are repeat dims
+
         for dim in dims:
-            if dim in str_repeat_dims:
+            if dim in str_repeat_corr_dims:
                 err_corr_list.append(repeat_dim_err_corr[dim])
             else:
                 custom_corr_dims.append(dim)
@@ -319,7 +328,7 @@ class DigitalEffectsTableTemplates(ABC):
             err_corr_list.append(
                 {
                     "dim": custom_corr_dims,
-                    "form": "custom",
+                    "form": "err_corr_matrix",
                     "params": [err_corr_name],
                     "units": [],
                 }
@@ -368,5 +377,12 @@ class DigitalEffectsTableTemplates(ABC):
         if drop is not None:
             if drop in ds_pre.variables:
                 ds_pre = ds_pre.drop(drop)
+        for var in ds.variables:
+            try:
+                ds_pre = ds_pre.drop(var)
+            except:
+                continue
         ds_out = xr.merge([ds, ds_pre])
+        ds_out.attrs = ds_pre.attrs
+
         return ds_out
