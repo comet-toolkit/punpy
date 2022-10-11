@@ -156,7 +156,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(uf, yerr_corr, atol=0.1)
 
     def test_propagate_random_2D(self):
-        prop = MCPropagation(20000, parallel_cores=2)
+        prop = MCPropagation(20000, parallel_cores=4)
         ufb, ucorrb = prop.propagate_random(
             functionb, xsb, xerrsb, return_corr=True, repeat_dims=1
         )
@@ -184,7 +184,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
 
         ufb, ucorrb = prop.propagate_random(
-            functionb, xsb, xerrsb, return_corr=True, corr_axis=1
+            functionb, xsb, xerrsb, return_corr=True, corr_dims=1
         )
         npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.06)
         npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
@@ -304,7 +304,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ucorrb, np.ones_like(ucorrb), atol=0.06)
 
         ufb, ucorrb = prop.propagate_systematic(
-            functionb, xsb, xerrsb, return_corr=True, corr_axis=0
+            functionb, xsb, xerrsb, return_corr=True, corr_dims=0
         )
         npt.assert_allclose(ucorrb, np.ones_like(ucorrb), atol=0.06)
 
@@ -347,19 +347,19 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ucorrd[0], np.ones_like(ucorrd[0]), atol=0.06)
 
         ufd, ucorrd, corr_out = prop.propagate_systematic(
-            functiond, xsd, xerrsd, return_corr=True, corr_axis=0, output_vars=2
+            functiond, xsd, xerrsd, return_corr=True, corr_dims=0, output_vars=2
         )
         npt.assert_allclose(ucorrd[0], np.ones_like(ucorrd[0]), atol=0.06)
 
         prop = MCPropagation(30000)
 
         ufd, ucorrd, corr_out = prop.propagate_systematic(
-            functiond, xsd, xerrsd, return_corr=True, corr_axis=1, output_vars=2
+            functiond, xsd, xerrsd, return_corr=True, corr_dims=1, output_vars=2
         )
         npt.assert_allclose(ucorrd[1], np.ones_like(ucorrd[1]), atol=0.06)
 
         ufd, ucorrd, corr_out = prop.propagate_systematic(
-            functiond, xsd, xerrsd, return_corr=True, corr_axis=2, output_vars=2
+            functiond, xsd, xerrsd, return_corr=True, corr_dims=2, output_vars=2
         )
         npt.assert_allclose(ucorrd[0], np.ones_like(ucorrd[0]), atol=0.06)
 
@@ -493,7 +493,7 @@ class TestMCPropagation(unittest.TestCase):
             for xerrd in xerrsd
         ]
         ufd, ucorrd, corr_out = prop.propagate_cov(
-            functiond, xsd, covd, return_corr=True, corr_axis=0, output_vars=2
+            functiond, xsd, covd, return_corr=True, corr_dims=0, output_vars=2
         )
         npt.assert_allclose(ucorrd[0], np.eye(len(ucorrd[0])), atol=0.06)
         npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
@@ -506,7 +506,7 @@ class TestMCPropagation(unittest.TestCase):
             for xerrd in xerrsd
         ]
         ufd, ucorrd, corr_out = prop.propagate_cov(
-            functiond, xsd, covd, return_corr=True, corr_axis=0, output_vars=2
+            functiond, xsd, covd, return_corr=True, corr_dims=0, output_vars=2
         )
         npt.assert_allclose(ucorrd[1], np.ones_like(ucorrd[1]), atol=0.06)
         npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
@@ -522,7 +522,7 @@ class TestMCPropagation(unittest.TestCase):
             xerrsb,
             corr_x=corrb,
             repeat_dims=0,
-            corr_axis=1,
+            corr_dims=1,
             return_corr=True,
         )
         ufb, ucorrb2 = prop.propagate_systematic(
@@ -531,7 +531,7 @@ class TestMCPropagation(unittest.TestCase):
             xerrsb,
             corr_x=["rand", "rand"],
             repeat_dims=0,
-            corr_axis=1,
+            corr_dims=1,
             return_corr=True,
         )
         npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.06)
@@ -547,7 +547,7 @@ class TestMCPropagation(unittest.TestCase):
             xerrsb,
             corr_x=corrb,
             repeat_dims=0,
-            corr_axis=1,
+            corr_dims=1,
             return_corr=True,
         )
         ufb, ucorrb2 = prop.propagate_systematic(
@@ -556,7 +556,7 @@ class TestMCPropagation(unittest.TestCase):
             xerrsb,
             corr_x=["syst", None],
             repeat_dims=0,
-            corr_axis=1,
+            corr_dims=1,
             return_corr=True,
         )
         npt.assert_allclose(ucorrb, np.ones_like(ucorrb), atol=0.06)
@@ -573,7 +573,7 @@ class TestMCPropagation(unittest.TestCase):
             xerrsd,
             corr_x=corrd,
             return_corr=True,
-            corr_axis=0,
+            corr_dims=0,
             repeat_dims=[1, 2],
             output_vars=2,
         )
@@ -590,7 +590,7 @@ class TestMCPropagation(unittest.TestCase):
             xerrsd,
             corr_x=corrd,
             return_corr=True,
-            corr_axis=0,
+            corr_dims=0,
             repeat_dims=1,
             output_vars=2,
         )
@@ -606,7 +606,7 @@ class TestMCPropagation(unittest.TestCase):
             xsd2,
             xerrsd2,
             return_corr=True,
-            corr_axis=0,
+            corr_dims=0,
             output_vars=2,
         )
         npt.assert_allclose(ucorrd[0], np.ones_like(ucorrd[0]), atol=0.06)
@@ -617,7 +617,7 @@ class TestMCPropagation(unittest.TestCase):
             xsd2,
             xerrsd2,
             return_corr=True,
-            corr_axis=0,
+            corr_dims=0,
             output_vars=2,
             repeat_dims=1,
             param_fixed=[False, True],
@@ -637,7 +637,7 @@ class TestMCPropagation(unittest.TestCase):
             xerrsd,
             corr_x=corrd,
             return_corr=True,
-            corr_axis=0,
+            corr_dims=0,
             repeat_dims=[1, 2],
             output_vars=2,
         )
@@ -652,7 +652,7 @@ class TestMCPropagation(unittest.TestCase):
             xerrsd,
             corr_x=corrd,
             return_corr=True,
-            corr_axis=0,
+            corr_dims=0,
             repeat_dims=[1, 2],
             output_vars=1,
         )
@@ -673,7 +673,7 @@ class TestMCPropagation(unittest.TestCase):
             xerrsc,
             corr_x=corrc,
             repeat_dims=0,
-            corr_axis=1,
+            corr_dims=1,
             output_vars=1,
             fixed_corr_var=None,
             param_fixed=None,
@@ -686,7 +686,7 @@ class TestMCPropagation(unittest.TestCase):
             xerrsd,
             corr_x=corrd,
             repeat_dims=[0, 1],
-            corr_axis=2,
+            corr_dims=2,
             output_vars=2,
             fixed_corr_var=None,
             param_fixed=[True, False, False],
@@ -699,7 +699,7 @@ class TestMCPropagation(unittest.TestCase):
                 xerrsc,
                 corr_x=corrc,
                 repeat_dims=0,
-                corr_axis=0,
+                corr_dims=0,
                 output_vars=1,
                 fixed_corr_var=None,
                 param_fixed=None,
@@ -711,7 +711,7 @@ class TestMCPropagation(unittest.TestCase):
                 xerrsd,
                 corr_x=corrd,
                 repeat_dims=[0, 1],
-                corr_axis=1,
+                corr_dims=1,
                 output_vars=2,
                 fixed_corr_var=None,
                 param_fixed=[True, False, False],
