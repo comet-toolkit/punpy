@@ -472,6 +472,8 @@ class MeasurementFunction(ABC):
             simple_systematic=simple_systematic,
         )
 
+        print(template)
+
         # create dataset template
         ds_out = obsarray.create_ds(template, self.sizes_dict)
         ds_out[self.yvariable].values = y
