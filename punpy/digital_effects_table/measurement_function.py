@@ -6,7 +6,6 @@ from abc import ABC,abstractmethod
 
 import numpy as np
 import obsarray
-
 from punpy.digital_effects_table.digital_effects_table_templates import (
     DigitalEffectsTableTemplates,)
 from punpy.digital_effects_table.measurement_function_utils import (

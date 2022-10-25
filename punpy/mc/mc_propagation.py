@@ -6,7 +6,6 @@ from multiprocessing import Pool
 
 import comet_maths as cm
 import numpy as np
-
 import punpy.utilities.utilities as util
 
 """___Authorship___"""
@@ -1404,10 +1403,19 @@ class MCPropagation:
                                 )
                     else:
                         corr_ys[i] = fixed_corr
+
                 # calculate correlation matrix between the different outputs produced by the measurement function.
                 if all([yshapes[i] == yshapes[0] for i in range(len(yshapes))]):
-                    corr_out = np.corrcoef(MC_y[i].reshape((output_vars, -1))).astype(
-                        self.dtype
+                    if MC_y.ndim==1:
+                        MC_y=np.concatenate([MC_y[i] for i in range(len(MC_y))])
+                    corr_out = np.mean(
+                        [
+                            np.corrcoef(
+                                MC_y.reshape((output_vars, -1, MC_y.shape[-1]))[:, i]
+                            )
+                            for i in range(len(MC_y[0]))
+                        ],
+                        axis=0,
                     )
                 else:
                     corr_out = None

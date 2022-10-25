@@ -118,3 +118,58 @@ For example, if :math:`n`, :math:`T` and :math:`P`, each had their own digital e
 
 These digital effects tables can be provided in any order. They can also contain numerous other quantities that are not relevant for the current measurement function.
 When multiple of these digital effects tables have a variable with the same name (which is used in the measurement function), an error is raised.
+
+functions for propagating uncertainties
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+In the above example, we show an example of using the propagate_ds() function to obtain a
+measurand effects table that has separate contributions for the random, systematic and structured uncertainties.
+Depending on what uncertainty components one is interested in, there are a number of functions that can be used:
+-  propagate_ds: measurand digital effects table with separate contributions for the random, systematic and structured uncertainties.
+-  propagate_ds_tot: measurand digital effects table with one combined contribution for the total uncertainty (and error correlation matrix).
+-  propagate_ds_specific: measurand digital effects table with separate contributions for a list of named uncertainty contributions provided by the user.
+-  propagate_ds_all: measurand digital effects table with separate contributions for all the individual uncertainty contributions in the input quantities in the provided input digital effects tables.
+
+It is worth noting that the uncertainty components labelled in the measurand DETs as
+"random" or "systematic" (either in propagate_ds, propagate_ds_specific or propagate_ds_all),
+will contain the propagated uncertainties for all uncertainty components on the input
+quantities that are random or systematic respectively along all the measurand dimensions.
+Any uncertainty components on the input quantities where this is not the case (e.g. because
+the error correlation along one dimension is random and along another is systematic;
+or because one of the error correlations is provided as a numerical error correlation matrix)
+will be propagated to the structured uncertainty components on the measurand.
+
+This is somewhat further complicated by the fact that the input quantity dimensions are
+not always the same as the measurand dimensions. If any of the measurand dimensions is
+not in the input quantity dimensions, some assumption needs to made about how this input
+quantity will be correlated along that measurand dimension. Often, such a situation will
+simply mean that the same value of the input quantity will be used for every index along
+the measurand dimension (broadcasting). This often leads to a systematic correlation along this measurand
+dimension (a typical example would be the same spectral gains being applied to multiple
+spectral scans in a measurement, where the gains have a wavelength dimension and the
+spectral scans have wavelength and scan index dimensions; any error in the gains, will
+affect all scans equally). There are however also scenarios where
+the introduced error-correlation along the measurand dimension should be random (e.g. if
+a constant temperature is assumed and applied along the time dimension, but we know in
+reality the temperature is fluctuating randomly w.r.t. to assumed temperature). It can
+also be structured. Detailed understanding of the problem is thus required when the measurand
+dimensions are not present along the measurand dimensions. These broadcast error correlations can
+be set in punpy using ... Depending on how this broadcast error correlation combines with
+the error correlations in the other dimensions, can also affect which measurand uncertainty component
+(random, systematic or structured) it contributes to when using propagate_ds.
+
+avoiding memory issues in structured components
+:::::::::::::::::::::::::::::::::::::::::::::::::
+Random and systematic uncertainty components take up very little space, as each of their error
+correlation dimensions are by defnition parameterised as random or systematic.
+For structured components with error correlation matrices stored as separate variables, it is not
+uncommon for these matrices to take up a lot of memory. This is especially the case when
+each of the dimensions is not parametrised separately, and instead an error correlation
+matrix is provided along the combination of angles. E.g. for a variable with dimensions (x,y,z),
+which correspond to a shape of e.g. (20,30,40), the resulting total error correlation matrix will have shape
+(20*30*40,20*30*40) which would contain 575 million elements. The shape chosen here as an example is
+quite moderate, so it is clear this could be an issue when using larger datasets.
+
+The solution to this is to avoid storing the full (x*y*z,x*y*z) error correlation matrix when possible.
+In many cases, even though the errors for pixels along a certain dimension (e.g. x) might
+be correlated, this error correlation w.r.t x does not change for different values of y or z.
+In that case, the error correlation for x can be separated and stored as a matrix of shape (x,x).

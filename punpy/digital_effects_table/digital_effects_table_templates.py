@@ -376,21 +376,22 @@ class DigitalEffectsTableTemplates(ABC):
         :rtype: xarray.Dataset
         """
         for var in ds.variables:
-            ds[var].encoding=ds_pre[var].encoding
-            err_corr_warn=False
+            ds[var].encoding = ds_pre[var].encoding
+            err_corr_warn = False
             for key in ds_pre[var].attrs.keys():
                 if "err_corr" in key:
                     try:
-                        if ds[var].attrs[key]==ds_pre[var].attrs[key]:
-                            err_corr_warn=True
+                        if ds[var].attrs[key] == ds_pre[var].attrs[key]:
+                            err_corr_warn = True
                     except:
-                        err_corr_warn=True
+                        err_corr_warn = True
 
                 else:
-                    ds[var].attrs[key]=ds_pre[var].attrs[key]
+                    ds[var].attrs[key] = ds_pre[var].attrs[key]
             if err_corr_warn:
                 warnings.warn(
-                    "The returned dataset has a different error correlation parameterisation for variable %s than the provided ds_out_pre (possibly just the order changed)."%var
+                    "The returned dataset has a different error correlation parameterisation for variable %s than the provided ds_out_pre (possibly just the order changed)."
+                    % var
                 )
 
         if drop is not None:

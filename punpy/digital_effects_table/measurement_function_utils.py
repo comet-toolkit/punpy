@@ -342,7 +342,10 @@ class MeasurementFunctionUtils:
                 if hasattr(dataset, "variables"):
                     if var in dataset.variables:
                         if ydims is not None:
-                            if len(dataset[var].dims) < len(ydims):
+                            if np.all([dim in dataset[var].dims for dim in ydims]):
+                                inputs_unc[iv] = self.calculate_unc(form, dataset, var)
+
+                            else:
                                 inputs_unc[iv] = self.calculate_unc_missingdim(
                                     form,
                                     dataset,
@@ -351,8 +354,6 @@ class MeasurementFunctionUtils:
                                     sizes_dict=sizes_dict,
                                     ydims=ydims,
                                 )
-                            else:
-                                inputs_unc[iv] = self.calculate_unc(form, dataset, var)
 
             if np.count_nonzero(inputs_unc[iv]) == 0:
                 inputs_unc[iv] = None
