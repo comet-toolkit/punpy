@@ -475,23 +475,15 @@ class MCPropagation:
 
         else:
             if samples is not None:
-                MC_data = samples
+                MC_x = samples
             else:
-                MC_data = np.empty(len(x), dtype=np.ndarray)
+                MC_x = self.generate_MC_sample(x,u_x,corr_x,corr_between=corr_between)
 
-                for i in range(len(x)):
-                    MC_data[i] = cm.generate_sample(self.MCsteps, x, u_x, corr_x, i)
-                if corr_between is not None:
-                    MC_data = cm.correlate_sample_corr(MC_data, corr_between)
-                if self.verbose:
-                    print(
-                        "samples generated (%s s since creation of prop object)"
-                        % (time.time() - self.starttime)
-                    )
+            MC_y = self.run_samples(func, MC_x, output_vars=output_vars)
 
             return self.process_samples(
-                func,
-                MC_data,
+                MC_x,
+                MC_y,
                 return_corr,
                 return_samples,
                 yshapes,
@@ -500,6 +492,82 @@ class MCPropagation:
                 PD_corr,
                 output_vars,
             )
+
+    def generate_MC_sample(self,x,u_x,corr_x,corr_between=None):
+        """
+        function to generate MC sample for input quantities
+
+        :param x: list of input quantities (usually numpy arrays)
+        :type x: list[array]
+        :param u_x: list of systematic uncertainties on input quantities (usually numpy arrays)
+        :type u_x: list[array]
+        :param corr_x: list of correlation matrices (n,n) along non-repeating axis. Can be set to "rand" (diagonal correlation matrix), "syst" (correlation matrix of ones) or a custom correlation matrix.
+        :type corr_x: list[array]
+        :param corr_between: correlation matrix (n,n) between input quantities, defaults to None
+        :type corr_between: array, optional
+        :return: MC sample for input quantities
+        :rtype:
+        """
+        MC_data = np.empty(len(x), dtype=np.ndarray)
+
+        for i in range(len(x)):
+            MC_data[i] = cm.generate_sample(self.MCsteps, x, u_x, corr_x, i)
+        if corr_between is not None:
+            MC_data = cm.correlate_sample_corr(MC_data, corr_between)
+        if self.verbose:
+            print(
+                "samples generated (%s s since creation of prop object)"
+                % (time.time() - self.starttime)
+            )
+
+        return MC_data
+
+    def generate_MC_sample_cov(self,x,cov_x,corr_between=None):
+        """
+        function to generate MC sample for input quantities from covariance matrix
+
+        :param x: list of input quantities (usually numpy arrays)
+        :type x: list[array]
+        :param u_x: list of systematic uncertainties on input quantities (usually numpy arrays)
+        :type u_x: list[array]
+        :param corr_x: list of correlation matrices (n,n) along non-repeating axis. Can be set to "rand" (diagonal correlation matrix), "syst" (correlation matrix of ones) or a custom correlation matrix.
+        :type corr_x: list[array]
+        :param corr_between: correlation matrix (n,n) between input quantities, defaults to None
+        :type corr_between: array, optional
+        :return: MC sample for input quantities
+        :rtype:
+        """
+
+        MC_data = np.empty(len(x), dtype=np.ndarray)
+        for i in range(len(x)):
+            if not hasattr(x[i], "__len__"):
+                MC_data[i] = cm.generate_sample_systematic(
+                    self.MCsteps, x[i], cov_x[i]
+                )
+            elif param_fixed is not None:
+                if param_fixed[i] and (len(x[i].shape) == 2):
+                    MC_data[i] = np.array(
+                        [
+                            cm.generate_sample_cov(
+                                self.MCsteps, x[i][:, j].ravel(), cov_x[i]
+                            ).reshape(x[i][:, j].shape + (self.MCsteps,))
+                            for j in range(x[i].shape[1])
+                        ]
+                    ).T
+                    MC_data[i] = np.moveaxis(MC_data[i], 0, 1)
+                else:
+                    MC_data[i] = cm.generate_sample_cov(
+                        self.MCsteps, x[i].ravel(), cov_x[i]
+                    ).reshape(x[i].shape + (self.MCsteps,))
+            else:
+                MC_data[i] = cm.generate_sample_cov(
+                    self.MCsteps, x[i].ravel(), cov_x[i]
+                ).reshape(x[i].shape + (self.MCsteps,))
+
+        if corr_between is not None:
+            MC_data = cm.correlate_sample_corr(MC_data, corr_between)
+
+        return MC_data
 
     def propagate_cov_flattened(
         self,
@@ -679,34 +747,7 @@ class MCPropagation:
             if samples is not None:
                 MC_data = samples
             else:
-                MC_data = np.empty(len(x), dtype=np.ndarray)
-                for i in range(len(x)):
-                    if not hasattr(x[i], "__len__"):
-                        MC_data[i] = cm.generate_sample_systematic(
-                            self.MCsteps, x[i], cov_x[i]
-                        )
-                    elif param_fixed is not None:
-                        if param_fixed[i] and (len(x[i].shape) == 2):
-                            MC_data[i] = np.array(
-                                [
-                                    cm.generate_sample_cov(
-                                        self.MCsteps, x[i][:, j].ravel(), cov_x[i]
-                                    ).reshape(x[i][:, j].shape + (self.MCsteps,))
-                                    for j in range(x[i].shape[1])
-                                ]
-                            ).T
-                            MC_data[i] = np.moveaxis(MC_data[i], 0, 1)
-                        else:
-                            MC_data[i] = cm.generate_sample_cov(
-                                self.MCsteps, x[i].ravel(), cov_x[i]
-                            ).reshape(x[i].shape + (self.MCsteps,))
-                    else:
-                        MC_data[i] = cm.generate_sample_cov(
-                            self.MCsteps, x[i].ravel(), cov_x[i]
-                        ).reshape(x[i].shape + (self.MCsteps,))
-
-                if corr_between is not None:
-                    MC_data = cm.correlate_sample_corr(MC_data, corr_between)
+                MC_data = self.generate_MC_sample_cov(x,cov_x,corr_between=corr_between)
 
         return self.process_samples(
             func,
@@ -1147,6 +1188,7 @@ class MCPropagation:
             u_func = np.array(outs, dtype=self.dtype)
         else:
             u_func = np.array(outs[0], dtype=self.dtype)
+
         if len(repeat_dims) == 1:
             if output_vars == 1:
                 u_func = np.squeeze(np.moveaxis(u_func, 0, repeat_dims[0]))
@@ -1236,13 +1278,59 @@ class MCPropagation:
 
         return outs
 
+    def run_samples(self, func, MC_x, output_vars=1, start=None, end=None, sli=None, broadcasting=True):
+        """
+        process all the MC samples of input quantities through the measurand function
+
+        :param func: measurement function
+        :type func: function
+        :param MC_x: MC-generated samples of input quantities
+        :type MC_x: array[array]
+        :param yshapes: shape of the measurand(s)
+        :type yshapes: tuple or list of tuples
+        :return: MC sample of measurand
+        :rtype: array[array]
+        """
+        if (start is not None) or (end is not None):
+            sli=slice(start,end)
+            indices=range(*sli.indices(self.MCsteps))
+        else:
+            sli=slice(sli)
+            indices=range(*sli.indices(self.MCsteps))
+
+        if self.parallel_cores == 0:
+            if broadcasting:
+                MC_y = np.moveaxis(func(*[np.moveaxis(dat[sli], 0, -1) for dat in MC_x]),-1,0)
+            else:
+                MC_y = func(*[x[sli] for x in MC_x])
+
+        elif self.parallel_cores == 1:
+            MC_y = np.array(list(map(func, *[x[sli] for x in MC_x])))
+
+        else:
+            MC_x2 = np.empty(len(indices), dtype=object)
+            for i,index in enumerate(indices):
+                MC_x2[i] = [MC_x[j][index,...] for j in range(len(MC_x))]
+            MC_y = np.array(self.pool.starmap(func, MC_x2), dtype=self.dtype)
+
+        if self.verbose:
+            print(
+                "samples propagated (%s s since creation of prop object)"
+                % (time.time() - self.starttime)
+            )
+
+        return MC_y
+
+    def combine_samples(self,MC_samples):
+        return np.concatenate(MC_samples, axis=0)
+
     def process_samples(
         self,
-        func,
-        data,
-        return_corr,
-        return_samples,
-        yshapes,
+        MC_x,
+        MC_y,
+        return_corr=False,
+        return_samples=False,
+        yshapes=None,
         corr_dims=-99,
         fixed_corr=None,
         PD_corr=True,
@@ -1252,14 +1340,15 @@ class MCPropagation:
         Run the MC-generated samples of input quantities through the measurement function and calculate
         correlation matrix if required.
 
-        :param func: measurement function
-        :type func: function
-        :param data: MC-generated samples of input quantities
-        :type data: array[array]
+        :param MC_x: MC-generated samples of input quantities
+        :type MC_x: array[array]
+        :param MC_y: MC sample of measurand
+        :type MC_y: array[array]
         :param return_corr: set to True to return correlation matrix of measurand
         :type return_corr: bool
         :param return_samples: set to True to return generated samples
         :type return_samples: bool
+
         :param corr_dims: set to positive integer to select the axis used in the correla[ tion matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
         :type corr_dims: integer, optional
         :param fixed_corr: correlation matrix to be copied without changing, defaults to None (correlation matrix is calculated rather than copied)
@@ -1271,88 +1360,34 @@ class MCPropagation:
         :return: uncertainties on measurand
         :rtype: array
         """
-        if self.parallel_cores == 0:
-            MC_y = np.array(func(*data))
-
-        elif self.parallel_cores == 1:
-            # In order to Process the MC iterations separately, the array with the input quantities has to be reordered
-            # so that it has the same length (i.e. the first dimension) as the number of MCsteps.
-            # First we move the axis with the same length as self.MCsteps from the last dimension to the fist dimension
-            if self.dtype is not None:
-                data2 = [np.moveaxis(dat, -1, 0).astype(self.dtype) for dat in data]
-            else:
-                data2 = [np.moveaxis(dat, -1, 0) for dat in data]
-
-            if output_vars == 1 or all(
-                [yshapes[i] == yshapes[0] for i in range(len(yshapes))]
-            ):
-                # The function can then be applied to each of these MCsteps
-                MC_y2 = np.array(list(map(func, *data2)))
-
-                # We then reorder to bring it back to the original shape
-                MC_y = np.moveaxis(MC_y2, 0, -1)
-
-            else:
-                MC_y = np.empty(output_vars, dtype=object)
-                MC_y2 = np.empty(output_vars, dtype=object)
-
-                for i in range(output_vars):
-                    MC_y2[i] = np.array([out[i] for out in list(map(func, *data2))])
-                    MC_y[i] = np.empty(yshapes[i] + (self.MCsteps,))
-                    if len(yshapes[i]) == 0:
-                        for j in range(self.MCsteps):
-                            MC_y[i][j] = MC_y2[i][j]
-                    elif len(yshapes[i]) == 1:
-                        for ii in range(yshapes[i][0]):
-                            for j in range(self.MCsteps):
-                                MC_y[i][ii, j] = MC_y2[i][j][ii]
-                    elif len(yshapes[i]) == 2:
-                        for ii in range(yshapes[i][0]):
-                            for iii in range(yshapes[i][1]):
-                                for j in range(self.MCsteps):
-                                    MC_y[i][ii, iii, j] = MC_y2[i][j][ii, iii]
-                    elif len(yshapes[i]) == 3:
-                        for ii in range(yshapes[i][0]):
-                            for iii in range(yshapes[i][1]):
-                                for iiii in range(yshapes[i][2]):
-                                    for j in range(self.MCsteps):
-                                        MC_y[i][ii, iii, iiii, j] = MC_y2[i][j][
-                                            ii, iii, iiii
-                                        ]
-                    else:
-                        raise ValueError(
-                            "punpy.mc_propagation: this shape is not supported"
-                        )
-
-        else:
-            # We again need to reorder the input quantities samples in order to be able to pass them to p.starmap
-            # We here use lists to iterate over and order them slightly different as the case above.
-            data2 = np.empty(self.MCsteps, dtype=object)
-            for i in range(self.MCsteps):
-                data2[i] = [data[j][..., i] for j in range(len(data))]
-            MC_y2 = np.array(self.pool.starmap(func, data2), dtype=self.dtype)
-            if output_vars == 1:
-                MC_y = np.moveaxis(MC_y2, 0, -1)
-            else:
-                MC_y = np.empty(output_vars, dtype=object)
-                for i in range(output_vars):
-                    MC_y[i] = np.moveaxis(MC_y2[:, i], 0, -1)
-
-        if self.verbose:
-            print(
-                "samples propagated (%s s since creation of prop object)"
-                % (time.time() - self.starttime)
-            )
 
         # if hasattr(MC_y[0,0], '__len__'):
         #     print(yshape,np.array(MC_y[0,0]).shape,np.array(MC_y[1,0]).shape,np.array(MC_y[2,0]).shape,np.array(MC_y[3,0]).shape)
         if output_vars == 1:
-            u_func = np.std(MC_y, axis=-1, dtype=self.dtype)
+            u_func = np.std(MC_y, axis=0, dtype=self.dtype)
+
         else:
-            u_func = np.empty(output_vars, dtype=object)
-            for i in range(output_vars):
-                # print(MC_y[i].shape,MC_y[i])
-                u_func[i] = np.std(np.array(MC_y[i]), axis=-1, dtype=self.dtype)
+            complex_shapes=True
+            if yshapes is None:
+                complex_shapes=False
+            elif all(
+                    [yshapes[i] == yshapes[0] for i in range(len(yshapes))]
+            ):
+                complex_shapes=False
+
+            if complex_shapes:
+                MC_y2 = np.empty(output_vars, dtype=object)
+                u_func = np.empty(output_vars, dtype=object)
+
+                for i in range(output_vars):
+                    MC_y2[i]=np.empty((self.MCsteps,)+yshapes[i])
+                    for j in range(self.MCsteps):
+                        MC_y2[i][j]=MC_y[j,i]
+                    u_func[i] = np.std(np.array(MC_y2[i]), axis=0, dtype=self.dtype)
+
+            else:
+                u_func = np.std(MC_y, axis=0, dtype=self.dtype)
+
 
         if self.verbose:
             print(
@@ -1362,7 +1397,7 @@ class MCPropagation:
 
         if not return_corr:
             if return_samples:
-                return u_func, MC_y, data
+                return u_func, MC_y, MC_x
             else:
                 return u_func
         else:
@@ -1384,7 +1419,7 @@ class MCPropagation:
                     )
 
                 if return_samples:
-                    return u_func, corr_y, MC_y, data
+                    return u_func, corr_y, MC_y, MC_x
                 else:
                     return u_func, corr_y
 
@@ -1393,9 +1428,14 @@ class MCPropagation:
                 corr_ys = np.empty(output_vars, dtype=object)
                 for i in range(output_vars):
                     if fixed_corr is None:
-                        corr_ys[i] = cm.calculate_corr(MC_y[i], corr_dims).astype(
+                        if complex_shapes:
+                            corr_ys[i] = cm.calculate_corr(MC_y2[i], corr_dims).astype(
+                                self.dtype
+                            )
+                        else:
+                            corr_ys[i] = cm.calculate_corr(MC_y[:,i], corr_dims).astype(
                             self.dtype
-                        )
+                            )
                         if PD_corr:
                             if not cm.isPD(corr_ys[i]):
                                 corr_ys[i] = cm.nearestPD_cholesky(
@@ -1404,21 +1444,20 @@ class MCPropagation:
                     else:
                         corr_ys[i] = fixed_corr
 
-                # calculate correlation matrix between the different outputs produced by the measurement function.
-                if all([yshapes[i] == yshapes[0] for i in range(len(yshapes))]):
-                    if MC_y.ndim==1:
-                        MC_y=np.concatenate([MC_y[i] for i in range(len(MC_y))])
+                if complex_shapes:
+                    corr_out = None
+                else:
+                    # calculate correlation matrix between the different outputs produced by the measurement function.
+                    MC_y2=MC_y.reshape((self.MCsteps, output_vars, -1))
+
                     corr_out = np.mean(
                         [
-                            np.corrcoef(
-                                MC_y.reshape((output_vars, -1, MC_y.shape[-1]))[:, i]
-                            )
-                            for i in range(len(MC_y[0]))
+                            cm.calculate_corr(MC_y2[:,:,i]).astype(
+                                self.dtype
+                            ) for i in range(len(MC_y2[0,0]))
                         ],
                         axis=0,
                     )
-                else:
-                    corr_out = None
 
                 if PD_corr and corr_out is not None:
                     if not cm.isPD(corr_out):
@@ -1433,6 +1472,6 @@ class MCPropagation:
                     )
 
                 if return_samples:
-                    return u_func, corr_ys, corr_out, MC_y, data
+                    return u_func, corr_ys, corr_out, MC_y, MC_x
                 else:
                     return u_func, corr_ys, corr_out
