@@ -6,6 +6,7 @@ from abc import ABC,abstractmethod
 
 import numpy as np
 import obsarray
+
 from punpy.digital_effects_table.digital_effects_table_templates import (
     DigitalEffectsTableTemplates,)
 from punpy.digital_effects_table.measurement_function_utils import (
@@ -35,6 +36,7 @@ class MeasurementFunction(ABC):
         corr_dims=-99,
         refxvar=None,
         sizes_dict=None,
+        use_err_corr_dict=True,
     ):
         """
         Initialise MeasurementFunction
@@ -63,6 +65,8 @@ class MeasurementFunction(ABC):
         :type refxvar: string, optional
         :param sizes_dict: Dictionary with sizes of each of the dimensions of the measurand. Defaults to None, in which cases sizes come from input quantites.
         :type sizes_dict: dict, optional
+        :param use_err_corr_dict: when possible, use dictionaries with separate error-correlation info per dimension in order to save memory
+        :type use_err_corr_dict: bool, optional
         """
         if prop is None:
             self.prop = MCPropagation(100, dtype="float32")
@@ -132,6 +136,7 @@ class MeasurementFunction(ABC):
             self.str_repeat_corr_dims,
             self.prop.verbose,
             self.templ,
+            use_err_corr_dict
         )
 
     @abstractmethod

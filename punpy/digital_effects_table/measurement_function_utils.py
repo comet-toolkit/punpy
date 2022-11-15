@@ -12,7 +12,7 @@ __status__ = "Development"
 
 
 class MeasurementFunctionUtils:
-    def __init__(self, xvariables, ydims, str_repeat_corr_dims, verbose, templ):
+    def __init__(self, xvariables, ydims, str_repeat_corr_dims, verbose, templ, use_err_corr_dict):
         """
         Initialise MeasurementFunctionUtils
 
@@ -31,6 +31,7 @@ class MeasurementFunctionUtils:
         self.str_repeat_corr_dims = str_repeat_corr_dims
         self.templ = templ
         self.repeat_dims_form = "structured"
+        self.use_err_corr_dict = use_err_corr_dict
 
     def find_repeat_dim_corr(self, form, *args, store_unc_percent=False, ydims=None):
         """
@@ -560,7 +561,10 @@ class MeasurementFunctionUtils:
 
             try:
                 uvar = "%s_%s" % (form, var)
-                return dsu[uvar].err_corr_matrix().values
+                if self.use_err_corr_dict:
+                    return dsu[uvar].err_corr_dict_numdim()
+                else:
+                    return dsu[uvar].err_corr_matrix().values
             except:
                 keys = np.array(list(ds.keys()))
                 uvar_ids = [
@@ -568,7 +572,10 @@ class MeasurementFunctionUtils:
                 ]
                 uvar = keys[uvar_ids]
                 if len(uvar) > 0:
-                    return dsu[uvar[0]].err_corr_matrix().values
+                    if self.use_err_corr_dict:
+                        return dsu[uvar[0]].err_corr_dict_numdim()
+                    else:
+                        return dsu[uvar[0]].err_corr_matrix().values
                 else:
                     return None
 

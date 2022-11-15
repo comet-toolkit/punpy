@@ -6,6 +6,7 @@ from multiprocessing import Pool
 
 import comet_maths as cm
 import numpy as np
+
 import punpy.utilities.utilities as util
 
 """___Authorship___"""
@@ -493,7 +494,7 @@ class MCPropagation:
                 output_vars,
             )
 
-    def generate_MC_sample(self,x,u_x,corr_x,corr_between=None):
+    def generate_MC_sample(self,x,u_x,corr_x,corr_between=None,pdf_shape="gaussian",pdf_params=None):
         """
         function to generate MC sample for input quantities
 
@@ -505,13 +506,17 @@ class MCPropagation:
         :type corr_x: list[array]
         :param corr_between: correlation matrix (n,n) between input quantities, defaults to None
         :type corr_between: array, optional
+        :param pdf_shape: string identifier of the probability density function shape, defaults to gaussian
+        :type pdf_shape: str, optional
+        :param pdf_params: dictionaries defining optional additional parameters that define the probability density function, Defaults to None (gaussian does not require additional parameters)
+        :type pdf_params: dict, optional
         :return: MC sample for input quantities
         :rtype:
         """
         MC_data = np.empty(len(x), dtype=np.ndarray)
 
         for i in range(len(x)):
-            MC_data[i] = cm.generate_sample(self.MCsteps, x, u_x, corr_x, i)
+            MC_data[i] = cm.generate_sample(self.MCsteps, x, u_x, corr_x, i, pdf_shape=pdf_shape, pdf_params=pdf_params)
         if corr_between is not None:
             MC_data = cm.correlate_sample_corr(MC_data, corr_between)
         if self.verbose:
@@ -859,17 +864,13 @@ class MCPropagation:
                     if self.dtype is not None:
                         u_x[i] = np.array(u_x[i], dtype=self.dtype)
 
-            if corr_x is not None:
-                if (corr_x[i] is not None) and (not isinstance(corr_x[i], str)):
-                    if self.dtype is not None:
-                        corr_x[i] = np.array(corr_x[i], dtype=self.dtype)
-
             if np.sum(u_x[i]) != 0 and fixed_corr_var == True:
                 count += 1
                 var = i
+
             if corr_x is not None:
                 if corr_x[i] is not None:
-                    if not isinstance(corr_x[i], str):
+                    if not (isinstance(corr_x[i], str) or isinstance(corr_x[i], dict)):
                         if np.any(corr_x[i] > 1.000001):
                             raise ValueError(
                                 "punpy.mc_propagation: One of the provided correlation matrices "
