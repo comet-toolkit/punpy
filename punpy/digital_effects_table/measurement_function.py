@@ -6,7 +6,6 @@ from abc import ABC,abstractmethod
 
 import numpy as np
 import obsarray
-
 from punpy.digital_effects_table.digital_effects_table_templates import (
     DigitalEffectsTableTemplates,)
 from punpy.digital_effects_table.measurement_function_utils import (
@@ -36,7 +35,7 @@ class MeasurementFunction(ABC):
         corr_dims=-99,
         refxvar=None,
         sizes_dict=None,
-        use_err_corr_dict=True,
+        use_err_corr_dict=False,
     ):
         """
         Initialise MeasurementFunction
