@@ -614,7 +614,7 @@ class MeasurementFunction(ABC):
         input_qty = self.utils.get_input_qty(
             args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
-        return self.meas_function(*input_qty)
+        return np.array(self.meas_function(*input_qty))
 
     def check_sizes_and_run(self, *args, expand=False, ds_out_pre=None):
         """
