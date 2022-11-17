@@ -641,6 +641,7 @@ class MeasurementFunction(ABC):
 
         if self.sizes_dict is None:
             self.sizes_dict = {}
+            print(y.shape,self.ydims)
             for idim, dim in enumerate(self.ydims):
                 self.sizes_dict[dim] = y.shape[idim]
 
