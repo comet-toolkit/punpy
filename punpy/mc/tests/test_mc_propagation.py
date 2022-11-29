@@ -218,7 +218,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufc, yerr_corrc, rtol=0.06)
 
     def test_propagate_random_3D_2out(self):
-        prop = MCPropagation(20000, parallel_cores=0 , verbose=True)
+        prop = MCPropagation(20000, parallel_cores=0, verbose=True)
         ufd, ucorrd, corr_out = prop.propagate_random(
             functiond, xsd, xerrsd, return_corr=True, output_vars=2
         )
@@ -677,12 +677,14 @@ class TestMCPropagation(unittest.TestCase):
 
         corrd = [np.eye(len(xerrd.ravel())) for xerrd in xerrsd]
 
-        MC_x=prop.generate_MC_sample(xsd,xerrsd,corrd)
-        MC_y1=prop.run_samples(functiond,MC_x,output_vars=2,start=0,end=10000)
-        MC_y2=prop.run_samples(functiond,MC_x,output_vars=2,start=10000,end=20000)
-        MC_y=prop.combine_samples([MC_y1,MC_y2])
+        MC_x = prop.generate_MC_sample(xsd, xerrsd, corrd)
+        MC_y1 = prop.run_samples(functiond, MC_x, output_vars=2, start=0, end=10000)
+        MC_y2 = prop.run_samples(functiond, MC_x, output_vars=2, start=10000, end=20000)
+        MC_y = prop.combine_samples([MC_y1, MC_y2])
 
-        ufd, ucorrd, corr_out = prop.process_samples(MC_x,MC_y, return_corr=True, corr_dims=0, output_vars=2)
+        ufd, ucorrd, corr_out = prop.process_samples(
+            MC_x, MC_y, return_corr=True, corr_dims=0, output_vars=2
+        )
 
         npt.assert_allclose(ucorrd[0], np.eye(len(ucorrd[0])), atol=0.06)
         npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
@@ -692,12 +694,14 @@ class TestMCPropagation(unittest.TestCase):
 
         corrd = [np.eye(len(xerrd[:, 0, 0].ravel())) for xerrd in xerrsd]
 
-        MC_x=prop.generate_MC_sample(xsd,xerrsd,corr_x=["rand","rand"])
-        MC_y1=prop.run_samples(functiond,MC_x,output_vars=2,start=0,end=10000)
-        MC_y2=prop.run_samples(functiond,MC_x,output_vars=2,start=10000,end=20000)
-        MC_y=prop.combine_samples([MC_y1,MC_y2])
+        MC_x = prop.generate_MC_sample(xsd, xerrsd, corr_x=["rand", "rand"])
+        MC_y1 = prop.run_samples(functiond, MC_x, output_vars=2, start=0, end=10000)
+        MC_y2 = prop.run_samples(functiond, MC_x, output_vars=2, start=10000, end=20000)
+        MC_y = prop.combine_samples([MC_y1, MC_y2])
 
-        ufd, ucorrd, corr_out = prop.process_samples(MC_x,MC_y, return_corr=True, corr_dims=0, output_vars=2)
+        ufd, ucorrd, corr_out = prop.process_samples(
+            MC_x, MC_y, return_corr=True, corr_dims=0, output_vars=2
+        )
 
         npt.assert_allclose(ucorrd[0], np.eye(len(ucorrd[0])), atol=0.06)
         npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
@@ -707,12 +711,14 @@ class TestMCPropagation(unittest.TestCase):
 
         corrd = [np.eye(len(xerrd[:, 0, 0].ravel())) for xerrd in xerrsd]
 
-        MC_x=prop.generate_MC_sample(xsd,xerrsd,corr_x=["rand","rand"])
-        MC_y1=prop.run_samples(functiond,MC_x,output_vars=2,start=0,end=10000)
-        MC_y2=prop.run_samples(functiond,MC_x,output_vars=2,start=10000,end=20000)
-        MC_y=prop.combine_samples([MC_y1,MC_y2])
+        MC_x = prop.generate_MC_sample(xsd, xerrsd, corr_x=["rand", "rand"])
+        MC_y1 = prop.run_samples(functiond, MC_x, output_vars=2, start=0, end=10000)
+        MC_y2 = prop.run_samples(functiond, MC_x, output_vars=2, start=10000, end=20000)
+        MC_y = prop.combine_samples([MC_y1, MC_y2])
 
-        ufd, ucorrd, corr_out = prop.process_samples(MC_x,MC_y, return_corr=True, corr_dims=0, output_vars=2)
+        ufd, ucorrd, corr_out = prop.process_samples(
+            MC_x, MC_y, return_corr=True, corr_dims=0, output_vars=2
+        )
 
         npt.assert_allclose(ucorrd[0], np.eye(len(ucorrd[0])), atol=0.06)
         npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)

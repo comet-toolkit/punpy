@@ -18,6 +18,8 @@ Punpy has the following dependencies:
 * `scipy <https://scipy.org>`_
 * `emcee <https://emcee.readthedocs.io/en/stable/>`_
 * `numdifftools <https://numdifftools.readthedocs.io/en/latest/>`_
+* `comet_maths <https://comet-maths.readthedocs.io/en/latest/>`_
+* `obsarray <https://obsarray.readthedocs.io/en/latest/>`_
 
 
 Installation
@@ -31,7 +33,7 @@ Ideally, it is recommended to do this inside a virtual environment (e.g. conda).
 
 Alternatively, for the latest development version, first go to the folder where you want to save punpy and clone the project repository from GitLab::
 
-   $ git clone git@gitlab.npl.co.uk:eco/tools/punpy.git
+   $ git clone git@github.com:comet-toolkit/punpy.git
 
 Then go into the created directory and install the module with pip::
 

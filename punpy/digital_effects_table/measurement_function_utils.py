@@ -12,7 +12,9 @@ __status__ = "Development"
 
 
 class MeasurementFunctionUtils:
-    def __init__(self, xvariables, ydims, str_repeat_corr_dims, verbose, templ, use_err_corr_dict):
+    def __init__(
+        self, xvariables, ydims, str_repeat_corr_dims, verbose, templ, use_err_corr_dict
+    ):
         """
         Initialise MeasurementFunctionUtils
 
@@ -379,14 +381,27 @@ class MeasurementFunctionUtils:
         :return: uncertainty values for the given variable in the given dataset. returns None if uncertainty component is not present in dataset.
         :rtype: np.ndarray
         """
+        data = None
         if form == "tot":
-            data = ds.unc[var].total_unc()
+            if self.use_err_corr_dict:
+                return [
+                    ds.unc[var][uvar].value.values
+                    for uvar in ds.unc._var_unc_var_names(var)
+                ]
+            else:
+                data = ds.unc[var].total_unc()
         elif form == "rand":
             data = ds.unc[var].random_unc()
         elif form == "syst":
             data = ds.unc[var].systematic_unc()
         elif form == "stru":
-            data = ds.unc[var].structured_unc()
+            if self.use_err_corr_dict:
+                return [
+                    ds.unc[var][uvar].value.values
+                    for uvar in ds.unc._var_unc_var_names(var, unc_type="structured")
+                ]
+            else:
+                data = ds.unc[var].structured_unc()
         else:
             try:
                 uvar = "%s_%s" % (form, var)
@@ -406,8 +421,6 @@ class MeasurementFunctionUtils:
                         return data.values / 100 * ds[var].values
                     else:
                         return data.values
-                else:
-                    data = None
 
         if data is not None:
             return data.values
@@ -537,9 +550,15 @@ class MeasurementFunctionUtils:
                 sli[i] = 0
         dsu = ds.unc[var][tuple(sli)]
         if form == "tot":
-            return dsu.total_err_corr_matrix().values
+            if self.use_err_corr_dict:
+                return [unc.err_corr_dict_numdim() for unc in dsu]
+            else:
+                return dsu.total_err_corr_matrix().values
         elif form == "stru":
-            return dsu.structured_err_corr_matrix().values
+            if self.use_err_corr_dict:
+                return [unc.err_corr_dict_numdim() for unc in dsu if unc.is_structured]
+            else:
+                return dsu.structured_err_corr_matrix().values
         elif form == "rand":
             return "rand"
         elif form == "syst":

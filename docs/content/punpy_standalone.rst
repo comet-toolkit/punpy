@@ -185,7 +185,6 @@ These functions can still be handled by punpy, but require the `output_vars` key
 Note that now there is an additional output corr_out, which gives the correlation between the different output variables (in the above case a 2 by 2 matrix).
 Here the correlation coefficients between the 2 variables are averaged over all measurements. 
 
-
 Additional options
 ##################
 
@@ -246,6 +245,26 @@ is set to an integer, the correlation matrix corresponding to that dimension is 
    measurement_function, [x1, x2, x3], [ur_x1, ur_x2, ur_x3],
    corr_between=corr_x1x2x3, fixed_corr_var=True)
 
+Different Probability Density Functions
+#########################################
+
+The standard probability density function in punpy is a Gaussian distribution.
+This means the generated MC samples will follow a gaussian distribution with the input quantity values as mean and uncertainties as standard deviation.
+However other probabilty density functions are also possible.
+Currently there are two additional options (with more to follow in the future).
+
+The first alternative is a truncated Gaussian distribution. This distribution is just like the Gaussian one, except that there are no values outside a given minimum or maximum value.
+A typical use case of this distribution is when a certain input quantity can never be negative.
+In such a case the uncertainty propagation could be done like this::
+
+   ur_y = prop.propagate_random(measurement_function, [x1, x2, x3],
+          [ur_x1, ur_x2, ur_x3], corr_between = corr_x1x2x3, pdf_shape="truncated_gaussian", pdf_params={"min":0.})
+
+When the alternative probability density functions requie additional parameters, these can be passed in the optional pdf_params dictionary.
+For the truncated Gaussian example, this dictionary can contain a value for "min" and "max" for the minimum and maximum allowed values respectively.
+
+The second alternative is a tophat distribution. In this case the MC sample will have a uniform probabilty distribution from the value of the input quantity minus its uncertainty to the value of the input quantity plus its uncertainty.
+We note that for these modified probability density functions, the standard deviation of the MC sample is not the same as the uncertainty anymore.
 
 
 Processing the MC samples in parallel
@@ -283,3 +302,28 @@ In this case each of the repeated measurements is processed in parallel::
       us_y = prop.propagate_systematic(measurement_function, [x1, x2, x3], 
              [us_x1, us_x2, us_x3],repeat_dims=0)
 
+
+
+
+Separating MC propagation in different stages
+###############################################
+
+At the start of this section we already saw that the optional `parallel_cores` keyword can be used to running the MC
+samples one-by-one through the measurement function rather than all at once as in the standard case. It is also possible
+to use the same keyword to use parallel processing. Here, only the processing of the input quantities through the measurement
+function is done in parallel. Generating the samples and calculating the covariance matrix etc is still done as normal.
+Punpy uses the multiprocessing module which comes standard with your python distribution.
+The gain by using parallel processing only really outweighs the overhead if the measurement function is relatively slow
+(of the order of 0.1 s or slower for one set of input quantities).
+
+Parallel processing for MC can be done as follows::
+
+   if __name__ == "__main__":
+      prop = punpy.MCPropagation(10000,parallel_cores=4)
+      ur_y = prop.propagate_random(measurement_function, [x1, x2, x3],
+             [ur_x1, ur_x2, ur_x3])
+      us_y = prop.propagate_systematic(measurement_function, [x1, x2, x3],
+             [us_x1, us_x2, us_x3])
+
+Note that the use of 'if __name__ == "__main__":' is required when using a Windows machine for multiprocessing and is generally good practise.
+When process

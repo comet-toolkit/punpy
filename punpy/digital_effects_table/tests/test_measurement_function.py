@@ -116,6 +116,40 @@ class TestMeasurementFunction(unittest.TestCase):
             ds_y.unc["volume"].total_unc().values, u_tot_volume, rtol=0.06
         )
 
+    def test_gaslaw_errcorrdict(self):
+        prop = MCPropagation(1000, dtype="float32", verbose=False)
+
+        gl = IdealGasLaw(
+            prop,
+            ["pressure", "temperature", "n_moles"],
+            "volume",
+            yunit="m^3",
+            use_err_corr_dict=True,
+        )
+        ds_y_tot = gl.propagate_ds_total(ds)
+
+        npt.assert_allclose(ds_y_tot["volume"].values, volume, rtol=0.002)
+
+        npt.assert_allclose(ds_y_tot["u_tot_volume"].values, u_tot_volume, rtol=0.1)
+
+        prop = MCPropagation(3000, dtype="float32", verbose=False)
+        gl = IdealGasLaw(
+            prop,
+            ["pressure", "temperature", "n_moles"],
+            "volume",
+            yunit="m^3",
+            repeat_dims=[0, 2],
+        )
+        ds_y = gl.propagate_ds(ds)
+
+        npt.assert_allclose(ds_y["volume"].values, volume, rtol=0.002)
+        npt.assert_allclose(ds_y["u_ran_volume"].values, u_ran_volume, rtol=0.06)
+        npt.assert_allclose(ds_y["u_sys_volume"].values, u_sys_volume, rtol=0.06)
+        npt.assert_allclose(ds_y["u_str_volume"].values, u_str_volume, rtol=0.06)
+        npt.assert_allclose(
+            ds_y.unc["volume"].total_unc().values, u_tot_volume, rtol=0.06
+        )
+
     def test_hypernets_repeat_dim(self):
         prop = MCPropagation(3000, dtype="float32", parallel_cores=1, verbose=False)
 

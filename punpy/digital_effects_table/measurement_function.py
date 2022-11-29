@@ -135,8 +135,10 @@ class MeasurementFunction(ABC):
             self.str_repeat_corr_dims,
             self.prop.verbose,
             self.templ,
-            use_err_corr_dict
+            use_err_corr_dict,
         )
+
+        self.use_err_corr_dict = use_err_corr_dict
 
     @abstractmethod
     def meas_function(self, *args, **kwargs):
@@ -641,7 +643,7 @@ class MeasurementFunction(ABC):
 
         if self.sizes_dict is None:
             self.sizes_dict = {}
-            print(y.shape,self.ydims)
+            print(y.shape, self.ydims)
             for idim, dim in enumerate(self.ydims):
                 self.sizes_dict[dim] = y.shape[idim]
 
@@ -758,19 +760,38 @@ class MeasurementFunction(ABC):
         if all([iu is None for iu in input_unc]):
             return None, None
         else:
-            return self.prop.propagate_standard(
-                self.meas_function,
-                input_qty,
-                input_unc,
-                input_corr,
-                param_fixed=self.param_fixed,
-                corr_between=self.corr_between,
-                return_corr=return_corr,
-                return_samples=False,
-                repeat_dims=self.num_repeat_dims,
-                corr_dims=self.num_corr_dims,
-                output_vars=self.output_vars,
-            )
+            if self.use_err_corr_dict:
+                MC_x = self.prop.generate_MC_sample(
+                    input_qty,
+                    input_unc,
+                    corr_x=input_corr,
+                    corr_between=self.corr_between,
+                    comp_list=True,
+                )
+                MC_y = self.prop.run_samples(
+                    self.meas_function, MC_x, output_vars=self.output_vars
+                )
+                return self.prop.process_samples(
+                    MC_x,
+                    MC_y,
+                    return_corr=return_corr,
+                    corr_dims=self.num_corr_dims,
+                    output_vars=self.output_vars,
+                )
+            else:
+                return self.prop.propagate_standard(
+                    self.meas_function,
+                    input_qty,
+                    input_unc,
+                    input_corr,
+                    param_fixed=self.param_fixed,
+                    corr_between=self.corr_between,
+                    return_corr=return_corr,
+                    return_samples=False,
+                    repeat_dims=self.num_repeat_dims,
+                    corr_dims=self.num_corr_dims,
+                    output_vars=self.output_vars,
+                )
 
     def propagate_random(self, *args, expand=False):
         """
@@ -868,19 +889,38 @@ class MeasurementFunction(ABC):
         if all([iu is None for iu in input_unc]):
             return None, None
         else:
-            return self.prop.propagate_standard(
-                self.meas_function,
-                input_qty,
-                input_unc,
-                input_corr,
-                param_fixed=self.param_fixed,
-                corr_between=self.corr_between,
-                return_corr=return_corr,
-                return_samples=False,
-                repeat_dims=self.num_repeat_dims,
-                corr_dims=self.num_corr_dims,
-                output_vars=self.output_vars,
-            )
+            if self.use_err_corr_dict:
+                MC_x = self.prop.generate_MC_sample(
+                    input_qty,
+                    input_unc,
+                    corr_x=input_corr,
+                    corr_between=self.corr_between,
+                    comp_list=True,
+                )
+                MC_y = self.prop.run_samples(
+                    self.meas_function, MC_x, output_vars=self.output_vars
+                )
+                return self.prop.process_samples(
+                    MC_x,
+                    MC_y,
+                    return_corr=return_corr,
+                    corr_dims=self.num_corr_dims,
+                    output_vars=self.output_vars,
+                )
+            else:
+                return self.prop.propagate_standard(
+                    self.meas_function,
+                    input_qty,
+                    input_unc,
+                    input_corr,
+                    param_fixed=self.param_fixed,
+                    corr_between=self.corr_between,
+                    return_corr=return_corr,
+                    return_samples=False,
+                    repeat_dims=self.num_repeat_dims,
+                    corr_dims=self.num_corr_dims,
+                    output_vars=self.output_vars,
+                )
 
     def propagate_specific(self, form, *args, expand=False, return_corr=False):
         """
@@ -911,16 +951,34 @@ class MeasurementFunction(ABC):
         if all([iu is None for iu in input_unc]):
             return None, None
         else:
-            return self.prop.propagate_standard(
-                self.meas_function,
-                input_qty,
-                input_unc,
-                input_corr,
-                param_fixed=self.param_fixed,
-                corr_between=self.corr_between,
-                return_corr=return_corr,
-                return_samples=False,
-                repeat_dims=self.num_repeat_dims,
-                corr_dims=self.num_corr_dims,
-                output_vars=self.output_vars,
-            )
+            if self.use_err_corr_dict:
+                MC_x = self.prop.generate_MC_sample(
+                    input_qty,
+                    input_unc,
+                    corr_x=input_corr,
+                    corr_between=self.corr_between,
+                )
+                MC_y = self.prop.run_samples(
+                    self.meas_function, MC_x, output_vars=self.output_vars
+                )
+                ufd, ucorrd, corr_out = self.prop.process_samples(
+                    MC_x,
+                    MC_y,
+                    return_corr=return_corr,
+                    corr_dims=self.num_corr_dims,
+                    output_vars=self.output_vars,
+                )
+            else:
+                return self.prop.propagate_standard(
+                    self.meas_function,
+                    input_qty,
+                    input_unc,
+                    input_corr,
+                    param_fixed=self.param_fixed,
+                    corr_between=self.corr_between,
+                    return_corr=return_corr,
+                    return_samples=False,
+                    repeat_dims=self.num_repeat_dims,
+                    corr_dims=self.num_corr_dims,
+                    output_vars=self.output_vars,
+                )

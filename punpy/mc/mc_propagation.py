@@ -6,7 +6,6 @@ from multiprocessing import Pool
 
 import comet_maths as cm
 import numpy as np
-
 import punpy.utilities.utilities as util
 
 """___Authorship___"""
@@ -57,6 +56,8 @@ class MCPropagation:
         output_vars=1,
         PD_corr=True,
         refyvar=0,
+        pdf_shape="gaussian",
+        pdf_params=None,
     ):
         """
         Propagate random uncertainties through measurement function with n input quantities.
@@ -94,6 +95,10 @@ class MCPropagation:
         :type PD_corr: bool, optional
         :param refyvar: Index of output variable with reference shape (only relevant when output_vars>1; should be output variable with most dimensions; affects things like repeat_dims)
         :type refyvar: int, optional
+        :param pdf_shape: string identifier of the probability density function shape, defaults to gaussian
+        :type pdf_shape: str, optional
+        :param pdf_params: dictionaries defining optional additional parameters that define the probability density function, Defaults to None (gaussian does not require additional parameters)
+        :type pdf_params: dict, optional
         :return: uncertainties on measurand
         :rtype: array
         """
@@ -119,6 +124,8 @@ class MCPropagation:
             output_vars=output_vars,
             PD_corr=PD_corr,
             refyvar=refyvar,
+            pdf_shape=pdf_shape,
+            pdf_params=pdf_params,
         )
 
     def propagate_systematic(
@@ -138,6 +145,8 @@ class MCPropagation:
         output_vars=1,
         PD_corr=True,
         refyvar=0,
+        pdf_shape="gaussian",
+        pdf_params=None,
     ):
         """
         Propagate systematic uncertainties through measurement function with n input quantities.
@@ -175,6 +184,10 @@ class MCPropagation:
         :type PD_corr: bool, optional
         :param refyvar: Index of output variable with reference shape (only relevant when output_vars>1; should be output variable with most dimensions; affects things like repeat_dims)
         :type refyvar: int, optional
+        :param pdf_shape: string identifier of the probability density function shape, defaults to gaussian
+        :type pdf_shape: str, optional
+        :param pdf_params: dictionaries defining optional additional parameters that define the probability density function, Defaults to None (gaussian does not require additional parameters)
+        :type pdf_params: dict, optional
         :return: uncertainties on measurand
         :rtype: array
         """
@@ -200,6 +213,8 @@ class MCPropagation:
             output_vars=output_vars,
             PD_corr=PD_corr,
             refyvar=refyvar,
+            pdf_shape=pdf_shape,
+            pdf_params=pdf_params,
         )
 
     def propagate_cov(
@@ -218,6 +233,8 @@ class MCPropagation:
         output_vars=1,
         PD_corr=True,
         refyvar=0,
+        pdf_shape="gaussian",
+        pdf_params=None,
     ):
         """
         Propagate uncertainties with given covariance matrix through measurement function with n input quantities.
@@ -254,6 +271,10 @@ class MCPropagation:
         :type PD_corr: bool, optional
         :param refyvar: Index of output variable with reference shape (only relevant when output_vars>1; should be output variable with most dimensions; affects things like repeat_dims)
         :type refyvar: int, optional
+        :param pdf_shape: string identifier of the probability density function shape, defaults to gaussian
+        :type pdf_shape: str, optional
+        :param pdf_params: dictionaries defining optional additional parameters that define the probability density function, Defaults to None (gaussian does not require additional parameters)
+        :type pdf_params: dict, optional
         :return: uncertainties on measurand
         :rtype: array
         """
@@ -281,6 +302,8 @@ class MCPropagation:
             output_vars=output_vars,
             PD_corr=PD_corr,
             refyvar=refyvar,
+            pdf_shape=pdf_shape,
+            pdf_params=pdf_params,
         )
 
     def propagate_standard(
@@ -300,6 +323,8 @@ class MCPropagation:
         output_vars=1,
         PD_corr=True,
         refyvar=0,
+        pdf_shape="gaussian",
+        pdf_params=None,
     ):
         """
         Propagate uncertainties through measurement function with n input quantities. Correlations must be specified in corr_x.
@@ -337,6 +362,10 @@ class MCPropagation:
         :type PD_corr: bool, optional
         :param refyvar: Index of output variable with reference shape (only relevant when output_vars>1; should be output variable with most dimensions; affects things like repeat_dims)
         :type refyvar: int, optional
+        :param pdf_shape: string identifier of the probability density function shape, defaults to gaussian
+        :type pdf_shape: str, optional
+        :param pdf_params: dictionaries defining optional additional parameters that define the probability density function, Defaults to None (gaussian does not require additional parameters)
+        :type pdf_params: dict, optional
         :return: uncertainties on measurand
         :rtype: array
         """
@@ -387,6 +416,8 @@ class MCPropagation:
                 fixed_corr_var=fixed_corr_var,
                 output_vars=output_vars,
                 PD_corr=False,
+                pdf_shape=pdf_shape,
+                pdf_params=pdf_params,
             )
 
             outs = self.make_new_outs(
@@ -437,6 +468,8 @@ class MCPropagation:
                     fixed_corr_var=fixed_corr_var,
                     output_vars=output_vars,
                     PD_corr=False,
+                    pdf_shape=pdf_shape,
+                    pdf_params=pdf_params,
                 )
 
                 outs = self.add_repeated_outs(
@@ -478,7 +511,14 @@ class MCPropagation:
             if samples is not None:
                 MC_x = samples
             else:
-                MC_x = self.generate_MC_sample(x,u_x,corr_x,corr_between=corr_between)
+                MC_x = self.generate_MC_sample(
+                    x,
+                    u_x,
+                    corr_x,
+                    corr_between=corr_between,
+                    pdf_shape=pdf_shape,
+                    pdf_params=pdf_params,
+                )
 
             MC_y = self.run_samples(func, MC_x, output_vars=output_vars)
 
@@ -494,9 +534,64 @@ class MCPropagation:
                 output_vars,
             )
 
-    def generate_MC_sample(self,x,u_x,corr_x,corr_between=None,pdf_shape="gaussian",pdf_params=None):
+    def generate_MC_sample(
+        self,
+        x,
+        u_x,
+        corr_x,
+        corr_between=None,
+        pdf_shape="gaussian",
+        pdf_params=None,
+        comp_list=False,
+    ):
         """
         function to generate MC sample for input quantities
+
+        :param x: list of input quantities (usually numpy arrays)
+        :type x: list[array]
+        :param u_x: list of systematic uncertainties on input quantities (usually numpy arrays)
+        :type u_x: list[array]
+        :param corr_x: list of correlation matrices (n,n) along non-repeating axis. Can be set to "rand" (diagonal correlation matrix), "syst" (correlation matrix of ones) or a custom correlation matrix.
+        :type corr_x: list[array]
+        :param corr_between: correlation matrix (n,n) between input quantities, defaults to None
+        :type corr_between: array, optional
+        :param pdf_shape: string identifier of the probability density function shape, defaults to gaussian
+        :type pdf_shape: str, optional
+        :param pdf_params: dictionaries defining optional additional parameters that define the probability density function, Defaults to None (gaussian does not require additional parameters)
+        :type pdf_params: dict, optional
+        :param comp_list: boolean to define whether u_x and corr_x are given as a list or individual uncertainty components. Defaults to False, in chich case a single combined uncertainty component is given per input quantity.
+        :type comp_list: bool, optional
+        :return: MC sample for input quantities
+        :rtype: list[array]
+        """
+        MC_data = np.empty(len(x), dtype=np.ndarray)
+
+        for i in range(len(x)):
+            MC_data[i] = cm.generate_sample(
+                self.MCsteps,
+                x,
+                u_x,
+                corr_x,
+                i,
+                pdf_shape=pdf_shape,
+                pdf_params=pdf_params,
+                comp_list=comp_list,
+            )
+        if corr_between is not None:
+            MC_data = cm.correlate_sample_corr(MC_data, corr_between)
+        if self.verbose:
+            print(
+                "samples generated (%s s since creation of prop object)"
+                % (time.time() - self.starttime)
+            )
+
+        return MC_data
+
+    def generate_MC_sample_cov(
+        self, x, cov_x, corr_between=None, pdf_shape="gaussian", pdf_params=None
+    ):
+        """
+        function to generate MC sample for input quantities from covariance matrix
 
         :param x: list of input quantities (usually numpy arrays)
         :type x: list[array]
@@ -513,60 +608,24 @@ class MCPropagation:
         :return: MC sample for input quantities
         :rtype:
         """
-        MC_data = np.empty(len(x), dtype=np.ndarray)
-
-        for i in range(len(x)):
-            MC_data[i] = cm.generate_sample(self.MCsteps, x, u_x, corr_x, i, pdf_shape=pdf_shape, pdf_params=pdf_params)
-        if corr_between is not None:
-            MC_data = cm.correlate_sample_corr(MC_data, corr_between)
-        if self.verbose:
-            print(
-                "samples generated (%s s since creation of prop object)"
-                % (time.time() - self.starttime)
-            )
-
-        return MC_data
-
-    def generate_MC_sample_cov(self,x,cov_x,corr_between=None):
-        """
-        function to generate MC sample for input quantities from covariance matrix
-
-        :param x: list of input quantities (usually numpy arrays)
-        :type x: list[array]
-        :param u_x: list of systematic uncertainties on input quantities (usually numpy arrays)
-        :type u_x: list[array]
-        :param corr_x: list of correlation matrices (n,n) along non-repeating axis. Can be set to "rand" (diagonal correlation matrix), "syst" (correlation matrix of ones) or a custom correlation matrix.
-        :type corr_x: list[array]
-        :param corr_between: correlation matrix (n,n) between input quantities, defaults to None
-        :type corr_between: array, optional
-        :return: MC sample for input quantities
-        :rtype:
-        """
 
         MC_data = np.empty(len(x), dtype=np.ndarray)
         for i in range(len(x)):
             if not hasattr(x[i], "__len__"):
                 MC_data[i] = cm.generate_sample_systematic(
-                    self.MCsteps, x[i], cov_x[i]
+                    self.MCsteps,
+                    x[i],
+                    cov_x[i],
+                    pdf_shape=pdf_shape,
+                    pdf_params=pdf_params,
                 )
-            elif param_fixed is not None:
-                if param_fixed[i] and (len(x[i].shape) == 2):
-                    MC_data[i] = np.array(
-                        [
-                            cm.generate_sample_cov(
-                                self.MCsteps, x[i][:, j].ravel(), cov_x[i]
-                            ).reshape(x[i][:, j].shape + (self.MCsteps,))
-                            for j in range(x[i].shape[1])
-                        ]
-                    ).T
-                    MC_data[i] = np.moveaxis(MC_data[i], 0, 1)
-                else:
-                    MC_data[i] = cm.generate_sample_cov(
-                        self.MCsteps, x[i].ravel(), cov_x[i]
-                    ).reshape(x[i].shape + (self.MCsteps,))
             else:
                 MC_data[i] = cm.generate_sample_cov(
-                    self.MCsteps, x[i].ravel(), cov_x[i]
+                    self.MCsteps,
+                    x[i].ravel(),
+                    cov_x[i],
+                    pdf_shape=pdf_shape,
+                    pdf_params=pdf_params,
                 ).reshape(x[i].shape + (self.MCsteps,))
 
         if corr_between is not None:
@@ -590,6 +649,8 @@ class MCPropagation:
         output_vars=1,
         PD_corr=True,
         refyvar=0,
+        pdf_shape="gaussian",
+        pdf_params=None,
     ):
         """
         Propagate uncertainties with given covariance matrix through measurement function with n input quantities.
@@ -626,6 +687,10 @@ class MCPropagation:
         :type PD_corr: bool, optional
         :param refyvar: Index of output variable with reference shape (only relevant when output_vars>1; should be output variable with most dimensions; affects things like repeat_dims)
         :type refyvar: int, optional
+        :param pdf_shape: string identifier of the probability density function shape, defaults to gaussian
+        :type pdf_shape: str, optional
+        :param pdf_params: dictionaries defining optional additional parameters that define the probability density function, Defaults to None (gaussian does not require additional parameters)
+        :type pdf_params: dict, optional
         :return: uncertainties on measurand
         :rtype: array
         """
@@ -669,6 +734,8 @@ class MCPropagation:
                 corr_dims=corr_dims,
                 output_vars=output_vars,
                 PD_corr=False,
+                pdf_shape=pdf_shape,
+                pdf_params=pdf_params,
             )
 
             outs = self.make_new_outs(
@@ -716,6 +783,8 @@ class MCPropagation:
                     corr_dims=corr_dims,
                     output_vars=output_vars,
                     PD_corr=False,
+                    pdf_shape=pdf_shape,
+                    pdf_params=pdf_params,
                 )
 
                 outs = self.add_repeated_outs(
@@ -752,7 +821,13 @@ class MCPropagation:
             if samples is not None:
                 MC_data = samples
             else:
-                MC_data = self.generate_MC_sample_cov(x,cov_x,corr_between=corr_between)
+                MC_data = self.generate_MC_sample_cov(
+                    x,
+                    cov_x,
+                    corr_between=corr_between,
+                    pdf_shape=pdf_shape,
+                    pdf_params=pdf_params,
+                )
 
         return self.process_samples(
             func,
@@ -1279,7 +1354,16 @@ class MCPropagation:
 
         return outs
 
-    def run_samples(self, func, MC_x, output_vars=1, start=None, end=None, sli=None, broadcasting=True):
+    def run_samples(
+        self,
+        func,
+        MC_x,
+        output_vars=1,
+        start=None,
+        end=None,
+        sli=None,
+        broadcasting=True,
+    ):
         """
         process all the MC samples of input quantities through the measurand function
 
@@ -1293,15 +1377,17 @@ class MCPropagation:
         :rtype: array[array]
         """
         if (start is not None) or (end is not None):
-            sli=slice(start,end)
-            indices=range(*sli.indices(self.MCsteps))
+            sli = slice(start, end)
+            indices = range(*sli.indices(self.MCsteps))
         else:
-            sli=slice(sli)
-            indices=range(*sli.indices(self.MCsteps))
+            sli = slice(sli)
+            indices = range(*sli.indices(self.MCsteps))
 
         if self.parallel_cores == 0:
             if broadcasting:
-                MC_y = np.moveaxis(func(*[np.moveaxis(dat[sli], 0, -1) for dat in MC_x]),-1,0)
+                MC_y = np.moveaxis(
+                    func(*[np.moveaxis(dat[sli], 0, -1) for dat in MC_x]), -1, 0
+                )
             else:
                 MC_y = func(*[x[sli] for x in MC_x])
 
@@ -1310,8 +1396,8 @@ class MCPropagation:
 
         else:
             MC_x2 = np.empty(len(indices), dtype=object)
-            for i,index in enumerate(indices):
-                MC_x2[i] = [MC_x[j][index,...] for j in range(len(MC_x))]
+            for i, index in enumerate(indices):
+                MC_x2[i] = [MC_x[j][index, ...] for j in range(len(MC_x))]
             MC_y = np.array(self.pool.starmap(func, MC_x2), dtype=self.dtype)
 
         if self.verbose:
@@ -1322,7 +1408,7 @@ class MCPropagation:
 
         return MC_y
 
-    def combine_samples(self,MC_samples):
+    def combine_samples(self, MC_samples):
         return np.concatenate(MC_samples, axis=0)
 
     def process_samples(
@@ -1368,27 +1454,24 @@ class MCPropagation:
             u_func = np.std(MC_y, axis=0, dtype=self.dtype)
 
         else:
-            complex_shapes=True
+            complex_shapes = True
             if yshapes is None:
-                complex_shapes=False
-            elif all(
-                    [yshapes[i] == yshapes[0] for i in range(len(yshapes))]
-            ):
-                complex_shapes=False
+                complex_shapes = False
+            elif all([yshapes[i] == yshapes[0] for i in range(len(yshapes))]):
+                complex_shapes = False
 
             if complex_shapes:
                 MC_y2 = np.empty(output_vars, dtype=object)
                 u_func = np.empty(output_vars, dtype=object)
 
                 for i in range(output_vars):
-                    MC_y2[i]=np.empty((self.MCsteps,)+yshapes[i])
+                    MC_y2[i] = np.empty((self.MCsteps,) + yshapes[i])
                     for j in range(self.MCsteps):
-                        MC_y2[i][j]=MC_y[j,i]
+                        MC_y2[i][j] = MC_y[j, i]
                     u_func[i] = np.std(np.array(MC_y2[i]), axis=0, dtype=self.dtype)
 
             else:
                 u_func = np.std(MC_y, axis=0, dtype=self.dtype)
-
 
         if self.verbose:
             print(
@@ -1434,9 +1517,9 @@ class MCPropagation:
                                 self.dtype
                             )
                         else:
-                            corr_ys[i] = cm.calculate_corr(MC_y[:,i], corr_dims).astype(
-                            self.dtype
-                            )
+                            corr_ys[i] = cm.calculate_corr(
+                                MC_y[:, i], corr_dims
+                            ).astype(self.dtype)
                         if PD_corr:
                             if not cm.isPD(corr_ys[i]):
                                 corr_ys[i] = cm.nearestPD_cholesky(
@@ -1449,13 +1532,12 @@ class MCPropagation:
                     corr_out = None
                 else:
                     # calculate correlation matrix between the different outputs produced by the measurement function.
-                    MC_y2=MC_y.reshape((self.MCsteps, output_vars, -1))
+                    MC_y2 = MC_y.reshape((self.MCsteps, output_vars, -1))
 
                     corr_out = np.mean(
                         [
-                            cm.calculate_corr(MC_y2[:,:,i]).astype(
-                                self.dtype
-                            ) for i in range(len(MC_y2[0,0]))
+                            cm.calculate_corr(MC_y2[:, :, i]).astype(self.dtype)
+                            for i in range(len(MC_y2[0, 0]))
                         ],
                         axis=0,
                     )
