@@ -6,6 +6,7 @@ from multiprocessing import Pool
 
 import comet_maths as cm
 import numpy as np
+
 import punpy.utilities.utilities as util
 
 """___Authorship___"""
@@ -1385,20 +1386,28 @@ class MCPropagation:
 
         if self.parallel_cores == 0:
             if broadcasting:
-                MC_y = np.moveaxis(
+                return np.moveaxis(
                     func(*[np.moveaxis(dat[sli], 0, -1) for dat in MC_x]), -1, 0
                 )
             else:
-                MC_y = func(*[x[sli] for x in MC_x])
+                return func(*[x[sli] for x in MC_x])
 
         elif self.parallel_cores == 1:
-            MC_y = np.array(list(map(func, *[x[sli] for x in MC_x])))
+            MC_y = list(map(func, *[x[sli] for x in MC_x]))
 
         else:
             MC_x2 = np.empty(len(indices), dtype=object)
             for i, index in enumerate(indices):
                 MC_x2[i] = [MC_x[j][index, ...] for j in range(len(MC_x))]
-            MC_y = np.array(self.pool.starmap(func, MC_x2), dtype=self.dtype)
+            MC_y = self.pool.starmap(func, MC_x2)
+
+        MC_y=np.array([MC_y[i] for i in range(len(indices)) if MC_y[i] is not None],dtype=self.dtype)
+
+        if len(MC_y)<len(indices):
+            print(
+                "%s of the %s MC samples were not processed correctly (returned None) and will be ignored in the punpy output"
+                % (len(indices)-len(MC_y),len(indices))
+            )
 
         if self.verbose:
             print(

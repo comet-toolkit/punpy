@@ -1,4 +1,4 @@
-punpy.mc package
+punpy.mc API
 ================
 
 .. automodule:: punpy.mc
