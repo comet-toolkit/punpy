@@ -50,7 +50,7 @@ class DigitalEffectsTableTemplates(ABC):
         err_corr, custom_err_corr = self.set_errcorr_shape(
             dims,
             dim_sizes,
-            "err_corr_tot_" + self.yvariable,
+            "err_corr_str_" + self.yvariable,
             str_repeat_corr_dims=str_repeat_corr_dims,
             repeat_dim_err_corr=repeat_dim_err_corrs,
         )

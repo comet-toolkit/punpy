@@ -7,6 +7,7 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 import xarray as xr
+
 from punpy import MeasurementFunction,MCPropagation
 
 """___Authorship___"""
@@ -57,8 +58,14 @@ L1data = xr.open_dataset(os.path.join(dir_path, "test_l1.nc"))
 
 # Define your measurement function inside a subclass of MeasurementFunction
 class IdealGasLaw(MeasurementFunction):
-    def meas_function(self, pres, temp, n):
+    @staticmethod
+    def meas_function(pres, temp, n):
         return (n * temp * 8.134) / pres
+
+# Define your measurement function inside a subclass of MeasurementFunction
+class IdealGasLaw_2out(MeasurementFunction):
+    def meas_function(self, pres, temp, n):
+        return (n * temp * 8.134) / pres, pres/temp
 
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -87,12 +94,14 @@ class TestMeasurementFunction(unittest.TestCase):
 
     def test_gaslaw(self):
 
-        prop = MCPropagation(1000, dtype="float32", verbose=False)
+        prop = MCPropagation(1000, dtype="float32", verbose=False, parallel_cores=4)
 
         gl = IdealGasLaw(
             prop, ["pressure", "temperature", "n_moles"], "volume", yunit="m^3"
         )
         ds_y_tot = gl.propagate_ds_total(ds)
+
+        npt.assert_(ds_y_tot["u_tot_volume"].attrs["err_corr_1_params"][0] in list(ds_y_tot.variables))
 
         npt.assert_allclose(ds_y_tot["volume"].values, volume, rtol=0.002)
 
@@ -108,13 +117,28 @@ class TestMeasurementFunction(unittest.TestCase):
         )
         ds_y = gl.propagate_ds(ds)
 
+        npt.assert_(ds_y["u_str_volume"].attrs["err_corr_3_params"][0] in list(ds_y.variables))
+
         npt.assert_allclose(ds_y["volume"].values, volume, rtol=0.002)
         npt.assert_allclose(ds_y["u_ran_volume"].values, u_ran_volume, rtol=0.06)
         npt.assert_allclose(ds_y["u_sys_volume"].values, u_sys_volume, rtol=0.06)
         npt.assert_allclose(ds_y["u_str_volume"].values, u_str_volume, rtol=0.06)
+        npt.assert_allclose(ds_y["u_str_volume"].values, u_str_volume, rtol=0.06)
         npt.assert_allclose(
             ds_y.unc["volume"].total_unc().values, u_tot_volume, rtol=0.06
         )
+
+    def test_gaslaw_2out(self):
+        prop = MCPropagation(1000, dtype="float32", verbose=False)
+
+        gl = IdealGasLaw_2out(
+            prop, ["pressure", "temperature", "n_moles"], ["volume","P/T"], yunit=["m^3","Pa/K"]
+        )
+        ds_y_tot = gl.propagate_ds_total(ds)
+
+        npt.assert_allclose(ds_y_tot["volume"].values, volume, rtol=0.002)
+
+        npt.assert_allclose(ds_y_tot["u_tot_volume"].values, u_tot_volume, rtol=0.1)
 
     def test_gaslaw_errcorrdict(self):
         prop = MCPropagation(1000, dtype="float32", verbose=False)

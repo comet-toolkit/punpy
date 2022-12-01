@@ -84,7 +84,7 @@ In this subclass, one can then define the measurement function in python as a fu
          return (8.134 * n * T)/P
 
 Propagating uncertainties in digital effects tables
-################################################
+####################################################
     
 Once this kind of measurement function class is defined, we can initialise an object of this class.
 Here, as the first argument, one needs to specify the names of each of the input quantities.
@@ -173,3 +173,16 @@ The solution to this is to avoid storing the full (x*y*z,x*y*z) error correlatio
 In many cases, even though the errors for pixels along a certain dimension (e.g. x) might
 be correlated, this error correlation w.r.t x does not change for different values of y or z.
 In that case, the error correlation for x can be separated and stored as a matrix of shape (x,x).
+
+This can be achieved by setting the using the use_err_corr_dict keyword::
+
+
+   prop = MCPropagation(1000, dtype="float32", verbose=False)
+
+   gl = IdealGasLaw(
+      prop,
+      ["pressure", "temperature", "n_moles"],
+      "volume",
+      yunit="m^3",
+      use_err_corr_dict=True,
+   )

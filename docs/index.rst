@@ -20,6 +20,7 @@ This documentation provides general information on how to use the module (with s
    content/getting_started
    content/punpy_standalone
    content/punpy_digital_effects_table
+   content/punpy_memory_and_speed
    content/examples_standalone
    content/examples_digital_effects_tables
    content/atbd
