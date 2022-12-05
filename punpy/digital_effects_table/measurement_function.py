@@ -100,7 +100,7 @@ class MeasurementFunction(ABC):
                         "punpy.MeasurementFunction: when specifying both yvariable and get_measurand_name, they need to be the same!"
                     )
 
-        self.templ = DigitalEffectsTableTemplates(self.yvariable, yunit)
+        self.templ = DigitalEffectsTableTemplates(self.yvariable, yunit, output_vars)
         self.ydims = ydims
         self.sizes_dict = sizes_dict
 
@@ -231,9 +231,14 @@ class MeasurementFunction(ABC):
             )
 
         if include_corr:
-            u_stru_y, corr_stru_y = self.propagate_structured(
+            if self.output_vars==1:
+                u_stru_y, corr_stru_y = self.propagate_structured(
                 *args, expand=expand, return_corr=include_corr
-            )
+                )
+            else:
+                u_stru_y, corr_stru_y, corr_stru_y_between = self.propagate_structured(
+                    *args, expand=expand, return_corr=include_corr
+                )
         else:
             u_stru_y = self.propagate_structured(
                 *args, expand=expand, return_corr=include_corr
@@ -298,9 +303,20 @@ class MeasurementFunction(ABC):
                 ds_out[ucomp_str].values = u_stru_y
 
             if include_corr:
-                ds_out["err_corr_str_" + self.yvariable].values = corr_stru_y
+                if self.output_vars==1:
+                    ds_out["err_corr_str_" + self.yvariable].values = corr_stru_y
+                else:
+                    for i in range(self.output_vars):
+                        ds_out["err_corr_str_" + self.yvariable[i]].values = corr_stru_y[i]
+
             else:
-                ds_out.drop("err_corr_str_" + self.yvariable)
+                if self.output_vars==1:
+                    ds_out.drop("err_corr_str_" + self.yvariable)
+                else:
+                    for i in range(self.output_vars):
+                        ds_out.drop("err_corr_str_" + self.yvariable[i])
+                    ds_out.drop("err_corr_str_between")
+
 
         if ds_out_pre is not None:
             self.templ.join_with_preexisting_ds(ds_out, ds_out_pre, drop=self.yvariable)
@@ -347,9 +363,14 @@ class MeasurementFunction(ABC):
         y = self.check_sizes_and_run(*args, expand=expand, ds_out_pre=ds_out_pre)
 
         if include_corr:
-            u_tot_y, corr_tot_y = self.propagate_total(
-                *args, expand=expand, return_corr=include_corr
-            )
+            if self.output_vars==1:
+                u_tot_y, corr_tot_y = self.propagate_total(
+                    *args, expand=expand, return_corr=include_corr
+                )
+            else:
+                u_tot_y, corr_tot_y, corr_tot_y_between = self.propagate_total(
+                    *args, expand=expand, return_corr=include_corr
+                )
         else:
             u_tot_y = self.propagate_total(
                 *args, expand=expand, return_corr=include_corr
@@ -373,7 +394,12 @@ class MeasurementFunction(ABC):
         # create dataset template
         ds_out = obsarray.create_ds(template, self.sizes_dict)
 
-        ds_out[self.yvariable].values = y
+        if self.output_vars==1:
+            ds_out[self.yvariable].values = y
+
+        else:
+            for i in range(self.output_vars):
+                ds_out[self.yvariable[i]].values = y[i]
 
         if store_unc_percent:
             ucomp = "u_rel_tot_" + self.yvariable
@@ -394,9 +420,20 @@ class MeasurementFunction(ABC):
                 ds_out[ucomp].values = u_tot_y
 
             if include_corr:
-                ds_out["err_corr_tot_" + self.yvariable].values = corr_tot_y
+                if self.output_vars==1:
+                    ds_out["err_corr_tot_" + self.yvariable].values = corr_tot_y
+                else:
+                    for i in range(self.output_vars):
+                        ds_out["err_corr_tot_" + self.yvariable[i]].values = corr_tot_y[i]
+                    ds_out["err_corr_tot_between"]= corr_tot_y_between
+
             else:
-                ds_out.drop("err_corr_tot_" + self.yvariable)
+                if self.output_vars==1:
+                    ds_out.drop("err_corr_tot_" + self.yvariable)
+                else:
+                    for i in range(self.output_vars):
+                        ds_out.drop("err_corr_tot_" + self.yvariable[i])
+                    ds_out.drop("err_corr_tot_between")
 
         if ds_out_pre is not None:
             self.templ.join_with_preexisting_ds(ds_out, ds_out_pre, drop=self.yvariable)
@@ -491,9 +528,14 @@ class MeasurementFunction(ABC):
 
             else:
                 if include_corr:
-                    u_comp_y, corr_comp_y = self.propagate_specific(
+                    if self.output_vars==1:
+                        u_comp_y, corr_comp_y = self.propagate_specific(
                         comp, *args, return_corr=include_corr, expand=expand
-                    )
+                     )
+                    else:
+                        u_comp_y, corr_comp_y,corr_comp_y_between = self.propagate_specific(
+                            comp, *args, return_corr=include_corr, expand=expand
+                        )
                 else:
                     u_comp_y = self.propagate_specific(
                         comp, *args, return_corr=include_corr, expand=expand
@@ -501,39 +543,80 @@ class MeasurementFunction(ABC):
                     corr_comp_y = None
 
                 if corr_comp_y is not None:
-                    ds_out[
-                        "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable
-                    ].values = corr_comp_y
+                    if self.output_vars==1:
+                        ds_out[
+                            "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable
+                            ].values = corr_comp_y
+                    else:
+                        for i in range(self.output_vars):
+                            ds_out[
+                                "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable[i]
+                            ].values = corr_comp_y[i]
                 else:
-                    ds_out.drop(
-                        "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable
-                    )
-                    err_corr_comp = None
+                    if self.output_vars==1:
+                        ds_out.drop(
+                            "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable
+                        )
+                        err_corr_comp = None
+                    else:
+                        for i in range(self.output_vars):
+                            ds_out.drop(
+                                "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable[i]
+                            )
+                            err_corr_comp = None
 
             if u_comp_y is None:
-                if store_unc_percent:
-                    ds_out = self.templ.remove_unc_component(
-                        ds_out,
-                        self.yvariable,
-                        "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable,
-                        err_corr_comp=err_corr_comp,
-                    )
+                if self.output_vars==1:
+                    if store_unc_percent:
+                        ds_out = self.templ.remove_unc_component(
+                            ds_out,
+                            self.yvariable,
+                            "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable,
+                            err_corr_comp=err_corr_comp,
+                            )
+                    else:
+                        ds_out = self.templ.remove_unc_component(
+                            ds_out,
+                            self.yvariable,
+                            "u_" + comp_list_out[icomp] + "_" + self.yvariable,
+                            err_corr_comp=err_corr_comp,
+                            )
                 else:
-                    ds_out = self.templ.remove_unc_component(
-                        ds_out,
-                        self.yvariable,
-                        "u_" + comp_list_out[icomp] + "_" + self.yvariable,
-                        err_corr_comp=err_corr_comp,
-                    )
+                    for i in range(self.output_vars):
+                        if store_unc_percent:
+                            ds_out = self.templ.remove_unc_component(
+                                ds_out,
+                                self.yvariable[i],
+                                "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable[i],
+                                err_corr_comp=err_corr_comp[i],
+                                )
+                        else:
+                            ds_out = self.templ.remove_unc_component(
+                                ds_out,
+                                self.yvariable[i],
+                                "u_" + comp_list_out[icomp] + "_" + self.yvariable[i],
+                                err_corr_comp=err_corr_comp[i],
+                                )
             else:
-                if store_unc_percent:
-                    ds_out[
-                        "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable
-                    ].values = (u_comp_y / y * 100)
+                if self.output_vars==1:
+                    if store_unc_percent:
+                        ds_out[
+                            "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable
+                        ].values = (u_comp_y / y * 100)
+                    else:
+                        ds_out[
+                            "u_" + comp_list_out[icomp] + "_" + self.yvariable
+                        ].values = u_comp_y
                 else:
-                    ds_out[
-                        "u_" + comp_list_out[icomp] + "_" + self.yvariable
-                    ].values = u_comp_y
+                    for i in range(self.output_vars):
+                        if store_unc_percent:
+                            ds_out[
+                                "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable[i]
+                                ].values = (u_comp_y[i] / y[i] * 100)
+                        else:
+                            ds_out[
+                                "u_" + comp_list_out[icomp] + "_" + self.yvariable[i]
+                                ].values = u_comp_y[i]
 
         if ds_out_pre is not None:
             ds_out = self.templ.join_with_preexisting_ds(
@@ -642,10 +725,15 @@ class MeasurementFunction(ABC):
         y = self.run(*args, expand=expand)
 
         if self.sizes_dict is None:
-            self.sizes_dict = {}
-            print(y.shape, self.ydims)
-            for idim, dim in enumerate(self.ydims):
-                self.sizes_dict[dim] = y.shape[idim]
+            if self.output_vars==0:
+                self.sizes_dict = {}
+                for idim, dim in enumerate(self.ydims):
+                    self.sizes_dict[dim] = y.shape[idim]
+            else:
+                self.sizes_dict = [{} for i in range(self.output_vars)]
+                for i in range(self.output_vars):
+                    for idim, dim in enumerate(self.ydims):
+                        self.sizes_dict[i][dim] = y[i].shape[idim]
 
         str_repeat_corr_dims = []
         for i in range(len(self.repeat_dims)):

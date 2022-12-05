@@ -7,7 +7,6 @@ import unittest
 import comet_maths as cm
 import numpy as np
 import numpy.testing as npt
-
 from punpy.mc.mc_propagation import MCPropagation
 
 """___Authorship___"""
@@ -39,11 +38,16 @@ def functionb(x1, x2):
     return 2 * x1 - x2
 
 def functionb_fail(x1, x2):
-    rand=np.random.random()
-    if rand<0.1:
-        return None
-    else:
-        return 2 * x1 - x2
+    zero_or_one=np.random.choice([0,1],p=[0.1,0.9])
+    with np.errstate(divide='raise'):
+        try:
+            return 2 * x1 - x2/zero_or_one
+        except:
+            return np.nan
+
+def functionb_failnan(x1, x2):
+    zero_or_one=np.random.choice([0,1],p=[0.1,0.9])
+    return 2 * x1 - x2/zero_or_one
 
 
 x1b = np.ones((20, 30)) * 50
@@ -739,6 +743,14 @@ class TestMCPropagation(unittest.TestCase):
         )
         npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.06)
         npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
+
+        prop = MCPropagation(10000, parallel_cores=4,verbose=True)
+        ufb, ucorrb = prop.propagate_random(
+            functionb_failnan, xsb, xerrsb, return_corr=True
+        )
+        npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.06)
+        npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
+
 
     def test_perform_checks(self):
         prop = MCPropagation(20000)

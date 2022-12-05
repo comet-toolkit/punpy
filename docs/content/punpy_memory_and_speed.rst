@@ -115,3 +115,18 @@ Parallel processing for MC can be done as follows::
 
 Note that the use of 'if __name__ == "__main__":' is required when using a Windows machine for multiprocessing and is generally good practise.
 When process
+
+Additional options
+#####################
+
+For both methods there are some cases, when there is only one correlation matrix contributing to the measurand (e.g. a complicated
+measurement function where all but one of the input quantities are known with perfect precision, i.e. without uncertainty),
+it can be beneficial to just copy this correlation matrix to the measurand rather than calculating it (since copying is faster
+and does not introduce MC noise). When the `fixed_corr_var` is set to True, punpy automatically detects if there is only one
+term of uncertainty, and if so copies the relevant correlation matrix to the output instead of calculating it. If `fixed_corr_var`
+is set to an integer, the correlation matrix corresponding to that dimension is copied instead::
+
+   prop = punpy.MCPropagation(10000)
+   ur_y = prop.propagate_random(
+   measurement_function, [x1, x2, x3], [ur_x1, ur_x2, ur_x3],
+   corr_between=corr_x1x2x3, fixed_corr_var=True)

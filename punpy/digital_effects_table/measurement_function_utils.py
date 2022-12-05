@@ -254,7 +254,7 @@ class MeasurementFunctionUtils:
 
         else:
             compname = self.templ.make_ucomp_name(
-                form, store_unc_percent=store_unc_percent, var=var
+                var, form, store_unc_percent=store_unc_percent
             )
             if compname in comps:
                 comps = [compname]

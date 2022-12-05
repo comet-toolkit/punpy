@@ -6,7 +6,6 @@ from multiprocessing import Pool
 
 import comet_maths as cm
 import numpy as np
-
 import punpy.utilities.utilities as util
 
 """___Authorship___"""
@@ -1386,11 +1385,11 @@ class MCPropagation:
 
         if self.parallel_cores == 0:
             if broadcasting:
-                return np.moveaxis(
+                MC_y = np.moveaxis(
                     func(*[np.moveaxis(dat[sli], 0, -1) for dat in MC_x]), -1, 0
                 )
             else:
-                return func(*[x[sli] for x in MC_x])
+                MC_y = func(*[x[sli] for x in MC_x])
 
         elif self.parallel_cores == 1:
             MC_y = list(map(func, *[x[sli] for x in MC_x]))
@@ -1401,7 +1400,7 @@ class MCPropagation:
                 MC_x2[i] = [MC_x[j][index, ...] for j in range(len(MC_x))]
             MC_y = self.pool.starmap(func, MC_x2)
 
-        MC_y=np.array([MC_y[i] for i in range(len(indices)) if MC_y[i] is not None],dtype=self.dtype)
+        MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.all(np.isfinite(MC_y[i]))],dtype=self.dtype)
 
         if len(MC_y)<len(indices):
             print(

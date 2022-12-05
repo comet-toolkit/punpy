@@ -1,16 +1,8 @@
-from comet_maths.linear_algebra.matrix_calculation import (
-    calculate_Jacobian,
-    calculate_corr,
-    nearestPD_cholesky,
-    isPD,
-)
-
-# load functionality of comet_maths as this used to be in punpy, and is generally useful as part of punpy
-
 from punpy.digital_effects_table.measurement_function import MeasurementFunction
 from punpy.lpu.lpu_propagation import LPUPropagation
 from punpy.mc.mc_propagation import MCPropagation
 from punpy.utilities.correlation_forms import *
+
 from ._version import __version__
 
 """___Authorship___"""

@@ -7,7 +7,6 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 import xarray as xr
-
 from punpy import MeasurementFunction,MCPropagation
 
 """___Authorship___"""
@@ -132,7 +131,7 @@ class TestMeasurementFunction(unittest.TestCase):
         prop = MCPropagation(1000, dtype="float32", verbose=False)
 
         gl = IdealGasLaw_2out(
-            prop, ["pressure", "temperature", "n_moles"], ["volume","P/T"], yunit=["m^3","Pa/K"]
+            prop, ["pressure", "temperature", "n_moles"], ["volume","P/T"], yunit=["m^3","Pa/K"], output_vars=2
         )
         ds_y_tot = gl.propagate_ds_total(ds)
 

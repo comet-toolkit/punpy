@@ -15,7 +15,7 @@ __status__ = "Development"
 
 
 class DigitalEffectsTableTemplates(ABC):
-    def __init__(self, yvariable, yunit):
+    def __init__(self, yvariable, yunit, output_vars):
         """
         Initialise DigitalEffectsTableTemplates
 
@@ -24,8 +24,14 @@ class DigitalEffectsTableTemplates(ABC):
         :param yunit: unit of the measurand
         :type yunit: string
         """
-        self.yvariable = yvariable
-        self.yunit = yunit
+        if isinstance(yvariable,str):
+            self.yvariable = [yvariable]
+            self.yunit = [yunit]
+        else:
+            self.yvariable = yvariable
+            self.yunit = yunit
+
+        self.output_vars = output_vars
 
     def make_template_main(
         self,
@@ -47,69 +53,71 @@ class DigitalEffectsTableTemplates(ABC):
         :return: measurand digital effects table template to be used by obsarray
         :rtype: dict
         """
-        err_corr, custom_err_corr = self.set_errcorr_shape(
-            dims,
-            dim_sizes,
-            "err_corr_str_" + self.yvariable,
-            str_repeat_corr_dims=str_repeat_corr_dims,
-            repeat_dim_err_corr=repeat_dim_err_corrs,
-        )
+        template = {}
 
-        if store_unc_percent:
-            units = "%"
-        else:
-            units = self.yunit
+        for i in range(self.output_vars):
+            err_corr, custom_err_corr = self.set_errcorr_shape(
+                dims,
+                dim_sizes,
+                "err_corr_str_" + self.yvariable[i],
+                str_repeat_corr_dims=str_repeat_corr_dims,
+                repeat_dim_err_corr=repeat_dim_err_corrs,
+            )
 
-        template = {
-            self.yvariable: {
-                "dtype": np.float32,
-                "dim": dims,
-                "attributes": {
-                    "units": self.yunit,
-                    "unc_comps": [
-                        self.make_ucomp_name(
-                            "ran", store_unc_percent=store_unc_percent
-                        ),
-                        self.make_ucomp_name(
-                            "sys", store_unc_percent=store_unc_percent
-                        ),
-                        self.make_ucomp_name(
-                            "str", store_unc_percent=store_unc_percent
-                        ),
-                    ],
-                },
-            },
-            self.make_ucomp_name("ran", store_unc_percent=store_unc_percent): {
-                "dtype": np.float32,
-                "dim": dims,
-                "attributes": {
-                    "units": units,
-                    "err_corr": [
-                        {"dim": dim, "form": "random", "params": [], "units": []}
-                        for dim in dims
-                    ],
-                },
-            },
-            self.make_ucomp_name("sys", store_unc_percent=store_unc_percent): {
-                "dtype": np.float32,
-                "dim": dims,
-                "attributes": {
-                    "units": units,
-                    "err_corr": [
-                        {"dim": dim, "form": "systematic", "params": [], "units": []}
-                        for dim in dims
-                    ],
-                },
-            },
-            self.make_ucomp_name("str", store_unc_percent=store_unc_percent): {
-                "dtype": np.float32,
-                "dim": dims,
-                "attributes": {"units": units, "err_corr": err_corr},
-            },
-        }
+            if store_unc_percent:
+                units = "%"
+            else:
+                units = self.yunit[i]
 
-        if custom_err_corr is not None:
-            template["err_corr_str_" + self.yvariable] = custom_err_corr
+            template[self.yvariable[i]] = {
+                    "dtype": np.float32,
+                    "dim": dims,
+                    "attributes": {
+                        "units": self.yunit[i],
+                        "unc_comps": [
+                            self.make_ucomp_name(self.yvariable[i],
+                                "ran", store_unc_percent=store_unc_percent
+                            ),
+                            self.make_ucomp_name(self.yvariable[i],
+                                "sys", store_unc_percent=store_unc_percent
+                            ),
+                            self.make_ucomp_name(self.yvariable[i],
+                                "str", store_unc_percent=store_unc_percent
+                            ),
+                        ],
+                    },
+                }
+            template[self.make_ucomp_name(self.yvariable[i],"ran", store_unc_percent=store_unc_percent)] = {
+                    "dtype": np.float32,
+                    "dim": dims,
+                    "attributes": {
+                        "units": units,
+                        "err_corr": [
+                            {"dim": dim, "form": "random", "params": [], "units": []}
+                            for dim in dims
+                        ],
+                    },
+                }
+            template[self.make_ucomp_name(self.yvariable[i],"sys", store_unc_percent=store_unc_percent)] ={
+                    "dtype": np.float32,
+                    "dim": dims,
+                    "attributes": {
+                        "units": units,
+                        "err_corr": [
+                            {"dim": dim, "form": "systematic", "params": [], "units": []}
+                            for dim in dims
+                        ],
+                    },
+                }
+            template[self.make_ucomp_name(self.yvariable[i],"str", store_unc_percent=store_unc_percent)] = {
+                    "dtype": np.float32,
+                    "dim": dims,
+                    "attributes": {"units": units, "err_corr": err_corr},
+                }
+
+
+            if custom_err_corr is not None:
+                template["err_corr_str_" + self.yvariable[i]] = custom_err_corr
 
         return template
 
@@ -131,38 +139,47 @@ class DigitalEffectsTableTemplates(ABC):
         :return: measurand digital effects table template to be used by obsarray
         :rtype: dict
         """
-        err_corr, custom_err_corr = self.set_errcorr_shape(
-            dims,
-            dim_sizes,
-            "err_corr_tot_" + self.yvariable,
-            str_repeat_corr_dims=str_repeat_corr_dims,
-            repeat_dim_err_corr=repeat_dim_err_corrs,
-        )
+        template = {}
 
-        if store_unc_percent:
-            units = "%"
-        else:
-            units = self.yunit
+        for i in range(self.output_vars):
+            err_corr, custom_err_corr = self.set_errcorr_shape(
+                dims,
+                dim_sizes,
+                "err_corr_tot_" + self.yvariable[i],
+                str_repeat_corr_dims=str_repeat_corr_dims,
+                repeat_dim_err_corr=repeat_dim_err_corrs,
+            )
 
-        template = {
-            self.yvariable: {
-                "dtype": np.float32,
-                "dim": dims,
-                "attributes": {
-                    "units": self.yunit,
-                    "unc_comps": [
-                        self.make_ucomp_name("tot", store_unc_percent=store_unc_percent)
-                    ],
-                },
-            },
-            self.make_ucomp_name("tot", store_unc_percent=store_unc_percent): {
+            if store_unc_percent:
+                units = "%"
+            else:
+                units = self.yunit[i]
+
+            template[self.yvariable[i]]={
+                    "dtype": np.float32,
+                    "dim": dims,
+                    "attributes": {
+                        "units": self.yunit[i],
+                        "unc_comps": [
+                            self.make_ucomp_name(self.yvariable[i],"tot", store_unc_percent=store_unc_percent)
+                        ],
+                    },
+                }
+            template[self.make_ucomp_name(self.yvariable[i],"tot", store_unc_percent=store_unc_percent)]={
+                    "dtype": np.float32,
+                    "dim": dims,
+                    "attributes": {"units": units, "err_corr": err_corr},
+                }
+
+            if custom_err_corr is not None:
+                template["err_corr_tot_" + self.yvariable[i]] = custom_err_corr
+
+        if self.output_vars:
+            template["corr_between_vars"]={
                 "dtype": np.float32,
                 "dim": dims,
                 "attributes": {"units": units, "err_corr": err_corr},
-            },
-        }
-        if custom_err_corr is not None:
-            template["err_corr_tot_" + self.yvariable] = custom_err_corr
+            }
 
         return template
 
@@ -187,91 +204,90 @@ class DigitalEffectsTableTemplates(ABC):
         :return: measurand digital effects table template to be used by obsarray
         :rtype: dict
         """
-        if store_unc_percent:
-            units = "%"
-        else:
-            units = self.yunit
+        template = {}
 
-        template = {
-            self.yvariable: {
-                "dtype": np.float32,
-                "dim": dims,
-                "attributes": {
-                    "units": self.yunit,
-                    "unc_comps": [
-                        self.make_ucomp_name(comp, store_unc_percent=store_unc_percent)
-                        for comp in comp_list
-                    ],
-                },
-            },
-        }
-
-        for ic, comp in enumerate(comp_list):
-            if comp == "random" and simple_random:
-                template[
-                    self.make_ucomp_name(comp, store_unc_percent=store_unc_percent)
-                ] = {
-                    "dtype": np.float32,
-                    "dim": dims,
-                    "attributes": {
-                        "units": units,
-                        "err_corr": [
-                            {"dim": dim, "form": "random", "params": [], "units": []}
-                            for dim in dims
-                        ],
-                    },
-                }
-
-            elif comp == "systematic" and simple_systematic:
-                template[
-                    self.make_ucomp_name(comp, store_unc_percent=store_unc_percent)
-                ] = {
-                    "dtype": np.float32,
-                    "dim": dims,
-                    "attributes": {
-                        "units": units,
-                        "err_corr": [
-                            {
-                                "dim": dim,
-                                "form": "systematic",
-                                "params": [],
-                                "units": [],
-                            }
-                            for dim in dims
-                        ],
-                    },
-                }
-
+        for i in range(self.output_vars):
+            if store_unc_percent:
+                units = "%"
             else:
-                err_corr, custom_err_corr = self.set_errcorr_shape(
-                    dims,
-                    dim_sizes,
-                    "err_corr_" + comp + "_" + self.yvariable,
-                    str_repeat_corr_dims=str_repeat_corr_dims,
-                    repeat_dim_err_corr=repeat_dim_err_corrs[ic],
-                )
+                units = self.yunit[i]
 
-                template[
-                    self.make_ucomp_name(comp, store_unc_percent=store_unc_percent)
-                ] = {
+            template[self.yvariable[i]] = {
                     "dtype": np.float32,
                     "dim": dims,
-                    "attributes": {"units": units, "err_corr": err_corr},
+                    "attributes": {
+                        "units": self.yunit[i],
+                        "unc_comps": [
+                            self.make_ucomp_name(self.yvariable[i],comp, store_unc_percent=store_unc_percent)
+                            for comp in comp_list
+                        ],
+                    },
                 }
-                if custom_err_corr is not None:
+
+            for ic, comp in enumerate(comp_list):
+                if comp == "random" and simple_random:
                     template[
-                        "err_corr_" + comp + "_" + self.yvariable
-                    ] = custom_err_corr
+                        self.make_ucomp_name(self.yvariable[i],comp, store_unc_percent=store_unc_percent)
+                    ] = {
+                        "dtype": np.float32,
+                        "dim": dims,
+                        "attributes": {
+                            "units": units,
+                            "err_corr": [
+                                {"dim": dim, "form": "random", "params": [], "units": []}
+                                for dim in dims
+                            ],
+                        },
+                    }
+
+                elif comp == "systematic" and simple_systematic:
+                    template[
+                        self.make_ucomp_name(self.yvariable[i], comp, store_unc_percent=store_unc_percent)
+                    ] = {
+                        "dtype": np.float32,
+                        "dim": dims,
+                        "attributes": {
+                            "units": units,
+                            "err_corr": [
+                                {
+                                    "dim": dim,
+                                    "form": "systematic",
+                                    "params": [],
+                                    "units": [],
+                                }
+                                for dim in dims
+                            ],
+                        },
+                    }
+
+                else:
+                    err_corr, custom_err_corr = self.set_errcorr_shape(
+                        dims,
+                        dim_sizes,
+                        "err_corr_" + comp + "_" + self.yvariable[i],
+                        str_repeat_corr_dims=str_repeat_corr_dims,
+                        repeat_dim_err_corr=repeat_dim_err_corrs[ic],
+                    )
+
+                    template[
+                        self.make_ucomp_name(self.yvariable[i], comp, store_unc_percent=store_unc_percent)
+                    ] = {
+                        "dtype": np.float32,
+                        "dim": dims,
+                        "attributes": {"units": units, "err_corr": err_corr},
+                    }
+                    if custom_err_corr is not None:
+                        template[
+                            "err_corr_" + comp + "_" + self.yvariable[i]
+                        ] = custom_err_corr
 
         return template
 
-    def make_ucomp_name(self, ucomp, store_unc_percent=False, var=None):
+    def make_ucomp_name(self, var, ucomp, store_unc_percent=False):
         if store_unc_percent:
             uvarname_start = "u_rel_"
         else:
             uvarname_start = "u_"
-        if var is None:
-            var = self.yvariable
         return uvarname_start + ucomp + "_" + var
 
     def set_errcorr_shape(
