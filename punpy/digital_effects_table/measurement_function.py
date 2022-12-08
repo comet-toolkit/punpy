@@ -6,7 +6,6 @@ from abc import ABC,abstractmethod
 
 import numpy as np
 import obsarray
-
 from punpy.digital_effects_table.digital_effects_table_templates import (
     DigitalEffectsTableTemplates,)
 from punpy.digital_effects_table.measurement_function_utils import (
@@ -109,6 +108,8 @@ class MeasurementFunction(ABC):
         if self.output_vars==1:
             if isinstance(self.yvariable,str):
                 self.yvariable=[self.yvariable]
+            if isinstance(self.yvariable,str):
+                yunit=[yunit]
             if self.ydims is not None:
                 if isinstance(self.ydims[0],str):
                     self.ydims = [ydims]
@@ -150,6 +151,7 @@ class MeasurementFunction(ABC):
 
         self.use_err_corr_dict = use_err_corr_dict
         self.allow_some_nans = allow_some_nans
+
     @abstractmethod
     def meas_function(self, *args, **kwargs):
         """

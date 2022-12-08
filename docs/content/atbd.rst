@@ -71,7 +71,8 @@ correlation effects important to satellite data products, as follows:
 
 
 
-.. _LPU Method:
+.. _LPUMethod:
+
 Law of Propagation of Uncertainty Method
 #########################################
 

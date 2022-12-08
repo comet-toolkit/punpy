@@ -9,7 +9,7 @@ Punpy as a standalone package
 ======================================
 In this section we give a short overview of some of the key capabilities of punpy for propagating uncertainties through a measurement function.
 When using punpy as a standalone tool, the input quantities and their uncertainties are manually specified.
-The code in this section is just as illustration and we refer to the Examples Section for examples with all required information for running punpy.
+The code in this section is just as illustration and we refer to the the CoMet website `examples <https://www.comet-toolkit.org/examples/>`_ for examples with all required information for running punpy.
 The punpy package can propagate various types of uncertainty through any python measurement function. In the next subsection we discuss how these python measurement functions are defined.
 
 Measurement functions
@@ -21,9 +21,9 @@ The measurement function can be written mathematically as:
 
 where:
 
--  :math:`f` is the measurment function;
--  :math:`y` is the measurand;
--  :math:`x_{i}` are the input quantities.
+*  :math:`f` is the measurment function;
+*  :math:`y` is the measurand;
+*  :math:`x_{i}` are the input quantities.
 
 The measurand and input quantities are often vectors consisting of multiple numbers. E.g. in spectroscopy, the input quantities and measurand each have measurements for multiple wavelengths. These wavelengths are the same for the input quantities and the measurand.
 We refer to the :ref:`atbd` section for more details on the vocabulary used and the various types of uncertainty.
@@ -53,7 +53,9 @@ Note that this measurement function can optionally be part of a class, which can
 
 Monte Carlo and Law of Propagation of Uncertainty methods
 ##########################################################
-Once this kind of measurement function is defined, we can use the various punpy methods to propagate uncertainties though this measurement function. In order to do this, we first create a prop object (object of punpy MCPropagation of LPUPropaation class)::
+Once this kind of measurement function is defined, we can use the various punpy methods
+to propagate uncertainties though this measurement function. In order to do this, we
+first create a prop object (object of punpy MCPropagation of LPUPropagation class)::
 
    import punpy
 
@@ -68,9 +70,10 @@ Once this kind of measurement function is defined, we can use the various punpy 
    # propagate uncertainties
    prop=punpy.LPUPropagation()
 
-In order to do propagate uncertainties, punpy uses Monte Carlo (MC) methods (see Section :ref:`Monte Carlo Method`) 
-or Law of Propagation of Uncertainties (LPU) methods (see Section :ref:`LPU Method`).
-MC methods generate MC samples from the input quantities (which can be individually correlated or not),
+In order to do propagate uncertainties, punpy uses Monte Carlo (MC) methods (see
+Section :ref:`Monte Carlo Method`)
+or Law of Propagation of Uncertainties (LPU) methods (see Section :ref:`LPUMethod`).
+MC methods generate MC samples from the input quantities (which can be correlated to eachother or not),
 and then propagate these samples through the measurement function.
 The LPU methods implement the law of propagation of uncertainties from the 
 GUM (Guide to the Expression of Uncertainty in Measurement) by calculating the Jacobian and using this to propagate the uncertainties.
@@ -96,18 +99,15 @@ range of the input quantities). It is possible to set the stepsize to be passed 
 the numdifftools jacobian method by setting the `step` keyword when creating the propagation object::
 
    prop = punpy.LPUPropagation(step=0.01)
-   ub_y, corr_y = prop.propagate_systematic(
-   measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3],
-   return_corr=True)
 
 Both the MC and LPU options also have the `verbose` keyword to set the verbosity, which allows the user to get additional information such as the time the runs took and additional warnings::
 
-   prop=punpy.MCPropagation(10000,verbose=True) # Here the number is how
+   prop=punpy.MCPropagation(10000,verbose=True)
 
 
 Propagating random and systematic uncertainties
 ################################################
-Once a prop object has been made (see previous sections), a number of methods can then be used to propagate uncertainties, depending on the kind of uncertainties that need to be propagated.
+Once a prop object has been made (see previous sections), a number of methods can be used to propagate uncertainties, depending on the kind of uncertainties that need to be propagated.
 We start by showing how to propagating random and systematic uncertainties.
 For random uncertainties, the errors associated with these uncertainties are entirely independent of each-other (errors for different elements of the input quantity are uncorrelated).
 For systematic uncertainties, the errors of the different elements (along the different dimensions of the input quantity) are entirely correlated. This typically means they are all affected by the same effect (e.g. if the calibration gain of a sensor is wrong, all its measurements will be wrong by the same factor).

@@ -12,7 +12,7 @@ For examples on how to use punpy either as a standalone package or with digital 
 There some jupyter notebooks (hosted on google colab) are available with examples.
 
 Below, we show two typical examples (one standalone and one with digital effects tables) for illustration purposes.
-For more complete examples with more detailed explanations, we refer to the CoMet website examples.
+For more complete examples with more detailed explanations, we refer to the CoMet website `examples <https://www.comet-toolkit.org/examples/>`_.
 
 In our first example, we use punpy as standalone in order to propagate uncertainties through a calibration process.
 
@@ -39,7 +39,7 @@ here::
    # (different for each band but fully correlated)
    gains_utemp = gains*0.03
 
-   corr_temp
+   corr_temp = []
 
    prop=punpy.MCPropagation(10000)
    L1=calibrate(L0,gains,dark)

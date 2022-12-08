@@ -10,7 +10,7 @@ punpy in combination with digital effects tables
 In this section we explain how punpy can be used for propagating uncertainties in digital effects tables through a measurement function.
 For details on how to create these digital effects tables, we refer to the `obsarray documentation <>`_.
 Once the digital effects tables are created, this is the most concise method for propagating uncertainties.
-The code in this section is just as illustration and we refer to the Examples Section for example with all requied information for running punpy.
+The code in this section is just as illustration and we refer to the the CoMet website `examples <https://www.comet-toolkit.org/examples/>`_ for example with all requied information for running punpy.
 The punpy package can propagate the various types of correlated uncertainties that can be stored in digital effects tables through a given measurement function. In the next subsection we discuss how these measurement functions need to be defined in order to use the digital effects tables.
 
 Digital Effects Tables
@@ -48,15 +48,15 @@ Multiple uncertainty components can be added for the same data variable, and obs
 
 Measurement Function
 ####################
-Generally, the measurement function can be written mathematically as:
+Generally, a measurement function can be written mathematically as:
 
 .. math:: y = f\left( x_{i},\ldots,\ x_{N} \right)
 
 where:
 
--  :math:`f` is the measurment function;
--  :math:`y` is the measurand;
--  :math:`x_{i}` are the input quantities.
+*  :math:`f` is the measurment function;
+*  :math:`y` is the measurand;
+*  :math:`x_{i}` are the input quantities.
 
 The measurand and input quantities are often vectors consisting of multiple numbers. Here, we choose an example of an ideal gas law equivalent:
 
@@ -64,10 +64,10 @@ The measurand and input quantities are often vectors consisting of multiple numb
 
 where:
 
--  :math:`V` is the volume;
--  :math:`n` is the amount of substance (number of moles);
--  :math:`T` is the temperature;
--  :math:`P` is the pressure.
+*  :math:`V` is the volume;
+*  :math:`n` is the amount of substance (number of moles);
+*  :math:`T` is the temperature;
+*  :math:`P` is the pressure.
 
 Here :math:`V` is now the measurand, and :math:`n`, :math:`T` and :math:`P` are the input quantities.
 Digital effects tables for :math:`n`, :math:`T` and :math:`P` will thus need to be specified prior, and punpy will create a digital effects table for :math:`V` as output.

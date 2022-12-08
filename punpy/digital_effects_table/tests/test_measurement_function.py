@@ -7,7 +7,6 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 import xarray as xr
-
 from punpy import MeasurementFunction,MCPropagation
 
 """___Authorship___"""
@@ -120,10 +119,10 @@ class TestMeasurementFunction(unittest.TestCase):
         npt.assert_(ds_y["u_str_volume"].attrs["err_corr_3_params"][0] in list(ds_y.variables))
 
         npt.assert_allclose(ds_y["volume"].values, volume, rtol=0.002)
-        npt.assert_allclose(ds_y["u_ran_volume"].values, u_ran_volume, rtol=0.06)
-        npt.assert_allclose(ds_y["u_sys_volume"].values, u_sys_volume, rtol=0.06)
-        npt.assert_allclose(ds_y["u_str_volume"].values, u_str_volume, rtol=0.06)
-        npt.assert_allclose(ds_y["u_str_volume"].values, u_str_volume, rtol=0.06)
+        npt.assert_allclose(ds_y["u_ran_volume"].values, u_ran_volume, rtol=0.08)
+        npt.assert_allclose(ds_y["u_sys_volume"].values, u_sys_volume, rtol=0.08)
+        npt.assert_allclose(ds_y["u_str_volume"].values, u_str_volume, rtol=0.08)
+        npt.assert_allclose(ds_y["u_str_volume"].values, u_str_volume, rtol=0.08)
         npt.assert_allclose(
             ds_y.unc["volume"].total_unc().values, u_tot_volume, rtol=0.12
         )
