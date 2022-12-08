@@ -5,14 +5,14 @@
 
 .. _punpy_standalone:
 
-punpy as a standalone package
+Punpy as a standalone package
 ======================================
 In this section we give a short overview of some of the key capabilities of punpy for propagating uncertainties through a measurement function.
 When using punpy as a standalone tool, the input quantities and their uncertainties are manually specified.
 The code in this section is just as illustration and we refer to the Examples Section for examples with all required information for running punpy.
 The punpy package can propagate various types of uncertainty through any python measurement function. In the next subsection we discuss how these python measurement functions are defined.
 
-Measurement Functions
+Measurement functions
 #######################
 
 The measurement function can be written mathematically as:
@@ -28,7 +28,7 @@ where:
 The measurand and input quantities are often vectors consisting of multiple numbers. E.g. in spectroscopy, the input quantities and measurand each have measurements for multiple wavelengths. These wavelengths are the same for the input quantities and the measurand.
 We refer to the :ref:`atbd` section for more details on the vocabulary used and the various types of uncertainty.
 
-When using punpy, the measurement function can be any python function that takes a number of input quantities as arguments (as floats or numpy arrays) and returns a measurand (as a float or numpy array).
+When using punpy, the measurement function can be any python function that takes a number of input quantities as arguments (as floats or numpy arrays of any shape) and returns a measurand (as a float or numpy array of any shape).
 For example::
 
    def measurement_function(x1,x2,x3):
@@ -51,10 +51,9 @@ Note that this measurement function can optionally be part of a class, which can
          return y
 
 
-Monte Carlo and Law of Propagation of uncertainty methods
-###########################################################
-    
-Once this kind of measurement function is defined, we can use the various punpy methods to propagate uncertainties though this measurement function. In order to do this, we first create a prop object::
+Monte Carlo and Law of Propagation of Uncertainty methods
+##########################################################
+Once this kind of measurement function is defined, we can use the various punpy methods to propagate uncertainties though this measurement function. In order to do this, we first create a prop object (object of punpy MCPropagation of LPUPropaation class)::
 
    import punpy
 
@@ -77,8 +76,9 @@ The LPU methods implement the law of propagation of uncertainties from the
 GUM (Guide to the Expression of Uncertainty in Measurement) by calculating the Jacobian and using this to propagate the uncertainties.
 
 
-For the MC method, the number of MC samples that is used as set as the first argument when creating the MCPropagation object (see example above).
+For the MC method, the number of MC samples that is used is set as the first argument when creating the MCPropagation object (see example above).
 Two approaches can be followed to propagate the MC samples of the input quantities to the measurand, depending on whether the measurement function can be applied to numpy arrays of arbitrary size.
+
 The most computationally efficient way is to pass an array consisting of all MC steps of an
 input quantity instead of the input quantity themselves. Each of the input quantities will thus get an additional dimension in the MC sample.
 If the measurement function can deal with these higher dimensional arrays by just performing numpy operations, this gives the most computationally efficient MC propagation.
@@ -91,18 +91,23 @@ In order to pass each MC sample individually to the measurement function, it is 
 
 
 For the LPU methods, the numdifftools package is used to calculate the Jacobian. This package automatically determines the stepsize in the numerical
-differentiation, unless a manual stepsize is set. For some measurement functions, it can be necessary to set a manual stepsize (because of the limited
-range of the input quantities, or because one of the input quantities has to remain sorted, or ...). It is possible to set the stepsize to be passed to
-the numdifftools jacobian method by setting the `step` keyword when creating the propagation object:
+differentiation, unless a manual stepsize is set. For some measurement functions, it can be necessary to set a manual stepsize (e.g. because of the limited
+range of the input quantities). It is possible to set the stepsize to be passed to
+the numdifftools jacobian method by setting the `step` keyword when creating the propagation object::
 
    prop = punpy.LPUPropagation(step=0.01)
    ub_y, corr_y = prop.propagate_systematic(
    measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3],
    return_corr=True)
 
+Both the MC and LPU options also have the `verbose` keyword to set the verbosity, which allows the user to get additional information such as the time the runs took and additional warnings::
+
+   prop=punpy.MCPropagation(10000,verbose=True) # Here the number is how
+
+
 Propagating random and systematic uncertainties
 ################################################
-Once a prop object has been made (see previous section), a number of methods can then be used to propagate uncertainties, depending on the kind of uncertainties that need to be propagated.
+Once a prop object has been made (see previous sections), a number of methods can then be used to propagate uncertainties, depending on the kind of uncertainties that need to be propagated.
 We start by showing how to propagating random and systematic uncertainties.
 For random uncertainties, the errors associated with these uncertainties are entirely independent of each-other (errors for different elements of the input quantity are uncorrelated).
 For systematic uncertainties, the errors of the different elements (along the different dimensions of the input quantity) are entirely correlated. This typically means they are all affected by the same effect (e.g. if the calibration gain of a sensor is wrong, all its measurements will be wrong by the same factor).
@@ -123,14 +128,19 @@ This is done by setting the `return_corr` keyword to True::
    ur_y, corr_y = prop.propagate_random(measurement_function,
           [x1, x2, x3], [ur_x1, ur_x2, ur_x3], return_corr=True)
 
-Here, the returned error correlation matrix will cover all dimensions of the associated uncertainty. If ur_y had shape (k,l), corr_y would have shape (k*l,k*l).
-The order of the correlation coefficient elements essentially is for the flattened ur_y (ur_y.flatten()).
+Here, the returned error correlation matrix will cover all dimensions of the associated uncertainty. If ur_y has shape (k,l), corr_y has shape (k*l,k*l).
+The order of the correlation coefficient elements corresponds to the order for a flattened version of ur_y (ur_y.flatten()).
 
 Propagating uncertainties when measurements are correlated (within input quantity)
 ###################################################################################
-Sometimes the elements of an input quantity xn are not simply independent (random uncertainties) or fully correlated (systematic uncertainty), but rather a combination of the two.
-In this case, it is possible to specify an error-correlation matrix between the different elements of the input quantity, which gives the correlation coefficient between the errors for different elements within the input quantity.
+Sometimes the elements of an input quantity xn are not simply independent (random uncertainties) or fully correlated (systematic uncertainty), but rather something in between.
+In this case, it is possible to specify an error-correlation matrix between the different elements (at different coordinates/indices) of the input quantity, which gives the correlation coefficient between the errors for different elements within the input quantities.
 If the input quantity is one-dimensional of size (k), the error correlation matrix will be a matrix of shape (k,k). If the input quantity is two dimensional of size (k,l), the error correlation matrix will be of size (k*l,k*l).
+
+This error correlation matrix cannot be calculated from the uncertainties themselves (it is not the correlation between the values of the uncertainties or something like that) but instead required knowledge of how the measurements were done and the sensors used.
+It is a matrix that needs to be provided. Fur more detailed information on error correlation matrices, we refer to the `Guide to the expression
+of uncertainty in measurement <https://www.bipm.org/documents/20126/2071204/JCGM_100_2008_E.pdf>`_ and the `FIDUCEO website <https://www.fiduceo.eu>`_.
+
 If such an error-correlation matrix corr_xn is known for every xn, punpy can use them to propage the combined uncertainty::
 
    uc_y, corrc_y = prop.propagate_standard(measurement_function,
@@ -139,10 +149,18 @@ If such an error-correlation matrix corr_xn is known for every xn, punpy can use
 Here the corr_xn can either be a square array with the appropriate error-correlation coefficients, or alternatively the string "rand" or "syst" for random and systematic error correlations respectively.
 In the case of random or systematic error-correlations, the error correlation matrices are always the same (diagonal matrix of ones and full matrix of ones for random and systematic respectively), and the string is thus sufficient to define the complete error correlation matrix.
 Note that these error-correlation matrices can also optionally be passed to the propagate_random() and propagate_systematic() functions.
-In this case, the only difference with propagate_standard, is that in case no error_correlation matrix is provided (i.e. None), the error correlation matrix defaults to the random or systematic case::
+In this case, the only difference with propagate_standard, is that in case no error_correlation matrix is provided (i.e. None), the error correlation matrix defaults to the random or systematic case.
+The following four expressions are entirely equivalent::
 
   uc_y, corrc_y = prop.propagate_standard(measurement_function,
-                   [x1, x2, x3], [us_x1, us_x2, us_x3], corr_x=[corr_x1, corr_x2, corr_x3])
+                   [x1, x2, x3], [us_x1, us_x2, us_x3], corr_x=[np.eye(us_x1.flatten()), corr_x2, np.eye(us_x1.flatten())])
+  uc_y, corrc_y = prop.propagate_standard(measurement_function,
+                   [x1, x2, x3], [us_x1, us_x2, us_x3], corr_x=["rand", corr_x2, "rand"])
+  uc_y, corrc_y = prop.propagate_random(measurement_function,
+                   [x1, x2, x3], [us_x1, us_x2, us_x3], corr_x=[np.eye(us_x1.flatten()), corr_x2, np.eye(us_x1.flatten())], return_corr=True)
+  uc_y, corrc_y = prop.propagate_random(measurement_function,
+                   [x1, x2, x3], [us_x1, us_x2, us_x3], corr_x=[None, corr_x2, None], return_corr=True)
+
 
 Instead of working with error-correlation matrices, it is also possible to use error covariance matrices.
 It is straightforward to convert between error correlation and covariance matrices using comet_maths::
@@ -160,12 +178,12 @@ Using covariance matrices, the uncertainties can be propagated using::
   uc_y, corr_y = prop.propagate_cov(measurement_function, [x1, x2, x3],
                   [cov_x1, cov_x2, cov_x3])
 
-If required, the measurand correlation matrix can easily be converted to a covariance matrix as::
+If required, the resulting measurand correlation matrix can easily be converted to a covariance matrix as::
 
    cov_y = cm.convert_corr_to_cov(corr_y, u_y)
 
 Note that propagate_standard() and propagate_cov() by default return the correlation matrix, yet propagate_random() and propagate_systematic()
-return only the uncertainties on the measurand (because the correlation matrices are trivial in this case).
+return only the uncertainties on the measurand (because the correlation matrices are trivial in their standard use case).
 However all these functions have an optional `return_corr` argument that can be used to define whether the correlation matrix should be returned.
 
 
@@ -180,26 +198,16 @@ This keyword needs to be set to the correlation matrix between the input quantit
    uc_y, corr_y = prop.propagate_cov(measurement_function, [x1, x2, x3], 
                   [cov_x1, cov_x2, cov_x3], corr_between = corr_x1x2x3)
 
-punpy more advanced input and output
+More advanced punpy input and output
 ######################################
 When returning the error correlation functions, rather than providing this full correlation matrix, it is also possible to get punpy to only calculate the error correlation matrix along one (or a list of) dimensions.
-If `return_corr` is set to True, the keyword `corr_axis` can be used to indicate the dimension(s) for which the correlation should be calculated.
-In this case the correlation coefficients will be averaged over all dimensions other than `corr_axis`::
+If `return_corr` is set to True, the keyword `corr_dims` can be used to indicate the dimension(s) for which the correlation should be calculated.
+In this case the correlation coefficients will be averaged over all dimensions other than `corr_dims`::
 
    ur_y, corr_y = prop.propagate_random(measurement_function,
-          [x1, x2, x3], [ur_x1, ur_x2, ur_x3], return_corr=True, corr_axis=0)
+          [x1, x2, x3], [ur_x1, ur_x2, ur_x3], return_corr=True, corr_dims=0)
 
 If ur_y again had shape (k,l), corr_y would now have shape (k,k).
-This can also be used to separately store the error correlation for each dimension::
-
-   ur_y, corr_y = prop.propagate_random(measurement_function,
-          [x1, x2, x3], [ur_x1, ur_x2, ur_x3], return_corr=True, corr_axis=[0,1])
-
-where now corr_y will have two elements, the first of which will be a (k,k) shaped matrix and the second one a (l,l) matrix.
-Saving the error correlations in this manner often required less memory than storing the full error correlation matrix.
-However, because of the averaging over the other dimension(s) when calculating these one-dimensional errror correlation matrices, some information in lost.
-In fact, this approach should only be done when the error correlation matrices do not vary along these other dimension(s).
-This thus depends on the measurement function itself and should be used with caution (a good rule of thumb is whether the measurement function could be applied without passing data along the entire dimension at once).
 
 For the MC method, it is also possible to return the generated samples by setting the optional `return_samples` keyword to True::
 
@@ -251,7 +259,7 @@ These functions can still be handled by punpy, but require the `output_vars` key
 
    us_y, corr_y, corr_out = prop.propagate_systematic(measurement_function,
                             [x1, x2, x3], [us_x1, us_x2, us_x3], 
-                            return_corr=True, corr_axis=0, output_vars=2)
+                            return_corr=True, corr_dims=0, output_vars=2)
 
 Note that now there is an additional output corr_out, which gives the correlation between the different output variables (in the above case a 2 by 2 matrix).
 Here the correlation coefficients between the 2 variables are averaged over all measurements. 

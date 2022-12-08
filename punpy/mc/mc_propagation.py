@@ -6,6 +6,7 @@ from multiprocessing import Pool
 
 import comet_maths as cm
 import numpy as np
+
 import punpy.utilities.utilities as util
 
 """___Authorship___"""
@@ -58,6 +59,7 @@ class MCPropagation:
         refyvar=0,
         pdf_shape="gaussian",
         pdf_params=None,
+            allow_some_nans=True,
     ):
         """
         Propagate random uncertainties through measurement function with n input quantities.
@@ -126,6 +128,7 @@ class MCPropagation:
             refyvar=refyvar,
             pdf_shape=pdf_shape,
             pdf_params=pdf_params,
+            allow_some_nans=allow_some_nans
         )
 
     def propagate_systematic(
@@ -147,6 +150,7 @@ class MCPropagation:
         refyvar=0,
         pdf_shape="gaussian",
         pdf_params=None,
+            allow_some_nans=True,
     ):
         """
         Propagate systematic uncertainties through measurement function with n input quantities.
@@ -215,6 +219,7 @@ class MCPropagation:
             refyvar=refyvar,
             pdf_shape=pdf_shape,
             pdf_params=pdf_params,
+            allow_some_nans=allow_some_nans
         )
 
     def propagate_cov(
@@ -235,6 +240,7 @@ class MCPropagation:
         refyvar=0,
         pdf_shape="gaussian",
         pdf_params=None,
+            allow_some_nans=True,
     ):
         """
         Propagate uncertainties with given covariance matrix through measurement function with n input quantities.
@@ -304,6 +310,7 @@ class MCPropagation:
             refyvar=refyvar,
             pdf_shape=pdf_shape,
             pdf_params=pdf_params,
+            allow_some_nans=allow_some_nans
         )
 
     def propagate_standard(
@@ -325,6 +332,7 @@ class MCPropagation:
         refyvar=0,
         pdf_shape="gaussian",
         pdf_params=None,
+        allow_some_nans=True,
     ):
         """
         Propagate uncertainties through measurement function with n input quantities. Correlations must be specified in corr_x.
@@ -520,7 +528,7 @@ class MCPropagation:
                     pdf_params=pdf_params,
                 )
 
-            MC_y = self.run_samples(func, MC_x, output_vars=output_vars)
+            MC_y = self.run_samples(func, MC_x, output_vars=output_vars,allow_some_nans=allow_some_nans)
 
             return self.process_samples(
                 MC_x,
@@ -1363,6 +1371,7 @@ class MCPropagation:
         end=None,
         sli=None,
         broadcasting=True,
+        allow_some_nans=True,
     ):
         """
         process all the MC samples of input quantities through the measurand function
@@ -1400,7 +1409,16 @@ class MCPropagation:
                 MC_x2[i] = [MC_x[j][index, ...] for j in range(len(MC_x))]
             MC_y = self.pool.starmap(func, MC_x2)
 
-        MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.all(np.isfinite(MC_y[i]))],dtype=self.dtype)
+        if output_vars==1:
+            if allow_some_nans:
+                MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.any(np.isfinite(MC_y[i]))],dtype=self.dtype)
+            else:
+                MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.all(np.isfinite(MC_y[i]))],dtype=self.dtype)
+        else:
+            if allow_some_nans:
+                MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.all([np.any(np.isfinite(MC_y[i][ivar])) for ivar in range(output_vars)])],dtype=self.dtype)
+            else:
+                MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.all([np.all(np.isfinite(MC_y[i][ivar])) for ivar in range(output_vars)])],dtype=self.dtype)
 
         if len(MC_y)<len(indices):
             print(
@@ -1495,12 +1513,7 @@ class MCPropagation:
         else:
             if output_vars == 1:
                 if fixed_corr is None:
-                    corr_y = cm.calculate_corr(MC_y, corr_dims).astype(self.dtype)
-                    if PD_corr:
-                        if not cm.isPD(corr_y):
-                            corr_y = cm.nearestPD_cholesky(
-                                corr_y, corr=True, return_cholesky=False
-                            )
+                    corr_y = cm.calculate_corr(MC_y, corr_dims,PD_corr,dtype=self.dtype)
                 else:
                     corr_y = fixed_corr
 
@@ -1521,18 +1534,11 @@ class MCPropagation:
                 for i in range(output_vars):
                     if fixed_corr is None:
                         if complex_shapes:
-                            corr_ys[i] = cm.calculate_corr(MC_y2[i], corr_dims).astype(
-                                self.dtype
-                            )
+                            corr_ys[i] = cm.calculate_corr(MC_y2[i], corr_dims, PD_corr, self.dtype)
                         else:
                             corr_ys[i] = cm.calculate_corr(
-                                MC_y[:, i], corr_dims
-                            ).astype(self.dtype)
-                        if PD_corr:
-                            if not cm.isPD(corr_ys[i]):
-                                corr_ys[i] = cm.nearestPD_cholesky(
-                                    corr_ys[i], corr=True, return_cholesky=False
-                                )
+                                MC_y[:, i], corr_dims, PD_corr, self.dtype)
+
                     else:
                         corr_ys[i] = fixed_corr
 
@@ -1544,17 +1550,11 @@ class MCPropagation:
 
                     corr_out = np.mean(
                         [
-                            cm.calculate_corr(MC_y2[:, :, i]).astype(self.dtype)
+                            cm.calculate_corr(MC_y2[:, :, i],PD_corr=PD_corr,dtype=self.dtype)
                             for i in range(len(MC_y2[0, 0]))
                         ],
                         axis=0,
                     )
-
-                if PD_corr and corr_out is not None:
-                    if not cm.isPD(corr_out):
-                        corr_out = cm.nearestPD_cholesky(
-                            corr_out, corr=True, return_cholesky=False
-                        )
 
                 if self.verbose:
                     print(

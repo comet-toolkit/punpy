@@ -7,6 +7,7 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 import xarray as xr
+
 from punpy import MeasurementFunction,MCPropagation
 
 """___Authorship___"""
@@ -124,14 +125,14 @@ class TestMeasurementFunction(unittest.TestCase):
         npt.assert_allclose(ds_y["u_str_volume"].values, u_str_volume, rtol=0.06)
         npt.assert_allclose(ds_y["u_str_volume"].values, u_str_volume, rtol=0.06)
         npt.assert_allclose(
-            ds_y.unc["volume"].total_unc().values, u_tot_volume, rtol=0.06
+            ds_y.unc["volume"].total_unc().values, u_tot_volume, rtol=0.12
         )
 
     def test_gaslaw_2out(self):
         prop = MCPropagation(1000, dtype="float32", verbose=False)
 
         gl = IdealGasLaw_2out(
-            prop, ["pressure", "temperature", "n_moles"], ["volume","P/T"], yunit=["m^3","Pa/K"], output_vars=2
+            prop, ["pressure", "temperature", "n_moles"], ["volume","P/T"], yunit=["m^3","Pa/K"]
         )
         ds_y_tot = gl.propagate_ds_total(ds)
 
@@ -173,6 +174,36 @@ class TestMeasurementFunction(unittest.TestCase):
             ds_y.unc["volume"].total_unc().values, u_tot_volume, rtol=0.06
         )
 
+    def test_gaslaw_corrdim(self):
+        prop = MCPropagation(1000, dtype="float32", verbose=False)
+
+        gl = IdealGasLaw(
+            prop,
+            ["pressure", "temperature", "n_moles"],
+            "volume",
+            yunit="m^3",
+            corr_dims=["0.1",2],
+        )
+        ds_y_tot = gl.propagate_ds_total(ds)
+
+        npt.assert_allclose(ds_y_tot["volume"].values, volume, rtol=0.002)
+
+        npt.assert_allclose(ds_y_tot["u_tot_volume"].values, u_tot_volume, rtol=0.1)
+
+        gl = IdealGasLaw(
+            prop,
+            ["pressure", "temperature", "n_moles"],
+            "volume",
+            yunit="m^3",
+            corr_dims=["x.y","time"],
+        )
+        ds_y_tot = gl.propagate_ds_total(ds)
+
+        npt.assert_allclose(ds_y_tot["volume"].values, volume, rtol=0.002)
+
+        npt.assert_allclose(ds_y_tot["u_tot_volume"].values, u_tot_volume, rtol=0.1)
+
+
     def test_hypernets_repeat_dim(self):
         prop = MCPropagation(3000, dtype="float32", parallel_cores=1, verbose=False)
 
@@ -189,12 +220,12 @@ class TestMeasurementFunction(unittest.TestCase):
             yunit="W m^-2",
             corr_between=None,
             param_fixed=None,
-            output_vars=1,
         )
+
         hmf.setup(0.1)
-        y = hmf.run(calib_data, L0data)
+        y = hmf.run(calib_data, L0data.variables,L0data)
         u_y_rand = hmf.propagate_random(L0data, calib_data)
-        # print(list(L1data.variables))
+        print(u_y_rand,L0data)
         mask = np.where(
             (
                 (L1data["wavelength"].values < 1350)
@@ -229,7 +260,6 @@ class TestMeasurementFunction(unittest.TestCase):
             yvariable="irradiance",
             yunit="W m^-2",
             corr_between=None,
-            output_vars=1,
             repeat_dims="scan",
             corr_dims=-99,
         )

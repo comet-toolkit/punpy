@@ -70,9 +70,10 @@ correlation effects important to satellite data products, as follows:
 .. [1] See: https://www.fiduceo.eu
 
 
+
 .. _LPU Method:
 Law of Propagation of Uncertainty Method
-########################
+#########################################
 
 Within the GUM framework uncertainty analysis begins with understanding
 the measurement function. The measurement function establishes the

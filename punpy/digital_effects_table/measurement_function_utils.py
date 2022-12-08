@@ -13,15 +13,15 @@ __status__ = "Development"
 
 class MeasurementFunctionUtils:
     def __init__(
-        self, xvariables, ydims, str_repeat_corr_dims, verbose, templ, use_err_corr_dict
+        self, xvariables, ydims, str_repeat_noncorr_dims, verbose, templ, use_err_corr_dict
     ):
         """
         Initialise MeasurementFunctionUtils
 
         :param xvariables: list of input quantity names, in same order as arguments in measurement function and with same exact names as provided in input datasets.
         :type xvariables: list(str)
-        :param str_repeat_corr_dims: list of dimension names to be used as repeated dims
-        :type str_repeat_corr_dims: list(str)
+        :param str_repeat_noncorr_dims: list of dimension names to be used as repeated dims
+        :type str_repeat_noncorr_dims: list(str)
         :param verbose: boolean to set verbosity
         :type verbose: bool
         :param templ: templater object
@@ -30,7 +30,7 @@ class MeasurementFunctionUtils:
         self.xvariables = xvariables
         self.verbose = verbose
         self.ydims = ydims
-        self.str_repeat_corr_dims = str_repeat_corr_dims
+        self.str_repeat_noncorr_dims = str_repeat_noncorr_dims
         self.templ = templ
         self.repeat_dims_form = "structured"
         self.use_err_corr_dict = use_err_corr_dict
@@ -49,8 +49,8 @@ class MeasurementFunctionUtils:
         :rtype: dict
         """
         repeat_dims_errcorrs = {}
-        for repeat_dim in self.ydims:
-            if repeat_dim in self.str_repeat_corr_dims:
+        for repeat_dim in self.ydims[0]:
+            if repeat_dim in self.str_repeat_noncorr_dims:
                 repeat_dims_errcorrs[repeat_dim] = {
                     "dim": repeat_dim,
                     "form": None,
@@ -168,13 +168,13 @@ class MeasurementFunctionUtils:
         :rtype: None
         """
         try:
-            if len(self.str_repeat_corr_dims) == 0 or len(repeat_dims_errcorrs) == 0:
+            if len(self.str_repeat_noncorr_dims) == 0 or len(repeat_dims_errcorrs) == 0:
                 self.repeat_dims_form = "None"
 
             elif np.all(
                 [
                     repeat_dims_errcorrs[repeat_dim]["form"] == "random"
-                    for repeat_dim in self.str_repeat_corr_dims
+                    for repeat_dim in self.str_repeat_noncorr_dims
                 ]
             ):
                 self.repeat_dims_form = "random"
@@ -182,7 +182,7 @@ class MeasurementFunctionUtils:
             elif np.all(
                 [
                     repeat_dims_errcorrs[repeat_dim]["form"] == "systematic"
-                    for repeat_dim in self.str_repeat_corr_dims
+                    for repeat_dim in self.str_repeat_noncorr_dims
                 ]
             ):
                 self.repeat_dims_form = "systematic"
@@ -193,7 +193,7 @@ class MeasurementFunctionUtils:
             if np.all(
                 [
                     repeat_dims_errcorrs[0][repeat_dim]["form"] == "random"
-                    for repeat_dim in self.str_repeat_corr_dims
+                    for repeat_dim in self.str_repeat_noncorr_dims
                 ]
             ):
                 self.repeat_dims_form = "random"
@@ -201,7 +201,7 @@ class MeasurementFunctionUtils:
             elif np.all(
                 [
                     repeat_dims_errcorrs[0][repeat_dim]["form"] == "systematic"
-                    for repeat_dim in self.str_repeat_corr_dims
+                    for repeat_dim in self.str_repeat_noncorr_dims
                 ]
             ):
                 self.repeat_dims_form = "systematic"
@@ -521,6 +521,11 @@ class MeasurementFunctionUtils:
                             )
                         else:
                             inputs_corr[iv] = self.calculate_corr(form, dataset, var)
+
+            #check if corr is filled with zeros
+            if not np.any(inputs_corr[iv]):
+                inputs_corr[iv]=None
+
             if inputs_corr[iv] is None:
                 if self.verbose:
                     print(
@@ -546,7 +551,7 @@ class MeasurementFunctionUtils:
         sli = list([slice(None)] * ds[var].ndim)
         var_dims = ds[var].dims
         for i in range(len(sli)):
-            if var_dims[i] in self.str_repeat_corr_dims:
+            if var_dims[i] in self.str_repeat_noncorr_dims:
                 sli[i] = 0
         dsu = ds.unc[var][tuple(sli)]
         if form == "tot":
@@ -621,19 +626,19 @@ class MeasurementFunctionUtils:
         :rtype: np.ndarray
         """
         sli = [
-            slice(None) if (ydim not in self.str_repeat_corr_dims) else 0
+            slice(None) if (ydim not in self.str_repeat_noncorr_dims) else 0
             for ydim in ds[var].dims
         ]
         dsu = ds.unc[var][tuple(sli)]
         vardims = [
-            ydim for ydim in ds[var].dims if (ydim not in self.str_repeat_corr_dims)
+            ydim for ydim in ds[var].dims if (ydim not in self.str_repeat_noncorr_dims)
         ]
 
-        outdims = [ydim for ydim in ydims if ydim not in self.str_repeat_corr_dims]
+        outdims = [ydim for ydim in ydims if ydim not in self.str_repeat_noncorr_dims]
         missingdims = [
             ydim
             for ydim in ydims
-            if ((ydim not in ds[var].dims) and (ydim not in self.str_repeat_corr_dims))
+            if ((ydim not in ds[var].dims) and (ydim not in self.str_repeat_noncorr_dims))
         ]
 
         missingshape = [sizes_dict[dim] for dim in missingdims]

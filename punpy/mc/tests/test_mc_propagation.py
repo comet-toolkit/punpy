@@ -7,6 +7,7 @@ import unittest
 import comet_maths as cm
 import numpy as np
 import numpy.testing as npt
+
 from punpy.mc.mc_propagation import MCPropagation
 
 """___Authorship___"""
@@ -277,6 +278,30 @@ class TestMCPropagation(unittest.TestCase):
         )
         npt.assert_allclose(ufd[0], yerr_corrd[0], atol=0.1)
         npt.assert_allclose(ufd[1], yerr_corrd[1], atol=0.1)
+
+    def test_propagate_systematic_2D_corrdict(self):
+        prop = MCPropagation(20000)
+
+        corrb = [{"0":np.eye(len(xerrb[:,0].ravel())),"1":np.eye(len(xerrb[0].ravel()))} for xerrb in xerrsb]
+        ufb, ucorrb = prop.propagate_systematic(
+            functionb,
+            xsb,
+            xerrsb,
+            corr_x=corrb,
+            return_corr=True,
+        )
+
+        ufb2, ucorrb2 = prop.propagate_systematic(
+            functionb,
+            xsb,
+            xerrsb,
+            corr_x=[{"0":np.eye(len(xerrsb[0])),"1":"syst"}, "syst"],
+            return_corr=True,
+        )
+
+        npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.06)
+        npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
+        npt.assert_allclose(ufb2, yerr_uncorrb, rtol=0.06)
 
     def test_propagate_systematic_1D(self):
         prop = MCPropagation(30000)

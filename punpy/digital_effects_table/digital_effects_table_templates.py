@@ -37,7 +37,8 @@ class DigitalEffectsTableTemplates(ABC):
         self,
         dims,
         dim_sizes,
-        str_repeat_corr_dims=[],
+            str_corr_dims=[],
+            str_repeat_noncorr_dims=[],
         store_unc_percent=False,
         repeat_dim_err_corrs=[],
     ):
@@ -48,8 +49,8 @@ class DigitalEffectsTableTemplates(ABC):
         :type dims: list
         :param u_xvar_ref: reference uncertainty component that is used to populate repeated dims
         :type u_xvar_ref: xarray.Variable
-        :param str_repeat_corr_dims: set to (list of) string(s) with dimension name(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to [], for which there is no reduction in dimensionality..
-        :type str_repeat_corr_dims: str or list of str, optional
+        :param str_repeat_noncorr_dims: set to (list of) string(s) with dimension name(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to [], for which there is no reduction in dimensionality..
+        :type str_repeat_noncorr_dims: str or list of str, optional
         :return: measurand digital effects table template to be used by obsarray
         :rtype: dict
         """
@@ -57,10 +58,11 @@ class DigitalEffectsTableTemplates(ABC):
 
         for i in range(self.output_vars):
             err_corr, custom_err_corr = self.set_errcorr_shape(
-                dims,
+                dims[i],
                 dim_sizes,
                 "err_corr_str_" + self.yvariable[i],
-                str_repeat_corr_dims=str_repeat_corr_dims,
+                str_repeat_noncorr_dims=str_repeat_noncorr_dims,
+                str_corr_dims=str_corr_dims,
                 repeat_dim_err_corr=repeat_dim_err_corrs,
             )
 
@@ -71,7 +73,7 @@ class DigitalEffectsTableTemplates(ABC):
 
             template[self.yvariable[i]] = {
                     "dtype": np.float32,
-                    "dim": dims,
+                    "dim": dims[i],
                     "attributes": {
                         "units": self.yunit[i],
                         "unc_comps": [
@@ -89,7 +91,7 @@ class DigitalEffectsTableTemplates(ABC):
                 }
             template[self.make_ucomp_name(self.yvariable[i],"ran", store_unc_percent=store_unc_percent)] = {
                     "dtype": np.float32,
-                    "dim": dims,
+                    "dim": dims[i],
                     "attributes": {
                         "units": units,
                         "err_corr": [
@@ -100,7 +102,7 @@ class DigitalEffectsTableTemplates(ABC):
                 }
             template[self.make_ucomp_name(self.yvariable[i],"sys", store_unc_percent=store_unc_percent)] ={
                     "dtype": np.float32,
-                    "dim": dims,
+                    "dim": dims[i],
                     "attributes": {
                         "units": units,
                         "err_corr": [
@@ -111,13 +113,15 @@ class DigitalEffectsTableTemplates(ABC):
                 }
             template[self.make_ucomp_name(self.yvariable[i],"str", store_unc_percent=store_unc_percent)] = {
                     "dtype": np.float32,
-                    "dim": dims,
+                    "dim": dims[i],
                     "attributes": {"units": units, "err_corr": err_corr},
                 }
 
 
             if custom_err_corr is not None:
-                template["err_corr_str_" + self.yvariable[i]] = custom_err_corr
+                for key in custom_err_corr.keys():
+                    if "err_corr_str_" + self.yvariable[i] in key:
+                        template[key] = custom_err_corr[key]
 
         return template
 
@@ -125,7 +129,8 @@ class DigitalEffectsTableTemplates(ABC):
         self,
         dims,
         dim_sizes,
-        str_repeat_corr_dims=[],
+        str_corr_dims=[],
+        str_repeat_noncorr_dims=[],
         store_unc_percent=False,
         repeat_dim_err_corrs=[],
     ):
@@ -143,10 +148,11 @@ class DigitalEffectsTableTemplates(ABC):
 
         for i in range(self.output_vars):
             err_corr, custom_err_corr = self.set_errcorr_shape(
-                dims,
+                dims[i],
                 dim_sizes,
                 "err_corr_tot_" + self.yvariable[i],
-                str_repeat_corr_dims=str_repeat_corr_dims,
+                str_repeat_noncorr_dims=str_repeat_noncorr_dims,
+                str_corr_dims=str_corr_dims,
                 repeat_dim_err_corr=repeat_dim_err_corrs,
             )
 
@@ -157,7 +163,7 @@ class DigitalEffectsTableTemplates(ABC):
 
             template[self.yvariable[i]]={
                     "dtype": np.float32,
-                    "dim": dims,
+                    "dim": dims[i],
                     "attributes": {
                         "units": self.yunit[i],
                         "unc_comps": [
@@ -167,19 +173,21 @@ class DigitalEffectsTableTemplates(ABC):
                 }
             template[self.make_ucomp_name(self.yvariable[i],"tot", store_unc_percent=store_unc_percent)]={
                     "dtype": np.float32,
-                    "dim": dims,
+                    "dim": dims[i],
                     "attributes": {"units": units, "err_corr": err_corr},
                 }
 
             if custom_err_corr is not None:
-                template["err_corr_tot_" + self.yvariable[i]] = custom_err_corr
+                for key in custom_err_corr.keys():
+                    if "err_corr_tot_" + self.yvariable[i] in key:
+                        template[key] = custom_err_corr[key]
 
-        if self.output_vars:
-            template["corr_between_vars"]={
-                "dtype": np.float32,
-                "dim": dims,
-                "attributes": {"units": units, "err_corr": err_corr},
-            }
+        # if self.output_vars>1:
+        #     template["corr_between_vars"]={
+        #         "dtype": np.float32,
+        #         "dim": dims,
+        #         "attributes": {"units": units, "err_corr": err_corr},
+        #     }
 
         return template
 
@@ -188,7 +196,8 @@ class DigitalEffectsTableTemplates(ABC):
         comp_list,
         dims,
         dim_sizes,
-        str_repeat_corr_dims=[],
+            str_corr_dims=[],
+            str_repeat_noncorr_dims=[],
         store_unc_percent=False,
         repeat_dim_err_corrs=[],
         simple_random=True,
@@ -214,7 +223,7 @@ class DigitalEffectsTableTemplates(ABC):
 
             template[self.yvariable[i]] = {
                     "dtype": np.float32,
-                    "dim": dims,
+                    "dim": dims[i],
                     "attributes": {
                         "units": self.yunit[i],
                         "unc_comps": [
@@ -230,7 +239,7 @@ class DigitalEffectsTableTemplates(ABC):
                         self.make_ucomp_name(self.yvariable[i],comp, store_unc_percent=store_unc_percent)
                     ] = {
                         "dtype": np.float32,
-                        "dim": dims,
+                        "dim": dims[i],
                         "attributes": {
                             "units": units,
                             "err_corr": [
@@ -245,7 +254,7 @@ class DigitalEffectsTableTemplates(ABC):
                         self.make_ucomp_name(self.yvariable[i], comp, store_unc_percent=store_unc_percent)
                     ] = {
                         "dtype": np.float32,
-                        "dim": dims,
+                        "dim": dims[i],
                         "attributes": {
                             "units": units,
                             "err_corr": [
@@ -255,17 +264,18 @@ class DigitalEffectsTableTemplates(ABC):
                                     "params": [],
                                     "units": [],
                                 }
-                                for dim in dims
+                                for dim in dims[i]
                             ],
                         },
                     }
 
                 else:
                     err_corr, custom_err_corr = self.set_errcorr_shape(
-                        dims,
+                        dims[i],
                         dim_sizes,
                         "err_corr_" + comp + "_" + self.yvariable[i],
-                        str_repeat_corr_dims=str_repeat_corr_dims,
+                        str_repeat_noncorr_dims=str_repeat_noncorr_dims,
+                        str_corr_dims=str_corr_dims,
                         repeat_dim_err_corr=repeat_dim_err_corrs[ic],
                     )
 
@@ -273,13 +283,13 @@ class DigitalEffectsTableTemplates(ABC):
                         self.make_ucomp_name(self.yvariable[i], comp, store_unc_percent=store_unc_percent)
                     ] = {
                         "dtype": np.float32,
-                        "dim": dims,
+                        "dim": dims[i],
                         "attributes": {"units": units, "err_corr": err_corr},
                     }
                     if custom_err_corr is not None:
-                        template[
-                            "err_corr_" + comp + "_" + self.yvariable[i]
-                        ] = custom_err_corr
+                        for key in custom_err_corr.keys():
+                            if "err_corr_" + comp + "_" + self.yvariable[i] in key:
+                                template[key] = custom_err_corr[key]
 
         return template
 
@@ -295,7 +305,7 @@ class DigitalEffectsTableTemplates(ABC):
         dims,
         dim_sizes,
         err_corr_name,
-        str_repeat_corr_dims=[],
+        str_repeat_noncorr_dims=[],
         str_corr_dims=[],
         repeat_dim_err_corr=[],
     ):
@@ -307,8 +317,8 @@ class DigitalEffectsTableTemplates(ABC):
         :type u_xvar_ref: xarray.Variable
         :param err_corr_name:
         :type err_corr_name:
-        :param str_repeat_corr_dims: set to (list of) string(s) with dimension name(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to [], for which there is no reduction in dimensionality..
-        :type str_repeat_corr_dims: str or list of str, optional
+        :param str_repeat_noncorr_dims: set to (list of) string(s) with dimension name(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to [], for which there is no reduction in dimensionality..
+        :type str_repeat_noncorr_dims: str or list of str, optional
         :return: measurand digital effects table template to be used by obsarray
         :rtype: dict
         """
@@ -317,39 +327,56 @@ class DigitalEffectsTableTemplates(ABC):
         custom_err_corr_dict = None
 
         # loop through all dimensions, and copy the ones that are repeat dims
-
         for dim in dims:
-            if dim in str_repeat_corr_dims:
+            if dim in str_repeat_noncorr_dims:
                 err_corr_list.append(repeat_dim_err_corr[dim])
             else:
                 custom_corr_dims.append(dim)
 
-        if len(custom_corr_dims) > 0:
-            if len(custom_corr_dims) == 1:
-                corrdim = custom_corr_dims[0]
-                custom_corr_dims = custom_corr_dims[0]
-            else:
-                corrdim = ".".join(custom_corr_dims)
-                dim_sizes[corrdim] = 1
-                for cust_dim in custom_corr_dims:
-                    dim_sizes[corrdim] *= dim_sizes[cust_dim]
+        if len(str_corr_dims)==0:
+            if len(custom_corr_dims) > 0:
+                if len(custom_corr_dims) == 1:
+                    corrdim = custom_corr_dims[0]
+                    custom_corr_dims = custom_corr_dims[0]
+                else:
+                    corrdim = ".".join(custom_corr_dims)
+                    # dim_sizes[corrdim] = 1
+                    # for cust_dim in custom_corr_dims:
+                    #     dim_sizes[corrdim] *= dim_sizes[cust_dim]
 
-            custom_err_corr_dict = {
-                "dtype": np.float32,
-                "dim": [corrdim, corrdim],
-                "attributes": {"units": ""},
-            }
+                custom_err_corr_dict = {err_corr_name:{
+                    "dtype": np.float32,
+                    "dim": [corrdim, corrdim],
+                    "attributes": {"units": ""},
+                }}
 
-        # make a combined custom form for the variables that are not repeated dims
-        if len(custom_corr_dims) > 0:
-            err_corr_list.append(
-                {
-                    "dim": custom_corr_dims,
-                    "form": "err_corr_matrix",
-                    "params": [err_corr_name],
-                    "units": [],
+            # make a combined custom form for the variables that are not repeated dims
+            if len(custom_corr_dims) > 0:
+                err_corr_list.append(
+                    {
+                        "dim": custom_corr_dims,
+                        "form": "err_corr_matrix",
+                        "params": [err_corr_name],
+                        "units": [],
+                    }
+                )
+        else:
+            custom_err_corr_dict={}
+            for corrdim in str_corr_dims:
+                custom_err_corr_dict[err_corr_name+"_"+corrdim]={
+                    "dtype": np.float32,
+                    "dim": [corrdim, corrdim],
+                    "attributes": {"units": ""},
                 }
-            )
+
+                err_corr_list.append(
+                    {
+                        "dim": corrdim.split("."),
+                        "form": "err_corr_matrix",
+                        "params": [err_corr_name+"_"+corrdim],
+                        "units": [],
+                    }
+                )
 
         return err_corr_list, custom_err_corr_dict
 

@@ -15,7 +15,7 @@ The punpy package can propagate the various types of correlated uncertainties th
 
 Digital Effects Tables
 #######################
-Digital Effects tables are created with the obsarray package. The `documentation for obsarray <>`_ is the reference for digital effect tables.
+Digital Effects tables are created with the obsarray package. The `documentation for obsarray <https://obsarray.readthedocs.io/en/latest/>`_ is the reference for digital effect tables.
 Here we summarise the main concepts in order to give context to the rest of the Section.
 
 Digital effects tables are a digital version of the effects tables created as part of the `FIDUCEO project <https://research.reading.ac.uk/fiduceo/>`_.
@@ -41,11 +41,9 @@ Each of these uncertainty components is clearly linked to its associated variabl
 These uncertainty components, unsurprisingly, have uncertainties as the data values.
 As attributes, they have the information defining the error-correlation structure.
 If the FIDUCEO correlation forms can be used, the form name and optionally its parameters are stored directly in the attributes of the uncertainty component.
-If the FIDUCEO correlation forms cannot be used, the form in the attributes is listed as custom and as parameter it has the name of another variable in the xarray dataset that has the correlation matrix.
+If the FIDUCEO correlation forms cannot be used, the form in the attributes is listed as "err_corr_matrix" and as parameter it has the name of another variable in the xarray dataset that has the correlation matrix.
 
 Multiple uncertainty components can be added for the same data variable, and obsarray provide functionality to combine these uncertainties, either as the total uncertainties for a given variable, or as separate random, systematic, and structured components.
-
-
 
 
 Measurement Function
@@ -80,31 +78,58 @@ In this subclass, one can then define the measurement function in python as a fu
    from punpy import MeasurementFunction
 
    class GasLaw(MeasurementFunction):
-      def function(self, n, T, P):
+      def function(self, P, T, n):
          return (8.134 * n * T)/P
+
+In some cases, it can also be useful to define the measurand name and input quantity names directly in this class::
+
+   from punpy import MeasurementFunction
+
+   class GasLaw(MeasurementFunction):
+      def function(self, P, T, n):
+         return (8.134 * n * T)/P
+
+      def get_measurand_name_and_unit(self):
+         return "volume", "m^3"
+
+      def get_argument_names(self):
+         return ["pressure", "temperature", "n_moles"]
+
+These names will be used as variable names in the digital effects tables. This means they have to match the expected names in e.g. the input digital effects tables that are used.
+Providing the names of the input quantities and measurand in this way is not a requirement, as this information can also be provided when initialising the object of this class.
 
 Propagating uncertainties in digital effects tables
 ####################################################
-    
 Once this kind of measurement function class is defined, we can initialise an object of this class.
-Here, as the first argument, one needs to specify the names of each of the input quantities.
+In principle there are no required arguments when creating an object of this class (all arguments have a default).
+However, in practise we will almost always provide at least some arguments.
+The first argument allows to pass a MCPropagation or LPUpropagaion object. It thus specifies whether the Monte Carlo (MC) method (see Section :ref:`Monte Carlo Method`)
+or Law of Propagation of Uncertainties (LPU) method (see Section :ref:`LPU Method`) should be used. These prop objects can be created with any of their options (such as parallel_cores)::
+
+   prop = MCPropagation(1000, dtype="float32", verbose=False, parallel_cores=4)
+
+   gl = IdealGasLaw(prop=prop)
+
+If no argument is provided for prop, a MCPropagation(100,parallel_cores=0) object is used.
+The next arguments are for providing the input quantity names and the measurand name and measurand unit respectively::
+
+   gl = IdealGasLaw(prop=prop, xvariables=["pressure", "temperature", "n_moles"], yvariable="volume", yunit="m^3")
+
+In the xvariables argument, one needs to specify the names of each of the input quantities.
 These names have to be in the same order as in the specified function, and need to correspond to the names used for the variables in the digital effects tables.
-The second argument specifies whether the Monte Carlo (MC) method (see Section :ref:`Monte Carlo Method`)
-or Law of Propagation of Uncertainties (LPU) method (see Section :ref:`LPU Method`) should be used, and further optional keywords give additional options relevant to those methods (e.g. how many MC steps should be used)::
-
-   gl = GasLaw(["n_moles", "temperature", "pressure"], "MC", steps=100000)
-
+These variable names can be provided as optional arguments here, or alternatively using the get_measurand_name_and_unit() and get_argument_names() functions in the class definition.
+If both options are provided, they are compared and an error is raised if they are different.
+There are many more optional keywords that can be set to finetune the processing of the uncertainty propagation.
+These will be discussed in the :ref:`MeasurementFunctionOptions` section.
 
 Once this object is created, and a digital effects table has been provided (here as a NetCDF file), the uncertainties can be propagated easily::
 
    import xarray as xr
-   ds = xr.open_dataset("digital_effects_table_gaslaw.nc")
-   ds_y = gl.propagate_ds("volume", ds)
+   ds_x1 = xr.open_dataset("digital_effects_table_gaslaw.nc")
+   ds_y = gl.propagate_ds(ds_x1)
 
 This generates a digital effects table for the measurand, which could optionally be saved as a NetCDF file, or passed to the next stage of the processing.
 The measurand effects table will have separate contributions for the random, systematic and structured uncertainties, which can easily be combined into a single covariance matrix using the obsarray functionalities of the digital effects tables.
-As can be seen from the code, the name of the measurand needs to be specified when using the "propagate_ds" function. This measurand name will be used as the variable name in the digital effects table.
-
 It is quite common that not all the uncertainty information is available in a single digital effects table.
 In such cases, multiple digital effects tables can simply be provided to "propagate_ds".
 punpy will then search each of these effects tables for the input quantities provided when initialising the MeasurementFunction object.
@@ -113,14 +138,14 @@ For example, if :math:`n`, :math:`T` and :math:`P`, each had their own digital e
    import xarray as xr
    ds_nmol = xr.open_dataset("n_moles.nc")
    ds_temp = xr.open_dataset("temperature.nc")
-    =ds_pres xr.open_dataset("pressure.nc")
-   ds_y = gl.propagate_ds("volume", ds_pres, ds_nmol, ds_temp)
+   ds_pres = xr.open_dataset("pressure.nc")
+   ds_y = gl.propagate_ds(ds_pres, ds_nmol, ds_temp)
 
 These digital effects tables can be provided in any order. They can also contain numerous other quantities that are not relevant for the current measurement function.
 When multiple of these digital effects tables have a variable with the same name (which is used in the measurement function), an error is raised.
 
 functions for propagating uncertainties
-:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+####################################################
 In the above example, we show an example of using the propagate_ds() function to obtain a
 measurand effects table that has separate contributions for the random, systematic and structured uncertainties.
 Depending on what uncertainty components one is interested in, there are a number of functions that can be used:
@@ -129,7 +154,7 @@ Depending on what uncertainty components one is interested in, there are a numbe
 -  propagate_ds_specific: measurand digital effects table with separate contributions for a list of named uncertainty contributions provided by the user.
 -  propagate_ds_all: measurand digital effects table with separate contributions for all the individual uncertainty contributions in the input quantities in the provided input digital effects tables.
 
-It is worth noting that the uncertainty components labelled in the measurand DETs as
+It is worth noting that the uncertainty components labelled in the measurand digital effect tables as
 "random" or "systematic" (either in propagate_ds, propagate_ds_specific or propagate_ds_all),
 will contain the propagated uncertainties for all uncertainty components on the input
 quantities that are random or systematic respectively along all the measurand dimensions.
@@ -156,33 +181,3 @@ dimensions are not present along the measurand dimensions. These broadcast error
 be set in punpy using ... Depending on how this broadcast error correlation combines with
 the error correlations in the other dimensions, can also affect which measurand uncertainty component
 (random, systematic or structured) it contributes to when using propagate_ds.
-
-avoiding memory issues in structured components
-:::::::::::::::::::::::::::::::::::::::::::::::::
-Random and systematic uncertainty components take up very little space, as each of their error
-correlation dimensions are by defnition parameterised as random or systematic.
-For structured components with error correlation matrices stored as separate variables, it is not
-uncommon for these matrices to take up a lot of memory. This is especially the case when
-each of the dimensions is not parametrised separately, and instead an error correlation
-matrix is provided along the combination of angles. E.g. for a variable with dimensions (x,y,z),
-which correspond to a shape of e.g. (20,30,40), the resulting total error correlation matrix will have shape
-(20*30*40,20*30*40) which would contain 575 million elements. The shape chosen here as an example is
-quite moderate, so it is clear this could be an issue when using larger datasets.
-
-The solution to this is to avoid storing the full (x*y*z,x*y*z) error correlation matrix when possible.
-In many cases, even though the errors for pixels along a certain dimension (e.g. x) might
-be correlated, this error correlation w.r.t x does not change for different values of y or z.
-In that case, the error correlation for x can be separated and stored as a matrix of shape (x,x).
-
-This can be achieved by setting the using the use_err_corr_dict keyword::
-
-
-   prop = MCPropagation(1000, dtype="float32", verbose=False)
-
-   gl = IdealGasLaw(
-      prop,
-      ["pressure", "temperature", "n_moles"],
-      "volume",
-      yunit="m^3",
-      use_err_corr_dict=True,
-   )

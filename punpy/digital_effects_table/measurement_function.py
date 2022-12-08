@@ -6,6 +6,7 @@ from abc import ABC,abstractmethod
 
 import numpy as np
 import obsarray
+
 from punpy.digital_effects_table.digital_effects_table_templates import (
     DigitalEffectsTableTemplates,)
 from punpy.digital_effects_table.measurement_function_utils import (
@@ -30,12 +31,12 @@ class MeasurementFunction(ABC):
         ydims=None,
         corr_between=None,
         param_fixed=None,
-        output_vars=1,
         repeat_dims=-99,
         corr_dims=-99,
         refxvar=None,
         sizes_dict=None,
         use_err_corr_dict=False,
+        allow_some_nans=True
     ):
         """
         Initialise MeasurementFunction
@@ -44,18 +45,16 @@ class MeasurementFunction(ABC):
         :type prop: punpy.MCPropagation or punpy. LPUPropagation
         :param xvariables: list of input quantity names, in same order as arguments in measurement function and with same exact names as provided in input datasets. Defaults to None, in which case get_argument_names function is used.
         :type xvariables: list(str), optional
-        :param yvariable: name of measurand. Defaults to None, in which case get_measurand_name function is used.
+        :param yvariable: name of measurand. Defaults to None, in which case get_measurand_name_and_unit function is used.
         :type yvariable: str, optional
         :param yunit: unit of measurand. Defaults to "" (unitless).
         :type yunit: str, optional
-        :param ydims: list of dimensions of the measurand, in correct order. Default to None, in which case it is assumed to be the same as refxvar (see below) input quantity.
+        :param ydims: list of dimensions of the measurand, in correct order. list of list of dimensions when there are multiple measurands. Default to None, in which case it is assumed to be the same as refxvar (see below) input quantity.
         :type ydims: list(str), optional
         :param corr_between: Allows to specify the (average) error correlation coefficient between the various input quantities. Defaults to None, in which case no error-correlation is assumed.
         :type corr_between: numpy.ndarray , optional
         :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
         :type param_fixed: list of bools, optional
-        :param output_vars: number of output parameters in the measurement function. Defaults to 1.
-        :type output_vars: integer, optional
         :param repeat_dims: Used to select the axis which has repeated measurements. Axis can be specified using the name(s) of the dimension, or their index in the ydims. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
         :type repeat_dims: str or int or list(str) or list(int), optional
         :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
@@ -90,22 +89,32 @@ class MeasurementFunction(ABC):
             )
 
         if yvariable is None:
-            self.yvariable, yunit = self.get_measurand_name()
+            self.yvariable, yunit = self.get_measurand_name_and_unit()
         else:
             self.yvariable = yvariable
-            yvar = self.get_measurand_name()[0]
+            yvar = self.get_measurand_name_and_unit()[0]
             if yvar != "measurand":
                 if yvariable != yvar:
                     raise ValueError(
-                        "punpy.MeasurementFunction: when specifying both yvariable and get_measurand_name, they need to be the same!"
+                        "punpy.MeasurementFunction: when specifying both yvariable and get_measurand_name_and_unit, they need to be the same!"
                     )
 
-        self.templ = DigitalEffectsTableTemplates(self.yvariable, yunit, output_vars)
-        self.ydims = ydims
-        self.sizes_dict = sizes_dict
-
         self.corr_between = corr_between
-        self.output_vars = output_vars
+        if isinstance(self.yvariable,str):
+            self.output_vars = 1
+        else:
+            self.output_vars = len(self.yvariable)
+        self.ydims = ydims
+
+        if self.output_vars==1:
+            if isinstance(self.yvariable,str):
+                self.yvariable=[self.yvariable]
+            if self.ydims is not None:
+                if isinstance(self.ydims[0],str):
+                    self.ydims = [ydims]
+
+        self.templ = DigitalEffectsTableTemplates(self.yvariable, yunit, self.output_vars)
+        self.sizes_dict = sizes_dict
 
         if refxvar is None:
             self.refxvar = self.xvariables[0]
@@ -122,24 +131,25 @@ class MeasurementFunction(ABC):
 
         if isinstance(corr_dims, int) or isinstance(corr_dims, str):
             corr_dims = [corr_dims]
-        self.corr_dims = np.array(corr_dims)
-        self.num_corr_dims = np.empty_like(self.corr_dims, dtype=int)
+        self.corr_dims = np.array(corr_dims,dtype=object)
+        self.num_corr_dims = np.empty_like(self.corr_dims,dtype=object)
+        self.str_corr_dims = np.empty_like(self.corr_dims,dtype="<U30")
 
-        self.str_repeat_corr_dims = np.empty_like(self.corr_dims, dtype="<U30")
+        self.str_repeat_noncorr_dims = np.empty_like(self.corr_dims, dtype="<U30")
 
         self.param_fixed = param_fixed
 
         self.utils = MeasurementFunctionUtils(
             self.xvariables,
             self.ydims,
-            self.str_repeat_corr_dims,
+            self.str_repeat_noncorr_dims,
             self.prop.verbose,
             self.templ,
             use_err_corr_dict,
         )
 
         self.use_err_corr_dict = use_err_corr_dict
-
+        self.allow_some_nans = allow_some_nans
     @abstractmethod
     def meas_function(self, *args, **kwargs):
         """
@@ -158,7 +168,7 @@ class MeasurementFunction(ABC):
         """
         return None
 
-    def get_measurand_name(self):
+    def get_measurand_name_and_unit(self):
         """
         This function allows to return the name and unit of the measurand as strings.
         Can optionally be overwritten to provide names instead of providing yvariable as a keyword.
@@ -235,6 +245,7 @@ class MeasurementFunction(ABC):
                 u_stru_y, corr_stru_y = self.propagate_structured(
                 *args, expand=expand, return_corr=include_corr
                 )
+
             else:
                 u_stru_y, corr_stru_y, corr_stru_y_between = self.propagate_structured(
                     *args, expand=expand, return_corr=include_corr
@@ -255,71 +266,76 @@ class MeasurementFunction(ABC):
             self.ydims,
             self.sizes_dict,
             store_unc_percent=store_unc_percent,
-            str_repeat_corr_dims=self.str_repeat_corr_dims,
+            str_repeat_noncorr_dims=self.str_repeat_noncorr_dims,
             repeat_dim_err_corrs=repeat_dim_err_corrs,
         )
 
         # create dataset template
         ds_out = obsarray.create_ds(template, self.sizes_dict)
 
-        ds_out[self.yvariable].values = y
+        #add trivial first dimension to so we can loop over output_vars later
+        if self.output_vars==1:
+            if u_rand_y is not None:
+                u_rand_y=u_rand_y[None,...]
+            if u_syst_y is not None:
+                u_syst_y=u_syst_y[None,...]
+            if u_stru_y is not None:
+                u_stru_y=u_stru_y[None,...]
+            if corr_stru_y is not None:
+                corr_stru_y=corr_stru_y[None,...]
 
-        if store_unc_percent:
-            ucomp_ran = "u_rel_ran_" + self.yvariable
-            ucomp_sys = "u_rel_sys_" + self.yvariable
-            ucomp_str = "u_rel_str_" + self.yvariable
-        else:
-            ucomp_ran = "u_ran_" + self.yvariable
-            ucomp_sys = "u_sys_" + self.yvariable
-            ucomp_str = "u_str_" + self.yvariable
+        for i in range(self.output_vars):
+            ds_out[self.yvariable[i]].values = y[i]
 
-        if u_rand_y is None:
-            ds_out = self.templ.remove_unc_component(ds_out, self.yvariable, ucomp_ran)
-        else:
             if store_unc_percent:
-                ds_out[ucomp_ran].values = u_rand_y / y * 100
+                ucomp_ran = "u_rel_ran_" + self.yvariable[i]
+                ucomp_sys = "u_rel_sys_" + self.yvariable[i]
+                ucomp_str = "u_rel_str_" + self.yvariable[i]
             else:
-                ds_out[ucomp_ran].values = u_rand_y
+                ucomp_ran = "u_ran_" + self.yvariable[i]
+                ucomp_sys = "u_sys_" + self.yvariable[i]
+                ucomp_str = "u_str_" + self.yvariable[i]
 
-        if u_syst_y is None:
-            ds_out = self.templ.remove_unc_component(ds_out, self.yvariable, ucomp_sys)
-        else:
-            if store_unc_percent:
-                ds_out[ucomp_sys].values = u_syst_y / y * 100
+            if u_rand_y is None:
+                ds_out = self.templ.remove_unc_component(ds_out, self.yvariable[i], ucomp_ran)
             else:
-                ds_out[ucomp_sys].values = u_syst_y
-
-        if u_stru_y is None:
-            ds_out = self.templ.remove_unc_component(
-                ds_out,
-                self.yvariable,
-                ucomp_str,
-                err_corr_comp="err_corr_str_" + self.yvariable,
-            )
-        else:
-            if store_unc_percent:
-                ds_out[ucomp_str].values = u_stru_y / y * 100
-            else:
-                ds_out[ucomp_str].values = u_stru_y
-
-            if include_corr:
-                if self.output_vars==1:
-                    ds_out["err_corr_str_" + self.yvariable].values = corr_stru_y
+                if store_unc_percent:
+                    ds_out[ucomp_ran].values = u_rand_y[i] / y[i] * 100
                 else:
-                    for i in range(self.output_vars):
-                        ds_out["err_corr_str_" + self.yvariable[i]].values = corr_stru_y[i]
+                    ds_out[ucomp_ran].values = u_rand_y[i]
 
+            if u_syst_y is None:
+                ds_out = self.templ.remove_unc_component(ds_out, self.yvariable[i], ucomp_sys)
             else:
-                if self.output_vars==1:
-                    ds_out.drop("err_corr_str_" + self.yvariable)
+                if store_unc_percent:
+                    ds_out[ucomp_sys].values = u_syst_y[i] / y[i] * 100
                 else:
-                    for i in range(self.output_vars):
-                        ds_out.drop("err_corr_str_" + self.yvariable[i])
-                    ds_out.drop("err_corr_str_between")
+                    ds_out[ucomp_sys].values = u_syst_y[i]
+
+            if u_stru_y is None:
+                ds_out = self.templ.remove_unc_component(
+                    ds_out,
+                    self.yvariable[i],
+                    ucomp_str,
+                    err_corr_comp="err_corr_str_" + self.yvariable[i],
+                )
+            else:
+                if store_unc_percent:
+                    ds_out[ucomp_str].values = u_stru_y[i] / y[i] * 100
+                else:
+                    ds_out[ucomp_str].values = u_stru_y[i]
+
+                if include_corr:
+                    ds_out["err_corr_str_" + self.yvariable[i]].values = corr_stru_y[i]
+
+                else:
+                    ds_out.drop("err_corr_str_" + self.yvariable[i])
+
+                    #ds_out.drop("err_corr_str_between")
 
 
-        if ds_out_pre is not None:
-            self.templ.join_with_preexisting_ds(ds_out, ds_out_pre, drop=self.yvariable)
+            if ds_out_pre is not None:
+                self.templ.join_with_preexisting_ds(ds_out, ds_out_pre, drop=self.yvariable)
 
         if self.prop.verbose:
             print(
@@ -387,7 +403,8 @@ class MeasurementFunction(ABC):
             self.ydims,
             self.sizes_dict,
             store_unc_percent=store_unc_percent,
-            str_repeat_corr_dims=self.str_repeat_corr_dims,
+            str_corr_dims=self.str_corr_dims,
+            str_repeat_noncorr_dims=self.str_repeat_noncorr_dims,
             repeat_dim_err_corrs=repeat_dim_err_corrs,
         )
 
@@ -395,48 +412,49 @@ class MeasurementFunction(ABC):
         ds_out = obsarray.create_ds(template, self.sizes_dict)
 
         if self.output_vars==1:
-            ds_out[self.yvariable].values = y
+            u_tot_y=u_tot_y[None,...]
+            corr_tot_y=corr_tot_y[None,...]
 
-        else:
-            for i in range(self.output_vars):
-                ds_out[self.yvariable[i]].values = y[i]
+        for i in range(self.output_vars):
+            ds_out[self.yvariable[i]].values = y[i]
 
-        if store_unc_percent:
-            ucomp = "u_rel_tot_" + self.yvariable
-        else:
-            ucomp = "u_tot_" + self.yvariable
-
-        if u_tot_y is None:
-            ds_out = self.templ.remove_unc_component(
-                ds_out,
-                self.yvariable,
-                ucomp,
-                err_corr_comp="err_corr_tot_" + self.yvariable,
-            )
-        else:
             if store_unc_percent:
-                ds_out[ucomp].values = u_tot_y / y * 100
+                ucomp = "u_rel_tot_" + self.yvariable[i]
             else:
-                ds_out[ucomp].values = u_tot_y
+                ucomp = "u_tot_" + self.yvariable[i]
 
-            if include_corr:
-                if self.output_vars==1:
-                    ds_out["err_corr_tot_" + self.yvariable].values = corr_tot_y
+            if u_tot_y is None:
+                ds_out = self.templ.remove_unc_component(
+                    ds_out,
+                    self.yvariable[i],
+                    ucomp,
+                    err_corr_comp="err_corr_tot_" + self.yvariable[i],
+                )
+            else:
+                if store_unc_percent:
+                    ds_out[ucomp].values = u_tot_y[i] / y[i] * 100
                 else:
-                    for i in range(self.output_vars):
+                    ds_out[ucomp].values = u_tot_y[i]
+
+                if include_corr:
+                    if len(self.str_corr_dims)==1:
                         ds_out["err_corr_tot_" + self.yvariable[i]].values = corr_tot_y[i]
-                    ds_out["err_corr_tot_between"]= corr_tot_y_between
+                    else:
+                        for ii in range(len(self.str_corr_dims)):
+                            ds_out["err_corr_tot_" + self.yvariable[i]+"_"+self.str_corr_dims[ii]].values = corr_tot_y[i][ii]
 
-            else:
-                if self.output_vars==1:
-                    ds_out.drop("err_corr_tot_" + self.yvariable)
                 else:
-                    for i in range(self.output_vars):
+                    if len(self.str_corr_dims)==1:
                         ds_out.drop("err_corr_tot_" + self.yvariable[i])
-                    ds_out.drop("err_corr_tot_between")
+                    else:
+                        for ii in range(len(self.str_corr_dims)):
+                            ds_out.drop("err_corr_tot_" + self.yvariable[i]+"_"+self.str_corr_dims[ii])
 
-        if ds_out_pre is not None:
-            self.templ.join_with_preexisting_ds(ds_out, ds_out_pre, drop=self.yvariable)
+            if ds_out_pre is not None:
+                self.templ.join_with_preexisting_ds(ds_out, ds_out_pre, drop=self.yvariable[i])
+
+        #ds_out["err_corr_tot_between"]= corr_tot_y_between
+        #ds_out.drop("err_corr_tot_between")
 
         if self.prop.verbose:
             print(
@@ -508,7 +526,7 @@ class MeasurementFunction(ABC):
             self.ydims,
             self.sizes_dict,
             store_unc_percent=store_unc_percent,
-            str_repeat_corr_dims=self.str_repeat_corr_dims,
+            str_repeat_noncorr_dims=self.str_repeat_noncorr_dims,
             repeat_dim_err_corrs=repeat_dim_err_corrs,
             simple_random=simple_random,
             simple_systematic=simple_systematic,
@@ -516,7 +534,9 @@ class MeasurementFunction(ABC):
 
         # create dataset template
         ds_out = obsarray.create_ds(template, self.sizes_dict)
-        ds_out[self.yvariable].values = y
+
+        for i in range(self.output_vars):
+            ds_out[self.yvariable[i]].values = y[i]
 
         for icomp, comp in enumerate(comp_list):
             err_corr_comp = None
@@ -532,6 +552,9 @@ class MeasurementFunction(ABC):
                         u_comp_y, corr_comp_y = self.propagate_specific(
                         comp, *args, return_corr=include_corr, expand=expand
                      )
+                        u_comp_y=u_comp_y[None,...]
+                        corr_comp_y=corr_comp_y[None,...]
+
                     else:
                         u_comp_y, corr_comp_y,corr_comp_y_between = self.propagate_specific(
                             comp, *args, return_corr=include_corr, expand=expand
@@ -542,86 +565,49 @@ class MeasurementFunction(ABC):
                     )
                     corr_comp_y = None
 
-                if corr_comp_y is not None:
-                    if self.output_vars==1:
+                for i in range(self.output_vars):
+                    if corr_comp_y is not None:
                         ds_out[
-                            "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable
-                            ].values = corr_comp_y
+                            "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable[i]
+                        ].values = corr_comp_y[i]
                     else:
-                        for i in range(self.output_vars):
-                            ds_out[
-                                "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable[i]
-                            ].values = corr_comp_y[i]
-                else:
-                    if self.output_vars==1:
                         ds_out.drop(
-                            "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable
+                            "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable[i]
                         )
                         err_corr_comp = None
-                    else:
-                        for i in range(self.output_vars):
-                            ds_out.drop(
-                                "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable[i]
-                            )
-                            err_corr_comp = None
 
             if u_comp_y is None:
-                if self.output_vars==1:
+                for i in range(self.output_vars):
                     if store_unc_percent:
                         ds_out = self.templ.remove_unc_component(
                             ds_out,
-                            self.yvariable,
-                            "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable,
-                            err_corr_comp=err_corr_comp,
+                            self.yvariable[i],
+                            "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable[i],
+                            err_corr_comp=err_corr_comp[i],
                             )
                     else:
                         ds_out = self.templ.remove_unc_component(
                             ds_out,
-                            self.yvariable,
-                            "u_" + comp_list_out[icomp] + "_" + self.yvariable,
-                            err_corr_comp=err_corr_comp,
+                            self.yvariable[i],
+                            "u_" + comp_list_out[icomp] + "_" + self.yvariable[i],
+                            err_corr_comp=err_corr_comp[i],
                             )
-                else:
-                    for i in range(self.output_vars):
-                        if store_unc_percent:
-                            ds_out = self.templ.remove_unc_component(
-                                ds_out,
-                                self.yvariable[i],
-                                "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable[i],
-                                err_corr_comp=err_corr_comp[i],
-                                )
-                        else:
-                            ds_out = self.templ.remove_unc_component(
-                                ds_out,
-                                self.yvariable[i],
-                                "u_" + comp_list_out[icomp] + "_" + self.yvariable[i],
-                                err_corr_comp=err_corr_comp[i],
-                                )
             else:
-                if self.output_vars==1:
+                for i in range(self.output_vars):
                     if store_unc_percent:
                         ds_out[
-                            "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable
-                        ].values = (u_comp_y / y * 100)
+                            "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable[i]
+                            ].values = (u_comp_y[i] / y[i] * 100)
                     else:
                         ds_out[
-                            "u_" + comp_list_out[icomp] + "_" + self.yvariable
-                        ].values = u_comp_y
-                else:
-                    for i in range(self.output_vars):
-                        if store_unc_percent:
-                            ds_out[
-                                "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable[i]
-                                ].values = (u_comp_y[i] / y[i] * 100)
-                        else:
-                            ds_out[
-                                "u_" + comp_list_out[icomp] + "_" + self.yvariable[i]
-                                ].values = u_comp_y[i]
+                            "u_" + comp_list_out[icomp] + "_" + self.yvariable[i]
+                            ].values = u_comp_y[i]
 
-        if ds_out_pre is not None:
-            ds_out = self.templ.join_with_preexisting_ds(
-                ds_out, ds_out_pre, drop=self.yvariable
-            )
+        for i in range(self.output_vars):
+            if ds_out_pre is not None:
+                ds_out = self.templ.join_with_preexisting_ds(
+                    ds_out, ds_out_pre, drop=self.yvariable
+                )
 
         if self.prop.verbose:
             print(
@@ -699,6 +685,7 @@ class MeasurementFunction(ABC):
         input_qty = self.utils.get_input_qty(
             args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
+
         return np.array(self.meas_function(*input_qty))
 
     def check_sizes_and_run(self, *args, expand=False, ds_out_pre=None):
@@ -713,81 +700,113 @@ class MeasurementFunction(ABC):
         :rtype: None
         """
         if self.ydims is None:
-            if ds_out_pre is not None:
-                self.ydims = ds_out_pre[self.yvariable].dims
-            else:
-                for dataset in args:
-                    try:
-                        self.ydims = dataset[self.refxvar].dims
-                    except:
-                        continue
+            self.ydims = np.empty(self.output_vars,dtype=object)
+            for i in range(self.output_vars):
+                if ds_out_pre is not None:
+                    self.ydims[i] = ds_out_pre[self.yvariable[i]].dims
+                else:
+                    for dataset in args:
+                        try:
+                            self.ydims[i] = dataset[self.refxvar].dims
+                        except:
+                            continue
 
         y = self.run(*args, expand=expand)
 
+        if self.output_vars==1:
+            y=y[None,...]
+
         if self.sizes_dict is None:
-            if self.output_vars==0:
-                self.sizes_dict = {}
-                for idim, dim in enumerate(self.ydims):
-                    self.sizes_dict[dim] = y.shape[idim]
-            else:
-                self.sizes_dict = [{} for i in range(self.output_vars)]
-                for i in range(self.output_vars):
-                    for idim, dim in enumerate(self.ydims):
-                        self.sizes_dict[i][dim] = y[i].shape[idim]
+            self.sizes_dict = {}
+            for i in range(self.output_vars):
+                for idim, dim in enumerate(self.ydims[i]):
+                    self.sizes_dict[dim] = y[i].shape[idim]
 
-        str_repeat_corr_dims = []
-        for i in range(len(self.repeat_dims)):
-            if isinstance(self.repeat_dims[i], str):
-                if not self.repeat_dims[i] in self.ydims:
-                    raise ValueError(
-                        "punpy.measurement_function: The repeat_dim (%s) is not in the measurand dimensions (%s)."
-                        % (self.repeat_dims[i], self.ydims)
-                    )
-                str_repeat_corr_dims.append(self.repeat_dims[i])
-                self.str_repeat_dims[i] = copy.copy(self.repeat_dims[i])
-                self.num_repeat_dims[i] = copy.copy(
-                    self.ydims.index(self.repeat_dims[i])
-                )
+        for idimr in range(len(self.repeat_dims)):
+            if isinstance(self.repeat_dims[idimr], str):
+                self.str_repeat_dims[idimr] , self.num_repeat_dims[idimr] = self.check_and_convert_str_dims(self.repeat_dims[idimr])
 
-            elif isinstance(self.repeat_dims[i], (int, np.integer)):
-                self.num_repeat_dims[i] = self.repeat_dims[i]
-                if self.repeat_dims[i] >= 0:
-                    self.str_repeat_dims[i] = copy.copy(self.ydims[self.repeat_dims[i]])
-                    str_repeat_corr_dims.append(self.ydims[self.repeat_dims[i]])
+            elif isinstance(self.repeat_dims[idimr], (int, np.integer)):
+                if self.repeat_dims[idimr] >= 0:
+                    self.str_repeat_dims[idimr] , self.num_repeat_dims[idimr] = self.check_and_convert_num_dims(self.repeat_dims[idimr])
+                else:
+                    self.num_repeat_dims[idimr]=self.repeat_dims[idimr]
+
             else:
                 raise ValueError(
                     "punpy.measurment_function: repeat_dims needs to be provided as ints or strings"
                 )
 
-        for i in range(len(self.corr_dims)):
-            if isinstance(self.corr_dims[i], str):
-                if not self.corr_dims[i] in self.ydims:
+        str_repeat_noncorr_dims=list(self.str_repeat_dims)
+
+        all_corr_dims=[]
+        for idimc in range(len(self.corr_dims)):
+            if isinstance(self.corr_dims[idimc], str):
+                if "." in self.corr_dims[idimc]:
+                    corr_dims=self.corr_dims[idimc].split(".")
+                    str_corr_dims=np.empty_like(corr_dims)
+                    num_corr_dims=np.empty_like(corr_dims,dtype=int)
+                    if corr_dims[0].isdigit():
+                        corrlen=1
+                        for ic in range(len(corr_dims)):
+                            str_corr_dims[ic], num_corr_dims[ic] = self.check_and_convert_num_dims(int(corr_dims[ic]))
+                            all_corr_dims.append(str_corr_dims[ic])
+                            corrlen*=y[0].shape[num_corr_dims[ic]]
+                        self.num_corr_dims[idimc] = copy.copy(self.corr_dims[idimc])
+                        self.str_corr_dims[idimc] = ".".join(str_corr_dims)
+                        self.sizes_dict[self.str_corr_dims[idimc]]=corrlen
+
+                    else:
+                        corrlen=1
+                        for ic in range(len(corr_dims)):
+                            str_corr_dims[ic], num_corr_dims[ic] = self.check_and_convert_str_dims(corr_dims[ic])
+                            all_corr_dims.append(str_corr_dims[ic])
+                            corrlen*=y[0].shape[num_corr_dims[ic]]
+                        self.str_corr_dims[idimc] = copy.copy(self.corr_dims[idimc])
+                        self.num_corr_dims[idimc] = ".".join([str(cdim) for cdim in num_corr_dims])
+                        self.sizes_dict[self.str_corr_dims[idimc]]=corrlen
+
+                elif not self.corr_dims[idimc] in self.ydims[0]:
                     raise ValueError(
                         "punpy.measurement_function: The corr_dim (%s) is not in the measurand dimensions (%s)."
-                        % (self.corr_dims[i], self.ydims)
-                    )
-                str_repeat_corr_dims.append(
-                    [dim for dim in self.ydims if dim not in self.corr_dims]
-                )
-                self.num_corr_dims[i] = copy.copy(self.ydims.index(self.corr_dims[i]))
-
-            elif isinstance(self.corr_dims[i], (int, np.integer)):
-                self.num_corr_dims[i] = self.corr_dims[i]
-                if self.corr_dims[i] >= 0:
-                    str_repeat_corr_dims.append(
-                        [
-                            dim
-                            for i_dim, dim in enumerate(self.ydims)
-                            if i_dim not in self.corr_dims
-                        ]
+                        % (self.corr_dims[idimc], self.ydims)
                     )
 
+                else:
+                    self.str_corr_dims[idimc] , self.num_corr_dims[idimc] = self.check_and_convert_str_dims(self.corr_dims[idimc])
+                    all_corr_dims.append(self.corr_dims[idimc])
+
+            elif isinstance(self.corr_dims[idimc], (int, np.integer)):
+                if self.corr_dims[idimc]>=0:
+                    self.str_corr_dims[idimc], self.num_corr_dims[idimc] = self.check_and_convert_num_dims(self.corr_dims[idimc])
+                    all_corr_dims.append(self.ydims[0][self.corr_dims[idimc]])
+                else:
+                    self.num_corr_dims[idimc]=self.corr_dims[idimc]
+                    self.str_corr_dims=[]
+                    all_corr_dims=self.ydims[0]
             else:
                 raise ValueError(
                     "punpy.measurment_function: corr_dims needs to be provided as ints or strings"
                 )
 
-        self.str_repeat_corr_dims = np.array(str_repeat_corr_dims).flatten()
+
+        for i in range(self.output_vars):
+            for idim, dim in enumerate(self.ydims[i]):
+                if dim not in all_corr_dims:
+                    str_repeat_noncorr_dims.append(dim)
+
+        self.str_repeat_noncorr_dims = np.array(str_repeat_noncorr_dims).flatten()
+
+        for i in range(self.output_vars):
+            #set sizes dict for combined shape of error correlation dict
+            key=""
+            val=1
+            for idim, dim in enumerate(self.ydims[i]):
+                if dim not in self.str_repeat_noncorr_dims:
+                    key+="."+dim
+                    val*=self.sizes_dict[dim]
+            self.sizes_dict[key[1::]]=val
+
 
         if (not expand) and (self.param_fixed is None):
             self.param_fixed = [False] * len(self.xvariables)
@@ -813,9 +832,33 @@ class MeasurementFunction(ABC):
                         )
 
         self.utils.ydims = self.ydims
-        self.utils.str_repeat_corr_dims = self.str_repeat_corr_dims
+        self.utils.str_repeat_noncorr_dims = self.str_repeat_noncorr_dims
 
         return y
+
+    def check_and_convert_str_dims(self,dim):
+        for i in range(self.output_vars):
+            if not dim in self.ydims[i]:
+                raise ValueError(
+                    "punpy.measurement_function: The repeat_dim (%s) is not in the measurand dimensions (%s)."
+                    % (dim, self.ydims)
+                )
+        if not np.all([ydims.index(dim)==self.ydims[0].index(dim) for ydims in self.ydims]):
+            raise ValueError(
+                "punpy.measurement_function: The repeat_dim (%s) cannot be used because it is not at the same index for every ydims of every measurand (%s)."
+                % (dim, self.ydims)
+            )
+        return copy.copy(dim),copy.copy(self.ydims[0].index(dim))
+
+    def check_and_convert_num_dims(self,dim):
+        if dim>=0:
+            if not np.all([ydims[dim]==self.ydims[0][dim] for ydims in self.ydims]):
+                raise ValueError(
+                    "punpy.measurement_function: The repeat_dim (%s) cannot be used because it is not at the same index for every ydims of every measurand (%s)."
+                    % (dim, self.ydims)
+                )
+
+        return copy.copy(self.ydims[0][dim]),dim
 
     def propagate_total(self, *args, expand=False, return_corr=True):
         """
@@ -894,10 +937,10 @@ class MeasurementFunction(ABC):
         """
         y = self.check_sizes_and_run(*args, expand=expand)
         input_qty = self.utils.get_input_qty(
-            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
         )
         input_unc = self.utils.get_input_unc(
-            "rand", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+            "rand", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
         )
         if all([iu is None for iu in input_unc]):
             return None
@@ -929,10 +972,10 @@ class MeasurementFunction(ABC):
         """
         y = self.check_sizes_and_run(*args, expand=expand)
         input_qty = self.utils.get_input_qty(
-            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
         )
         input_unc = self.utils.get_input_unc(
-            "syst", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+            "syst", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
         )
         if all([iu is None for iu in input_unc]):
             return None
@@ -965,13 +1008,13 @@ class MeasurementFunction(ABC):
         """
         y = self.check_sizes_and_run(*args, expand=expand)
         input_qty = self.utils.get_input_qty(
-            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
         )
         input_unc = self.utils.get_input_unc(
-            "stru", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+            "stru", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
         )
         input_corr = self.utils.get_input_corr(
-            "stru", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+            "stru", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
         )
 
         if all([iu is None for iu in input_unc]):
@@ -1028,13 +1071,13 @@ class MeasurementFunction(ABC):
         y = self.check_sizes_and_run(*args, expand=expand)
 
         input_qty = self.utils.get_input_qty(
-            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
         )
         input_unc = self.utils.get_input_unc(
-            form, args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+            form, args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
         )
         input_corr = self.utils.get_input_corr(
-            form, args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+            form, args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
         )
         if all([iu is None for iu in input_unc]):
             return None, None
@@ -1069,4 +1112,5 @@ class MeasurementFunction(ABC):
                     repeat_dims=self.num_repeat_dims,
                     corr_dims=self.num_corr_dims,
                     output_vars=self.output_vars,
+                    allow_some_nans=self.allow_some_nans
                 )
