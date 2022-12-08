@@ -108,7 +108,7 @@ class MeasurementFunction(ABC):
         if self.output_vars==1:
             if isinstance(self.yvariable,str):
                 self.yvariable=[self.yvariable]
-            if isinstance(self.yvariable,str):
+            if isinstance(yunit,str):
                 yunit=[yunit]
             if self.ydims is not None:
                 if isinstance(self.ydims[0],str):
