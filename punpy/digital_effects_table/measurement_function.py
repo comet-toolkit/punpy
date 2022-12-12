@@ -126,7 +126,9 @@ class MeasurementFunction(ABC):
 
         if isinstance(repeat_dims, int) or isinstance(repeat_dims, str):
             repeat_dims = [repeat_dims]
+
         self.repeat_dims = np.array(repeat_dims)
+
         self.num_repeat_dims = np.empty_like(self.repeat_dims, dtype=int)
         self.str_repeat_dims = np.empty_like(self.repeat_dims, dtype="<U30")
 
@@ -136,7 +138,7 @@ class MeasurementFunction(ABC):
         self.num_corr_dims = np.empty_like(self.corr_dims,dtype=object)
         self.str_corr_dims = np.empty_like(self.corr_dims,dtype="<U30")
 
-        self.str_repeat_noncorr_dims = np.empty_like(self.corr_dims, dtype="<U30")
+        self.str_repeat_noncorr_dims = []
 
         self.param_fixed = param_fixed
 
@@ -608,7 +610,7 @@ class MeasurementFunction(ABC):
         for i in range(self.output_vars):
             if ds_out_pre is not None:
                 ds_out = self.templ.join_with_preexisting_ds(
-                    ds_out, ds_out_pre, drop=self.yvariable
+                    ds_out, ds_out_pre, drop=self.yvariable[i]
                 )
 
         if self.prop.verbose:
@@ -739,7 +741,7 @@ class MeasurementFunction(ABC):
                     "punpy.measurment_function: repeat_dims needs to be provided as ints or strings"
                 )
 
-        str_repeat_noncorr_dims=list(self.str_repeat_dims)
+        str_repeat_noncorr_dims=[str_dim for str_dim in self.str_repeat_dims if str_dim!='']
 
         all_corr_dims=[]
         for idimc in range(len(self.corr_dims)):
@@ -797,6 +799,7 @@ class MeasurementFunction(ABC):
                 if dim not in all_corr_dims:
                     str_repeat_noncorr_dims.append(dim)
 
+        print(str_repeat_noncorr_dims)
         self.str_repeat_noncorr_dims = np.array(str_repeat_noncorr_dims).flatten()
 
         for i in range(self.output_vars):
