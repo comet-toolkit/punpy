@@ -6,7 +6,6 @@ from multiprocessing import Pool
 
 import comet_maths as cm
 import numpy as np
-
 import punpy.utilities.utilities as util
 
 """___Authorship___"""
@@ -18,7 +17,7 @@ __status__ = "Development"
 
 
 class MCPropagation:
-    def __init__(self, steps, parallel_cores=0, dtype=None, verbose=False):
+    def __init__(self, steps, parallel_cores=0, dtype=None, verbose=False, MCdimlast=False):
         """
         Initialise MC Propagator
 
@@ -30,6 +29,8 @@ class MCPropagation:
         :type dtype: numpy dtype
         :param verbose: bool to set if logging info should be printed
         :type verbose: bool
+        :param MCdimlast: bool to set whether the MC dimension should be moved to the last dimension when running through the measurment function (when parallel_cores==0). This can be useful for broadcasting within the measurement function. defaults to False
+        :type MCdimlast: bool
         """
 
         self.MCsteps = steps
@@ -39,6 +40,7 @@ class MCPropagation:
             self.pool = Pool(self.parallel_cores)
         self.verbose = verbose
         self.starttime = time.time()
+        self.MCdimlast = MCdimlast
 
     def propagate_random(
         self,
@@ -1370,7 +1372,6 @@ class MCPropagation:
         start=None,
         end=None,
         sli=None,
-        broadcasting=True,
         allow_some_nans=True,
     ):
         """
@@ -1393,7 +1394,7 @@ class MCPropagation:
             indices = range(*sli.indices(self.MCsteps))
 
         if self.parallel_cores == 0:
-            if broadcasting:
+            if self.MCdimlast:
                 MC_y = np.moveaxis(
                     func(*[np.moveaxis(dat[sli], 0, -1) for dat in MC_x]), -1, 0
                 )
@@ -1421,10 +1422,16 @@ class MCPropagation:
                 MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.all([np.all(np.isfinite(MC_y[i][ivar])) for ivar in range(output_vars)])],dtype=self.dtype)
 
         if len(MC_y)<len(indices):
-            print(
-                "%s of the %s MC samples were not processed correctly (returned None) and will be ignored in the punpy output"
-                % (len(indices)-len(MC_y),len(indices))
-            )
+            if allow_some_nans:
+                print(
+                    "%s of the %s MC samples were not processed correctly (contained only nans) and will be ignored in the punpy output"
+                    % (len(indices)-len(MC_y),len(indices))
+                )
+            else:
+                print(
+                    "%s of the %s MC samples were not processed correctly (contained some nans) and will be ignored in the punpy output"
+                    % (len(indices)-len(MC_y),len(indices))
+                )
 
         if self.verbose:
             print(
