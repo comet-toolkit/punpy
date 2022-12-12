@@ -1410,7 +1410,7 @@ class MCPropagation:
                 MC_x2[i] = [MC_x[j][index, ...] for j in range(len(MC_x))]
             MC_y = self.pool.starmap(func, MC_x2)
 
-        print(MC_x2)
+        print(MC_x)
         print([np.isfinite(MC_y[i]) for i in range(len(indices))])
         if output_vars==1:
             if allow_some_nans:
