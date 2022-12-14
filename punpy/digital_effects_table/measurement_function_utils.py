@@ -13,13 +13,15 @@ __status__ = "Development"
 
 class MeasurementFunctionUtils:
     def __init__(
-        self, xvariables, ydims, str_repeat_noncorr_dims, verbose, templ, use_err_corr_dict
+        self, xvariables, uncxvariables, ydims, str_repeat_noncorr_dims, verbose, templ, use_err_corr_dict
     ):
         """
         Initialise MeasurementFunctionUtils
 
         :param xvariables: list of input quantity names, in same order as arguments in measurement function and with same exact names as provided in input datasets.
         :type xvariables: list(str)
+        :param uncxvariables: list of input quantity names for which uncertainties should be propagated. Should be a subset of input quantity names. Defaults to None, in which case uncertainties on all input quantities are used.
+        :type uncxvariables: list(str), optional
         :param str_repeat_noncorr_dims: list of dimension names to be used as repeated dims
         :type str_repeat_noncorr_dims: list(str)
         :param verbose: boolean to set verbosity
@@ -28,6 +30,7 @@ class MeasurementFunctionUtils:
         :type templ: punpy.digital_effects_table_template
         """
         self.xvariables = xvariables
+        self.uncxvariables = uncxvariables
         self.verbose = verbose
         self.ydims = ydims
         self.str_repeat_noncorr_dims = str_repeat_noncorr_dims
@@ -341,31 +344,32 @@ class MeasurementFunctionUtils:
         inputs_unc = np.empty(len(self.xvariables), dtype=object)
         for iv, var in enumerate(self.xvariables):
             inputs_unc[iv] = None
-            for dataset in args[0]:
-                if hasattr(dataset, "variables"):
-                    if var in dataset.variables:
-                        if ydims is not None:
-                            if np.all([dim in dataset[var].dims for dim in ydims]):
-                                inputs_unc[iv] = self.calculate_unc(form, dataset, var)
+            if var in self.uncxvariables:
+                for dataset in args[0]:
+                    if hasattr(dataset, "variables"):
+                        if var in dataset.variables:
+                            if ydims is not None:
+                                if np.all([dim in dataset[var].dims for dim in ydims]):
+                                    inputs_unc[iv] = self.calculate_unc(form, dataset, var)
 
-                            else:
-                                inputs_unc[iv] = self.calculate_unc_missingdim(
-                                    form,
-                                    dataset,
-                                    var,
-                                    expand=expand,
-                                    sizes_dict=sizes_dict,
-                                    ydims=ydims,
-                                )
+                                else:
+                                    inputs_unc[iv] = self.calculate_unc_missingdim(
+                                        form,
+                                        dataset,
+                                        var,
+                                        expand=expand,
+                                        sizes_dict=sizes_dict,
+                                        ydims=ydims,
+                                    )
 
-            if np.count_nonzero(inputs_unc[iv]) == 0:
-                inputs_unc[iv] = None
-            if inputs_unc[iv] is None:
-                if self.verbose:
-                    print(
-                        "%s uncertainty for variable %s not found in provided datasets. Zero uncertainty assumed."
-                        % (form, var)
-                    )
+                if np.count_nonzero(inputs_unc[iv]) == 0:
+                    inputs_unc[iv] = None
+                if inputs_unc[iv] is None:
+                    if self.verbose:
+                        print(
+                            "%s uncertainty for variable %s not found in provided datasets. Zero uncertainty assumed."
+                            % (form, var)
+                        )
         return inputs_unc
 
     def calculate_unc(self, form, ds, var):
@@ -507,31 +511,32 @@ class MeasurementFunctionUtils:
         inputs_corr = np.empty(len(self.xvariables), dtype=object)
         for iv, var in enumerate(self.xvariables):
             inputs_corr[iv] = None
-            for dataset in args[0]:
-                if hasattr(dataset, "variables"):
-                    if var in dataset.variables:
-                        if len(dataset[var].dims) < len(ydims):
-                            inputs_corr[iv] = self.calculate_corr_missingdim(
-                                form,
-                                dataset,
-                                var,
-                                expand=expand,
-                                sizes_dict=sizes_dict,
-                                ydims=ydims,
-                            )
-                        else:
-                            inputs_corr[iv] = self.calculate_corr(form, dataset, var)
+            if var in self.uncxvariables:
+                for dataset in args[0]:
+                    if hasattr(dataset, "variables"):
+                        if var in dataset.variables:
+                            if len(dataset[var].dims) < len(ydims):
+                                inputs_corr[iv] = self.calculate_corr_missingdim(
+                                    form,
+                                    dataset,
+                                    var,
+                                    expand=expand,
+                                    sizes_dict=sizes_dict,
+                                    ydims=ydims,
+                                )
+                            else:
+                                inputs_corr[iv] = self.calculate_corr(form, dataset, var)
 
-            #check if corr is filled with zeros
-            if not np.any(inputs_corr[iv]):
-                inputs_corr[iv]=None
+                #check if corr is filled with zeros
+                if not np.any(inputs_corr[iv]):
+                    inputs_corr[iv]=None
 
-            if inputs_corr[iv] is None:
-                if self.verbose:
-                    print(
-                        "%s error-correlation for variable %s not found in provided datasets."
-                        % (form, var)
-                    )
+                if inputs_corr[iv] is None:
+                    if self.verbose:
+                        print(
+                            "%s error-correlation for variable %s not found in provided datasets."
+                            % (form, var)
+                        )
 
         return inputs_corr
 

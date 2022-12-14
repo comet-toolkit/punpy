@@ -318,10 +318,11 @@ Shape of input quanties within the measurement function
 When setting parallel_cores to 1 or more, the shape of the input quantities used for each iteration in the measurement function matches the shape of the input quantities themselves.
 However, when parallel_cores is set to 0, all iterations will be processed simultaneously and there will be an additional dimension for the MC iterations.
 Generally within punpy, the MC dimension in the samples is the first one (i.e. internally as well as when MC samples are returned).
-So as default, the shape of the input quantities when using parallel_cores will have the MC iterations as its first dimension.
-However, in some cases it is more helpful to have the MC iterations as the final dimension. In most of such cases, this is because
-having it as the last dimension allows for easier broadcasting of arrays of different shapes (if some of the input quantities have different shapes than others).
-If this is the case, the MC iteration dimension can be made the last dimension by setting the `MClastdim` keyword to True::
+However, when processing all iterations simultaniously, in most cases it is more practical to have the MC dimension as the last dimension.
+This is because we use numpy arrays and these are compatible when the last dimensions match following the `numpy broadcasting rules <https://numpy.org/doc/stable/user/basics.broadcasting.html#general-broadcasting-rules>`_.
+So as default, the shape of the input quantities when using parallel_cores will have the MC iterations as its last dimension.
+However, in some cases it is more helpful to have the MC iterations as the first dimension.
+If this is the case, the MC iteration dimension can be made the first dimension by setting the `MClastdim` keyword to False::
 
-      prop = punpy.MCPropagation(1000,MCdimlast=True)
+      prop = punpy.MCPropagation(1000,MCdimlast=False)
 

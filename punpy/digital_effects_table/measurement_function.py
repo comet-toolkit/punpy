@@ -25,6 +25,7 @@ class MeasurementFunction(ABC):
         self,
         prop=None,
         xvariables=None,
+        uncxvariables=None,
         yvariable=None,
         yunit="",
         ydims=None,
@@ -44,6 +45,8 @@ class MeasurementFunction(ABC):
         :type prop: punpy.MCPropagation or punpy. LPUPropagation
         :param xvariables: list of input quantity names, in same order as arguments in measurement function and with same exact names as provided in input datasets. Defaults to None, in which case get_argument_names function is used.
         :type xvariables: list(str), optional
+        :param uncxvariables: list of input quantity names for which uncertainties should be propagated. Should be a subset of input quantity names. Defaults to None, in which case uncertainties on all input quantities are used.
+        :type uncxvariables: list(str), optional
         :param yvariable: name of measurand. Defaults to None, in which case get_measurand_name_and_unit function is used.
         :type yvariable: str, optional
         :param yunit: unit of measurand. Defaults to "" (unitless).
@@ -86,6 +89,16 @@ class MeasurementFunction(ABC):
             raise ValueError(
                 "punpy.MeasurementFunction: You need to specify xvariables as keyword when initialising MeasurementFunction object, or add get_argument_names() as a function of the class."
             )
+
+        if uncxvariables is None:
+            self.uncxvariables = self.xvariables
+        else:
+            if np.all([uncvar in self.xvariables for uncvar in uncxvariables]):
+                self.uncxvariables = uncxvariables
+            else:
+                raise ValueError(
+                    "punpy.MeasurementFunction: the provided uncxvariables are not a subset of the provided xvariables."
+                )
 
         if yvariable is None:
             self.yvariable, yunit = self.get_measurand_name_and_unit()
@@ -144,6 +157,7 @@ class MeasurementFunction(ABC):
 
         self.utils = MeasurementFunctionUtils(
             self.xvariables,
+            self.uncxvariables,
             self.ydims,
             self.str_repeat_noncorr_dims,
             self.prop.verbose,
@@ -543,7 +557,6 @@ class MeasurementFunction(ABC):
             ds_out[self.yvariable[i]].values = y[i]
 
         for icomp, comp in enumerate(comp_list):
-            err_corr_comp = None
             if comp == "random":
                 u_comp_y = self.propagate_random(*args, expand=expand)
 
@@ -578,34 +591,29 @@ class MeasurementFunction(ABC):
                         ds_out.drop(
                             "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable[i]
                         )
-                        err_corr_comp = None
 
-            if u_comp_y is None:
-                for i in range(self.output_vars):
-                    if store_unc_percent:
-                        ds_out = self.templ.remove_unc_component(
-                            ds_out,
-                            self.yvariable[i],
-                            "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable[i],
-                            err_corr_comp=err_corr_comp[i],
-                            )
+                    if u_comp_y is None:
+                        if store_unc_percent:
+                            ds_out = self.templ.remove_unc_component(
+                                ds_out,
+                                self.yvariable[i],
+                                "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable[i],
+                                )
+                        else:
+                            ds_out = self.templ.remove_unc_component(
+                                ds_out,
+                                self.yvariable[i],
+                                "u_" + comp_list_out[icomp] + "_" + self.yvariable[i],
+                                )
                     else:
-                        ds_out = self.templ.remove_unc_component(
-                            ds_out,
-                            self.yvariable[i],
-                            "u_" + comp_list_out[icomp] + "_" + self.yvariable[i],
-                            err_corr_comp=err_corr_comp[i],
-                            )
-            else:
-                for i in range(self.output_vars):
-                    if store_unc_percent:
-                        ds_out[
-                            "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable[i]
-                            ].values = (u_comp_y[i] / y[i] * 100)
-                    else:
-                        ds_out[
-                            "u_" + comp_list_out[icomp] + "_" + self.yvariable[i]
-                            ].values = u_comp_y[i]
+                        if store_unc_percent:
+                            ds_out[
+                                "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable[i]
+                                ].values = (u_comp_y[i] / y[i] * 100)
+                        else:
+                            ds_out[
+                                "u_" + comp_list_out[icomp] + "_" + self.yvariable[i]
+                                ].values = u_comp_y[i]
 
         for i in range(self.output_vars):
             if ds_out_pre is not None:

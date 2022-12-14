@@ -17,7 +17,7 @@ __status__ = "Development"
 
 
 class MCPropagation:
-    def __init__(self, steps, parallel_cores=0, dtype=None, verbose=False, MCdimlast=False):
+    def __init__(self, steps, parallel_cores=0, dtype=None, verbose=False, MCdimlast=True):
         """
         Initialise MC Propagator
 
@@ -905,6 +905,19 @@ class MCPropagation:
 
         shapewarning = False
         for i in range(len(x)):
+            try:
+                if not (np.all(np.isfinite(u_x[i]))):
+                    warnings.warn(
+                        "One of your uncertainties has nans (of inf). This can cause issues in the uncertainty propagation. Please remove or replace your nans."
+                    )
+
+                if not (np.all(np.isfinite(corr_x[i]))):
+                    warnings.warn(
+                        "One of your error correlation matrices has nans (of inf). This can cause issues in the uncertainty propagation. Please remove or replace your nans."
+                    )
+            except:
+                pass
+
             if hasattr(x[i], "__shape__"):
                 if param_fixed is not None:
                     if (
