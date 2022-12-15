@@ -96,7 +96,7 @@ class TestMeasurementFunction(unittest.TestCase):
         prop = MCPropagation(1000, dtype="float32", verbose=False, parallel_cores=4)
 
         gl = IdealGasLaw(
-            prop, ["pressure", "temperature", "n_moles"], "volume", yunit="m^3"
+            prop, ["pressure", "temperature", "n_moles"], yvariable="volume", yunit="m^3"
         )
         ds_y_tot = gl.propagate_ds_total(ds)
 
@@ -110,7 +110,7 @@ class TestMeasurementFunction(unittest.TestCase):
         gl = IdealGasLaw(
             prop,
             ["pressure", "temperature", "n_moles"],
-            "volume",
+            yvariable="volume",
             yunit="m^3",
             repeat_dims=[0, 2],
         )
@@ -127,11 +127,23 @@ class TestMeasurementFunction(unittest.TestCase):
             ds_y.unc["volume"].total_unc().values, u_tot_volume, rtol=0.12
         )
 
+        gl = IdealGasLaw(
+            prop,
+            ["pressure", "temperature", "n_moles"],
+            uncxvariables=["pressure"],
+            yvariable="volume",
+            yunit="m^3",
+            repeat_dims=[0, 2],
+        )
+        ds_y = gl.propagate_ds(ds)
+
+        npt.assert_allclose(ds_y["volume"].values, volume, rtol=0.002)
+
     def test_gaslaw_2out(self):
         prop = MCPropagation(1000, dtype="float32", verbose=False)
 
         gl = IdealGasLaw_2out(
-            prop, ["pressure", "temperature", "n_moles"], ["volume","P/T"], yunit=["m^3","Pa/K"]
+            prop, ["pressure", "temperature", "n_moles"], yvariable=["volume","P/T"], yunit=["m^3","Pa/K"]
         )
         ds_y_tot = gl.propagate_ds_total(ds)
 
@@ -145,7 +157,7 @@ class TestMeasurementFunction(unittest.TestCase):
         gl = IdealGasLaw(
             prop,
             ["pressure", "temperature", "n_moles"],
-            "volume",
+            yvariable="volume",
             yunit="m^3",
             use_err_corr_dict=True,
         )
@@ -159,7 +171,7 @@ class TestMeasurementFunction(unittest.TestCase):
         gl = IdealGasLaw(
             prop,
             ["pressure", "temperature", "n_moles"],
-            "volume",
+            yvariable="volume",
             yunit="m^3",
             repeat_dims=[0, 2],
         )
@@ -179,7 +191,7 @@ class TestMeasurementFunction(unittest.TestCase):
         gl = IdealGasLaw(
             prop,
             ["pressure", "temperature", "n_moles"],
-            "volume",
+            yvariable="volume",
             yunit="m^3",
             corr_dims=["0.1",2],
         )
@@ -192,7 +204,7 @@ class TestMeasurementFunction(unittest.TestCase):
         gl = IdealGasLaw(
             prop,
             ["pressure", "temperature", "n_moles"],
-            "volume",
+            yvariable="volume",
             yunit="m^3",
             corr_dims=["x.y","time"],
         )

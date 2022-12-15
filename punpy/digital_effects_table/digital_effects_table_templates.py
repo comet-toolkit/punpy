@@ -244,7 +244,7 @@ class DigitalEffectsTableTemplates(ABC):
                             "units": units,
                             "err_corr": [
                                 {"dim": dim, "form": "random", "params": [], "units": []}
-                                for dim in dims
+                                for dim in dims[i]
                             ],
                         },
                     }
