@@ -228,7 +228,12 @@ Options when running propagate_ds functions
 There are also a few options when running the propagate_ds (or similar) functions.
 The `store_unc_percent` keyword simply indicates whether the measurand uncertainties should be stored in percent or in the measurand units (the latter is the default).
 The `expand` keyword indicate whether the input quantities should be expanded/broadcasted to the shape of the measurand, prior to passing to the measurement function (defaults to False).
-`ds_out_pre` allows to provide a pre-generated xarray dataset (typically made using obsarray) in which the results will be stored (measurand variables and associated uncertainty and error correlation will be overwritten, but all other variables in the dataset remain).
-This can be used to set additional variables previously, or to concatenate multiple results into one file.
+
+`ds_out_pre` allows to provide a pre-generated xarray dataset (typically made using obsarray) in which the results will be stored.
+This can be used to add additional variables to the dataset prior to running the uncertainty propagation, or to concatenate multiple uncertainty propagation results into one file.
+By default, the measurand variables and associated uncertainty and error correlation will be overwritten, but all other variables in the dataset remain.
+If one does not want to get punpy to work out the error correlations iteself, but just use the ones in the template (e.g. because in complex cases, punpy can run into problems),
+this can be specified by setting the `use_ds_out_pre_unmodified` keyword to True. In this case, only the values of the variables will be changed, but none of the attributes.
+
 Finally the `include_corr` keyword can be set to False if error correlations should be omited from the calculation.
-The latter results in faster processing but can lead to wrong results.
+The latter results in faster processing but can lead to wrong results so should be used with caution.

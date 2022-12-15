@@ -321,8 +321,6 @@ However, it is also possible to ignore all MC samples where any of the values ar
 This can be done by setting the `allow_some_nans` keyword to False::
 
 
-
-
 Shape of input quanties within the measurement function
 ########################################################
 When setting parallel_cores to 1 or more, the shape of the input quantities used for each iteration in the measurement function matches the shape of the input quantities themselves.

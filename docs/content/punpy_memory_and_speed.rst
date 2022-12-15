@@ -10,7 +10,13 @@ Managing memory and processing speed in punpy
 
 Storing error correlation matrices separately per dimension
 #############################################################
-Random and systematic uncertainty components take up very little space, as each of their error
+Error correlation matrices typically take up a lot of memory as they give the error correlation coefficients between each pair of measurements.
+The MC samples themselves can also take up a lot of memory when the number of samples is large.
+One easy way to limit the amount of memory used is by setting the `dtype` of the MC samples (and resulting uncertainties and error correlation matrices)::
+
+   prop = MCPropagation(20000, dtype=np.float32)
+
+Random and systematic uncertainty components take up relatively little space, as each of their error
 correlation dimensions are by defnition parameterised as random or systematic.
 For structured components with error correlation matrices stored as separate variables, it is not
 uncommon for these matrices to take up a lot of memory. This is especially the case when

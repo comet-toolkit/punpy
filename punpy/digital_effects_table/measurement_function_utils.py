@@ -100,7 +100,6 @@ class MeasurementFunctionUtils:
     ):
         for comp in comps:
             for idim in range(len(dataset[var].dims)):
-                print(dataset[comp].attrs)
                 if dataset[comp].attrs["err_corr_%s_dim" % (idim + 1)] == repeat_dim:
                     self.check_repeat_err_corr_same(
                         repeat_dims_errcorrs[repeat_dim],

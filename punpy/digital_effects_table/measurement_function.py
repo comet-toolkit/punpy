@@ -218,6 +218,7 @@ class MeasurementFunction(ABC):
         store_unc_percent=False,
         expand=False,
         ds_out_pre=None,
+        use_ds_out_pre_unmodified=False,
         include_corr=True,
     ):
         """
@@ -278,22 +279,30 @@ class MeasurementFunction(ABC):
             )
             corr_stru_y = None
 
-        repeat_dim_err_corrs = self.utils.find_repeat_dim_corr(
-            "str", *args, store_unc_percent=store_unc_percent, ydims=self.ydims
-        )
+        if use_ds_out_pre_unmodified:
+            if ds_out_pre is not None:
+                ds_out=ds_out_pre
+            else:
+                raise ValueError(
+                    "punpy.MeasurementFunction: ds_out_pre needs to be provided when use_ds_out_pre_unmodified is set to True."
+                )
+        else:
+            repeat_dim_err_corrs = self.utils.find_repeat_dim_corr(
+                "str", *args, store_unc_percent=store_unc_percent, ydims=self.ydims
+            )
 
-        self.utils.set_repeat_dims_form(repeat_dim_err_corrs)
+            self.utils.set_repeat_dims_form(repeat_dim_err_corrs)
 
-        template = self.templ.make_template_main(
-            self.ydims,
-            self.sizes_dict,
-            store_unc_percent=store_unc_percent,
-            str_repeat_noncorr_dims=self.str_repeat_noncorr_dims,
-            repeat_dim_err_corrs=repeat_dim_err_corrs,
-        )
+            template = self.templ.make_template_main(
+                self.ydims,
+                self.sizes_dict,
+                store_unc_percent=store_unc_percent,
+                str_repeat_noncorr_dims=self.str_repeat_noncorr_dims,
+                repeat_dim_err_corrs=repeat_dim_err_corrs,
+            )
 
-        # create dataset template
-        ds_out = obsarray.create_ds(template, self.sizes_dict)
+            # create dataset template
+            ds_out = obsarray.create_ds(template, self.sizes_dict)
 
         #add trivial first dimension to so we can loop over output_vars later
         if self.output_vars==1:
@@ -356,7 +365,7 @@ class MeasurementFunction(ABC):
                     #ds_out.drop("err_corr_str_between")
 
 
-            if ds_out_pre is not None:
+            if (ds_out_pre is not None) and not use_ds_out_pre_unmodified:
                 self.templ.join_with_preexisting_ds(ds_out, ds_out_pre, drop=self.yvariable)
 
         if self.prop.verbose:
@@ -373,6 +382,7 @@ class MeasurementFunction(ABC):
         store_unc_percent=False,
         expand=False,
         ds_out_pre=None,
+        use_ds_out_pre_unmodified=False,
         include_corr=True,
     ):
         """
@@ -415,23 +425,31 @@ class MeasurementFunction(ABC):
             )
             corr_tot_y = None
 
-        repeat_dim_err_corrs = self.utils.find_repeat_dim_corr(
+        if use_ds_out_pre_unmodified:
+            if ds_out_pre is not None:
+                ds_out=ds_out_pre
+            else:
+                raise ValueError(
+                    "punpy.MeasurementFunction: ds_out_pre needs to be provided when use_ds_out_pre_unmodified is set to True."
+                )
+        else:
+            repeat_dim_err_corrs = self.utils.find_repeat_dim_corr(
             "tot", *args, store_unc_percent=store_unc_percent, ydims=self.ydims
-        )
+            )
 
-        self.utils.set_repeat_dims_form(repeat_dim_err_corrs)
+            self.utils.set_repeat_dims_form(repeat_dim_err_corrs)
 
-        template = self.templ.make_template_tot(
-            self.ydims,
-            self.sizes_dict,
-            store_unc_percent=store_unc_percent,
-            str_corr_dims=self.str_corr_dims,
-            str_repeat_noncorr_dims=self.str_repeat_noncorr_dims,
-            repeat_dim_err_corrs=repeat_dim_err_corrs,
-        )
+            template = self.templ.make_template_tot(
+                self.ydims,
+                self.sizes_dict,
+                store_unc_percent=store_unc_percent,
+                str_corr_dims=self.str_corr_dims,
+                str_repeat_noncorr_dims=self.str_repeat_noncorr_dims,
+                repeat_dim_err_corrs=repeat_dim_err_corrs,
+            )
 
-        # create dataset template
-        ds_out = obsarray.create_ds(template, self.sizes_dict)
+            # create dataset template
+            ds_out = obsarray.create_ds(template, self.sizes_dict)
 
         if self.output_vars==1:
             u_tot_y=u_tot_y[None,...]
@@ -472,7 +490,7 @@ class MeasurementFunction(ABC):
                         for ii in range(len(self.str_corr_dims)):
                             ds_out.drop("err_corr_tot_" + self.yvariable[i]+"_"+self.str_corr_dims[ii])
 
-            if ds_out_pre is not None:
+            if (ds_out_pre is not None) and not use_ds_out_pre_unmodified:
                 self.templ.join_with_preexisting_ds(ds_out, ds_out_pre, drop=self.yvariable[i])
 
         #ds_out["err_corr_tot_between"]= corr_tot_y_between
@@ -494,6 +512,7 @@ class MeasurementFunction(ABC):
         store_unc_percent=False,
         expand=False,
         ds_out_pre=None,
+            use_ds_out_pre_unmodified=False,
         include_corr=True,
         simple_random=True,
         simple_systematic=True,
@@ -534,28 +553,36 @@ class MeasurementFunction(ABC):
         # first calculate the measurand and propagate the uncertainties
         y = self.check_sizes_and_run(*args, expand=expand, ds_out_pre=ds_out_pre)
 
-        repeat_dim_err_corrs = [
-            self.utils.find_repeat_dim_corr(
+        if use_ds_out_pre_unmodified:
+            if ds_out_pre is not None:
+                ds_out=ds_out_pre
+            else:
+                raise ValueError(
+                    "punpy.MeasurementFunction: ds_out_pre needs to be provided when use_ds_out_pre_unmodified is set to True."
+                )
+        else:
+            repeat_dim_err_corrs = [
+                self.utils.find_repeat_dim_corr(
                 form, *args, store_unc_percent=store_unc_percent, ydims=self.ydims
+                )
+                for form in comp_list
+            ]
+
+            self.utils.set_repeat_dims_form(repeat_dim_err_corrs)
+
+            template = self.templ.make_template_specific(
+                comp_list_out,
+                self.ydims,
+                self.sizes_dict,
+                store_unc_percent=store_unc_percent,
+                str_repeat_noncorr_dims=self.str_repeat_noncorr_dims,
+                repeat_dim_err_corrs=repeat_dim_err_corrs,
+                simple_random=simple_random,
+                simple_systematic=simple_systematic,
             )
-            for form in comp_list
-        ]
 
-        self.utils.set_repeat_dims_form(repeat_dim_err_corrs)
-
-        template = self.templ.make_template_specific(
-            comp_list_out,
-            self.ydims,
-            self.sizes_dict,
-            store_unc_percent=store_unc_percent,
-            str_repeat_noncorr_dims=self.str_repeat_noncorr_dims,
-            repeat_dim_err_corrs=repeat_dim_err_corrs,
-            simple_random=simple_random,
-            simple_systematic=simple_systematic,
-        )
-
-        # create dataset template
-        ds_out = obsarray.create_ds(template, self.sizes_dict)
+            # create dataset template
+            ds_out = obsarray.create_ds(template, self.sizes_dict)
 
         for i in range(self.output_vars):
             ds_out[self.yvariable[i]].values = y[i]
@@ -620,7 +647,7 @@ class MeasurementFunction(ABC):
                                 ].values = u_comp_y[i]
 
         for i in range(self.output_vars):
-            if ds_out_pre is not None:
+            if (ds_out_pre is not None) and not use_ds_out_pre_unmodified:
                 ds_out = self.templ.join_with_preexisting_ds(
                     ds_out, ds_out_pre, drop=self.yvariable[i]
                 )
@@ -639,6 +666,7 @@ class MeasurementFunction(ABC):
         store_unc_percent=False,
         expand=False,
         ds_out_pre=None,
+        use_ds_out_pre_unmodified=False,
         include_corr=True,
     ):
         """
@@ -684,6 +712,7 @@ class MeasurementFunction(ABC):
             store_unc_percent=store_unc_percent,
             expand=expand,
             ds_out_pre=ds_out_pre,
+            use_ds_out_pre_unmodified=use_ds_out_pre_unmodified,
             include_corr=include_corr,
         )
 
@@ -1099,7 +1128,7 @@ class MeasurementFunction(ABC):
             return None, None
         else:
             if self.use_err_corr_dict:
-                print(input_corr)
+                print(form,input_unc,input_corr)
                 MC_x = self.prop.generate_MC_sample(
                     input_qty,
                     input_unc,

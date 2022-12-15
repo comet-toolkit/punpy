@@ -594,7 +594,6 @@ class MCPropagation:
                 "samples generated (%s s since creation of prop object)"
                 % (time.time() - self.starttime)
             )
-
         return MC_data
 
     def generate_MC_sample_cov(
