@@ -103,7 +103,7 @@ Propagating uncertainties in digital effects tables
 Once this kind of measurement function class is defined, we can initialise an object of this class.
 In principle there are no required arguments when creating an object of this class (all arguments have a default).
 However, in practise we will almost always provide at least some arguments.
-The first argument allows to pass a MCPropagation or LPUpropagaion object. It thus specifies whether the Monte Carlo (MC) method (see Section :ref:`Monte Carlo Method`)
+The first argument `prop` allows to pass a MCPropagation or LPUpropagaion object. It thus specifies whether the Monte Carlo (MC) method (see Section :ref:`Monte Carlo Method`)
 or Law of Propagation of Uncertainties (LPU) method (see Section :ref:`LPU Method`) should be used. These prop objects can be created with any of their options (such as parallel_cores)::
 
    prop = MCPropagation(1000, dtype="float32", verbose=False, parallel_cores=4)
@@ -115,10 +115,13 @@ The next arguments are for providing the input quantity names and the measurand 
 
    gl = IdealGasLaw(prop=prop, xvariables=["pressure", "temperature", "n_moles"], yvariable="volume", yunit="m^3")
 
-In the xvariables argument, one needs to specify the names of each of the input quantities.
+In the `xvariables` argument, one needs to specify the names of each of the input quantities.
 These names have to be in the same order as in the specified function, and need to correspond to the names used for the variables in the digital effects tables.
-These variable names can be provided as optional arguments here, or alternatively using the get_measurand_name_and_unit() and get_argument_names() functions in the class definition.
+These variable names can be provided as optional arguments here, or alternatively using the get_argument_names() function in the class definition.
 If both options are provided, they are compared and an error is raised if they are different.
+
+Similarly, the `yvariable` gives the name of the measurand (or list of names if multiple measurands are returned by measurement function) and `yunit` specifies its associated unit(s).
+Alternatively, these can also be provided using the get_measurand_name_and_unit() function in the class definition (they will be cross-checked if both are provided).
 There are many more optional keywords that can be set to finetune the processing of the uncertainty propagation.
 These will be discussed in the :ref:`MeasurementFunctionOptions` section.
 
@@ -181,3 +184,51 @@ dimensions are not present along the measurand dimensions. These broadcast error
 be set in punpy using ... Depending on how this broadcast error correlation combines with
 the error correlations in the other dimensions, can also affect which measurand uncertainty component
 (random, systematic or structured) it contributes to when using propagate_ds.
+
+Sometimes one wants to propagate uncertainties one input quantity at a time.
+This can be the case no matter if we are propagating total uncertainties or individual components.
+When creating the MeasurementFunction object, it is possible to specify on which input quantities
+the uncertainties should be propagated using the `uncxvariables` keyword::
+
+   gl = IdealGasLaw(prop=prop,
+                     xvariables=["pressure", "temperature", "n_moles"],
+                     uncxvariables=["pressure"]
+                     yvariable="volume",
+                     yunit="m^3")
+   ds_y = gl.propagate_ds(ds_pres, ds_nmol, ds_temp)
+
+In the above example, only the uncertainties on pressure will be propagated.
+This behaviour could also be obtained by removing the unc_comps in the temperature and
+n_moles variables in their respective datasets, but the solution shown above is easier.
+If no uncxvariables are provided, the uncertainties on all input quantities are propagated.
+
+.. _MeasurementFunctionOptions:
+Options when creating MeasurementFunction object
+##################################################
+A number of additional options are available when creating the MeasurementFunction object, and when running one of the propagate_ds functions.
+We refer to the API for a full list of the keywords, but here highlight some of the ones that were not previously explained.
+
+When creating the MeasurementFunction object, we previously discussed the `prop`, `xvariables`, `uncxvariables`, `yvariable` and
+`yunit` keywords. Next, there are a number of keywords that are the same as the keywords for using punpy as standalone. These are
+`corr_between`,`param_fixed`, `repeat_dims`, `corr_dims`, `allow_some_nans`. Here these keywords work in the same way as for standalone
+punpy and we refer to the :ref:`punpy_standalone` Section for further explanation. The one difference is that here, the repeat_dims and
+corr_dims can be provided as dimension names rather than dimension indices (dimension indices are also still allowed).
+
+The options we have not previously explained are the `ydims`, `refxvar` and `sizes_dict`. These all have to do with the handling of dimensions when they differ between input quantities (or between input quantities and measurand).
+In the typical punpy usecase, the dimensions of the measurand are the same as the dimensions of the input quantities.
+If this is not the case, the `ydims` keyword should be set to a list of the measurand dimensions (in order matching the shape).
+If one of these dimensions is not in the input quantities, one should also provide `sizes_dict`, which is a dictionary with all dimension names as keys, and the dimension size as the value.
+Alternatively, if the dimensions of the measurand match the dimensions of one (but not all) of the input quantities, the measurnad shape can
+be automatically set if `refxvar` is provided, where `refxvar` is the name of the input quantity with matching shape.
+
+Finally the `use_err_corr_dict` is explained in the :ref:`punpy_memory_and_speed` Section.
+
+Options when running propagate_ds functions
+##################################################
+There are also a few options when running the propagate_ds (or similar) functions.
+The `store_unc_percent` keyword simply indicates whether the measurand uncertainties should be stored in percent or in the measurand units (the latter is the default).
+The `expand` keyword indicate whether the input quantities should be expanded/broadcasted to the shape of the measurand, prior to passing to the measurement function (defaults to False).
+`ds_out_pre` allows to provide a pre-generated xarray dataset (typically made using obsarray) in which the results will be stored (measurand variables and associated uncertainty and error correlation will be overwritten, but all other variables in the dataset remain).
+This can be used to set additional variables previously, or to concatenate multiple results into one file.
+Finally the `include_corr` keyword can be set to False if error correlations should be omited from the calculation.
+The latter results in faster processing but can lead to wrong results.

@@ -220,6 +220,13 @@ For the MC method, it is also possible to return the generated samples by settin
    measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3],
    return_corr=True, return_samples=True)
 
+It is also possible to pass a sample of input quantities rather than generating a new MC sample.
+This way, the exact same sample can be used as n a previous run, or one can generate a sample manually::
+
+   ub_y, corr_y = prop.propagate_systematic(
+   measurement_function, [x1, x2, x3], [us_x1, us_x2, us_x3],
+   return_corr=True, samples=samplesr_x)
+
 For the LPU method, it is possible to additionally return the calculated Jacobian matrix by setting the `return_Jacobian` keyword to True.
 In addition, instead of calculating the Jacobian as part of the propagation, it is also possible to give a precomputed Jacobian matrix, by setting the `Jx` keyword.
 This allows to use the Jacobian matrix from a previous step or an analytical prescription, which results in much faster processing::
@@ -310,7 +317,10 @@ Here the measurement will fail about 10% of the time (by raising a FloatingPoint
 The resulting sample of valid measurands will thus have about 900 samples, which should still be enough to calculate the uncertainties.
 
 By default, numpy will only ignore MC samples where all the values are non-finite.
-However, it is also possible to ignore all MC samples where any of the values are non-finite()
+However, it is also possible to ignore all MC samples where any of the values are non-finite.
+This can be done by setting the `allow_some_nans` keyword to False::
+
+
 
 
 Shape of input quanties within the measurement function
@@ -326,3 +336,7 @@ If this is the case, the MC iteration dimension can be made the first dimension 
 
       prop = punpy.MCPropagation(1000,MCdimlast=False)
 
+ dtype=None,
+PD_corr=True,
+refyvar=0,
+allow_some_nans=True,

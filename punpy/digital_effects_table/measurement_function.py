@@ -28,15 +28,15 @@ class MeasurementFunction(ABC):
         uncxvariables=None,
         yvariable=None,
         yunit="",
-        ydims=None,
         corr_between=None,
         param_fixed=None,
         repeat_dims=-99,
         corr_dims=-99,
+        allow_some_nans=True,
+        ydims=None,
         refxvar=None,
         sizes_dict=None,
         use_err_corr_dict=False,
-        allow_some_nans=True
     ):
         """
         Initialise MeasurementFunction
@@ -51,8 +51,6 @@ class MeasurementFunction(ABC):
         :type yvariable: str, optional
         :param yunit: unit of measurand. Defaults to "" (unitless).
         :type yunit: str, optional
-        :param ydims: list of dimensions of the measurand, in correct order. list of list of dimensions when there are multiple measurands. Default to None, in which case it is assumed to be the same as refxvar (see below) input quantity.
-        :type ydims: list(str), optional
         :param corr_between: Allows to specify the (average) error correlation coefficient between the various input quantities. Defaults to None, in which case no error-correlation is assumed.
         :type corr_between: numpy.ndarray , optional
         :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
@@ -61,6 +59,8 @@ class MeasurementFunction(ABC):
         :type repeat_dims: str or int or list(str) or list(int), optional
         :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
         :type corr_dims: integer, optional
+        :param ydims: list of dimensions of the measurand, in correct order. list of list of dimensions when there are multiple measurands. Default to None, in which case it is assumed to be the same as refxvar (see below) input quantity.
+        :type ydims: list(str), optional
         :param refxvar: name of reference input quantity that has the same shape as measurand. Defaults to None
         :type refxvar: string, optional
         :param sizes_dict: Dictionary with sizes of each of the dimensions of the measurand. Defaults to None, in which cases sizes come from input quantites.
@@ -93,8 +93,12 @@ class MeasurementFunction(ABC):
         if uncxvariables is None:
             self.uncxvariables = self.xvariables
         else:
+            if isinstance(uncxvariables,str):
+                uncxvariables=[uncxvariables]
+
             if np.all([uncvar in self.xvariables for uncvar in uncxvariables]):
                 self.uncxvariables = uncxvariables
+
             else:
                 raise ValueError(
                     "punpy.MeasurementFunction: the provided uncxvariables are not a subset of the provided xvariables."
@@ -807,7 +811,6 @@ class MeasurementFunction(ABC):
                 if dim not in all_corr_dims:
                     str_repeat_noncorr_dims.append(dim)
 
-        print(str_repeat_noncorr_dims)
         self.str_repeat_noncorr_dims = np.array(str_repeat_noncorr_dims).flatten()
 
         for i in range(self.output_vars):
@@ -1096,6 +1099,7 @@ class MeasurementFunction(ABC):
             return None, None
         else:
             if self.use_err_corr_dict:
+                print(input_corr)
                 MC_x = self.prop.generate_MC_sample(
                     input_qty,
                     input_unc,
@@ -1105,7 +1109,7 @@ class MeasurementFunction(ABC):
                 MC_y = self.prop.run_samples(
                     self.meas_function, MC_x, output_vars=self.output_vars
                 )
-                ufd, ucorrd, corr_out = self.prop.process_samples(
+                return self.prop.process_samples(
                     MC_x,
                     MC_y,
                     return_corr=return_corr,
