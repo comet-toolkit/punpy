@@ -463,7 +463,6 @@ class MCPropagation:
                 xb, u_xb = util.select_repeated_x(
                     x, u_x, param_fixed, i, repeat_dims, repeat_shape
                 )
-                print("here",i,u_xb)
                 out_i = self.propagate_standard(
                     func,
                     xb,
@@ -588,7 +587,6 @@ class MCPropagation:
                 pdf_params=pdf_params,
                 comp_list=comp_list,
             )
-            print(MC_data[i],u_x[i],corr_x[i])
 
         if corr_between is not None:
             MC_data = cm.correlate_sample_corr(MC_data, corr_between)
