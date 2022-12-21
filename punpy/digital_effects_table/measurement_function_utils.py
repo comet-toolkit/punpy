@@ -610,10 +610,21 @@ class MeasurementFunctionUtils:
                     return None
 
     def convert_err_corr_dict_to_num(self,err_corr_dict,var_dims):
+        """
+        Function to convert err_corr dictionary with dimension names as key, to dictionary with dimension indices as keys
+
+        :param err_corr_dict: err_corr dictionary with dimension names as key
+        :type err_corr_dict: dict
+        :param var_dims: list of variable dimensions, in correct order
+        :type var_dims: list
+        :return: err_corr dictionary with dimension indices as key
+        :rtype: dict
+        """
         err_corr_dict_numdim = {}
         for idim, dim in enumerate(var_dims):
             if dim in err_corr_dict.keys():
                 err_corr_dict_numdim[str(idim)] = err_corr_dict[dim]
+        return err_corr_dict_numdim
 
     def calculate_corr_missingdim(
         self, form, ds, var, ydims=None, sizes_dict=None, expand=False
