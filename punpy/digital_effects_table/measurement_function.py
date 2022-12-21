@@ -2,10 +2,12 @@
 
 import copy
 import time
+import warnings
 from abc import ABC,abstractmethod
 
 import numpy as np
 import obsarray
+
 from punpy.digital_effects_table.digital_effects_table_templates import (
     DigitalEffectsTableTemplates,)
 from punpy.digital_effects_table.measurement_function_utils import (
@@ -163,6 +165,7 @@ class MeasurementFunction(ABC):
             self.xvariables,
             self.uncxvariables,
             self.ydims,
+            self.str_repeat_dims,
             self.str_repeat_noncorr_dims,
             self.prop.verbose,
             self.templ,
@@ -765,7 +768,10 @@ class MeasurementFunction(ABC):
             self.sizes_dict = {}
             for i in range(self.output_vars):
                 for idim, dim in enumerate(self.ydims[i]):
-                    self.sizes_dict[dim] = y[i].shape[idim]
+                    try:
+                        self.sizes_dict[dim] = y[i].shape[idim]
+                    except:
+                        raise ValueError()
 
         for idimr in range(len(self.repeat_dims)):
             if isinstance(self.repeat_dims[idimr], str):
@@ -878,6 +884,7 @@ class MeasurementFunction(ABC):
 
         self.utils.ydims = self.ydims
         self.utils.str_repeat_noncorr_dims = self.str_repeat_noncorr_dims
+        self.utils.str_repeat_dims = self.str_repeat_dims
 
         return y
 
@@ -889,7 +896,7 @@ class MeasurementFunction(ABC):
                     % (dim, self.ydims)
                 )
         if not np.all([ydims.index(dim)==self.ydims[0].index(dim) for ydims in self.ydims]):
-            raise ValueError(
+            warnings.warn(
                 "punpy.measurement_function: The repeat_dim (%s) cannot be used because it is not at the same index for every ydims of every measurand (%s)."
                 % (dim, self.ydims)
             )
@@ -898,7 +905,7 @@ class MeasurementFunction(ABC):
     def check_and_convert_num_dims(self,dim):
         if dim>=0:
             if not np.all([ydims[dim]==self.ydims[0][dim] for ydims in self.ydims]):
-                raise ValueError(
+                warnings.warn(
                     "punpy.measurement_function: The repeat_dim (%s) cannot be used because it is not at the same index for every ydims of every measurand (%s)."
                     % (dim, self.ydims)
                 )
@@ -1128,7 +1135,6 @@ class MeasurementFunction(ABC):
             return None, None
         else:
             if self.use_err_corr_dict:
-                print(form,input_unc,input_corr)
                 MC_x = self.prop.generate_MC_sample(
                     input_qty,
                     input_unc,

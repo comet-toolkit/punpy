@@ -13,7 +13,7 @@ __status__ = "Development"
 
 class MeasurementFunctionUtils:
     def __init__(
-        self, xvariables, uncxvariables, ydims, str_repeat_noncorr_dims, verbose, templ, use_err_corr_dict
+        self, xvariables, uncxvariables, ydims, str_repeat_dims,str_repeat_noncorr_dims, verbose, templ, use_err_corr_dict
     ):
         """
         Initialise MeasurementFunctionUtils
@@ -34,6 +34,7 @@ class MeasurementFunctionUtils:
         self.verbose = verbose
         self.ydims = ydims
         self.str_repeat_noncorr_dims = str_repeat_noncorr_dims
+        self.str_repeat_dims = str_repeat_dims
         self.templ = templ
         self.repeat_dims_form = "structured"
         self.use_err_corr_dict = use_err_corr_dict
@@ -86,7 +87,6 @@ class MeasurementFunctionUtils:
                                         )
                                     )
                                 else:
-                                    print(form,repeat_dim,dataset[var].dims)
                                     self.check_repeat_err_corr_same(
                                         repeat_dims_errcorrs[repeat_dim], "systematic"
                                     )
@@ -557,17 +557,17 @@ class MeasurementFunctionUtils:
         sli = list([slice(None)] * ds[var].ndim)
         var_dims = ds[var].dims
         for i in range(len(sli)):
-            if var_dims[i] in self.str_repeat_noncorr_dims:
+            if var_dims[i] in self.str_repeat_dims:
                 sli[i] = 0
         dsu = ds.unc[var][tuple(sli)]
         if form == "tot":
             if self.use_err_corr_dict:
-                return [unc.err_corr_dict_numdim(var_dims) for unc in dsu]
+                return [self.convert_err_corr_dict_to_num(unc.err_corr_dict(),var_dims) for unc in dsu]
             else:
                 return dsu.total_err_corr_matrix().values
         elif form == "stru":
             if self.use_err_corr_dict:
-                return [unc.err_corr_dict_numdim(var_dims) for unc in dsu if unc.is_structured]
+                return [self.convert_err_corr_dict_to_num(unc.err_corr_dict(),var_dims) for unc in dsu if unc.is_structured]
             else:
                 return dsu.structured_err_corr_matrix().values
         elif form == "rand":
@@ -592,7 +592,7 @@ class MeasurementFunctionUtils:
             try:
                 uvar = "%s_%s" % (form, var)
                 if self.use_err_corr_dict:
-                    return dsu[uvar].err_corr_dict_numdim(var_dims)
+                    return self.convert_err_corr_dict_to_num(dsu[uvar].err_corr_dict(),var_dims)
                 else:
                     return dsu[uvar].err_corr_matrix().values
             except:
@@ -603,11 +603,17 @@ class MeasurementFunctionUtils:
                 uvar = keys[uvar_ids]
                 if len(uvar) > 0:
                     if self.use_err_corr_dict:
-                        return dsu[uvar[0]].err_corr_dict_numdim(var_dims)
+                        return self.convert_err_corr_dict_to_num(dsu[uvar[0]].err_corr_dict(),var_dims)
                     else:
                         return dsu[uvar[0]].err_corr_matrix().values
                 else:
                     return None
+
+    def convert_err_corr_dict_to_num(self,err_corr_dict,var_dims):
+        err_corr_dict_numdim = {}
+        for idim, dim in enumerate(var_dims):
+            if dim in err_corr_dict.keys():
+                err_corr_dict_numdim[str(idim)] = err_corr_dict[dim]
 
     def calculate_corr_missingdim(
         self, form, ds, var, ydims=None, sizes_dict=None, expand=False

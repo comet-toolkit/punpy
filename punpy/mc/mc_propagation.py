@@ -6,6 +6,7 @@ from multiprocessing import Pool
 
 import comet_maths as cm
 import numpy as np
+
 import punpy.utilities.utilities as util
 
 """___Authorship___"""
@@ -462,7 +463,7 @@ class MCPropagation:
                 xb, u_xb = util.select_repeated_x(
                     x, u_x, param_fixed, i, repeat_dims, repeat_shape
                 )
-
+                print("here",i,u_xb)
                 out_i = self.propagate_standard(
                     func,
                     xb,
@@ -587,6 +588,8 @@ class MCPropagation:
                 pdf_params=pdf_params,
                 comp_list=comp_list,
             )
+            print(MC_data[i],u_x[i],corr_x[i])
+
         if corr_between is not None:
             MC_data = cm.correlate_sample_corr(MC_data, corr_between)
         if self.verbose:
@@ -1286,6 +1289,7 @@ class MCPropagation:
             u_func = np.array(outs, dtype=self.dtype)
         else:
             u_func = np.array(outs[0], dtype=self.dtype)
+            print("here",u_func[-1].shape)
 
         if len(repeat_dims) == 1:
             if output_vars == 1:
@@ -1422,6 +1426,15 @@ class MCPropagation:
                 MC_x2[i] = [MC_x[j][index, ...] for j in range(len(MC_x))]
             MC_y = self.pool.starmap(func, MC_x2)
 
+        # for i in range(len(indices)):
+        #     print(MC_y[i])
+        #     print([MC_x[j][i] for j in range(len(MC_x))])
+        #     print(output_vars,MC_y[i].shape)
+        #     print([np.any(np.isfinite(MC_y[i][ivar])) for ivar in range(output_vars)])
+        #     print(np.all([np.any(np.isfinite(MC_y[i][ivar])) for ivar in range(output_vars)]),)
+        #     print(np.isfinite(MC_y[i]))
+
+
         if output_vars==1:
             if allow_some_nans:
                 MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.any(np.isfinite(MC_y[i]))],dtype=self.dtype)
@@ -1429,9 +1442,16 @@ class MCPropagation:
                 MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.all(np.isfinite(MC_y[i]))],dtype=self.dtype)
         else:
             if allow_some_nans:
-                MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.all([np.any(np.isfinite(MC_y[i][ivar])) for ivar in range(output_vars)])],dtype=self.dtype)
+                try:
+                    MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.all([np.any(np.isfinite(MC_y[i][ivar])) for ivar in range(output_vars)])],dtype=self.dtype)
+                except:
+                    MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.all([np.any(np.isfinite(MC_y[i][ivar])) for ivar in range(output_vars)])],dtype=object)
+
             else:
-                MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.all([np.all(np.isfinite(MC_y[i][ivar])) for ivar in range(output_vars)])],dtype=self.dtype)
+                try:
+                    MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.all([np.all(np.isfinite(MC_y[i][ivar])) for ivar in range(output_vars)])],dtype=self.dtype)
+                except:
+                    MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.all([np.all(np.isfinite(MC_y[i][ivar])) for ivar in range(output_vars)])],dtype=object)
 
         if len(MC_y)<len(indices):
             if allow_some_nans:
@@ -1439,6 +1459,7 @@ class MCPropagation:
                     "%s of the %s MC samples were not processed correctly (contained only nans) and will be ignored in the punpy output"
                     % (len(indices)-len(MC_y),len(indices))
                 )
+
             else:
                 print(
                     "%s of the %s MC samples were not processed correctly (contained some nans) and will be ignored in the punpy output"
