@@ -41,7 +41,7 @@ class LPUPropagation:
         return_corr=False,
         return_Jacobian=False,
         repeat_dims=-99,
-        corr_axis=-99,
+        corr_dims=-99,
         fixed_corr_var=False,
         output_vars=1,
         Jx=None,
@@ -71,8 +71,8 @@ class LPUPropagation:
         :type return_Jacobian: bool, optional
         :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
         :type repeat_dims: integer or list of 2 integers, optional
-        :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
-        :type corr_axis: integer, optional
+        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+        :type corr_dims: integer, optional
         :param fixed_corr_var: set to integer to copy the correlation matrix of the dimension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
         :type fixed_corr_var: bool or integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
@@ -100,7 +100,7 @@ class LPUPropagation:
             return_corr=return_corr,
             return_Jacobian=return_Jacobian,
             repeat_dims=repeat_dims,
-            corr_axis=corr_axis,
+            corr_dims=corr_dims,
             fixed_corr_var=fixed_corr_var,
             output_vars=output_vars,
             Jx=Jx,
@@ -118,7 +118,7 @@ class LPUPropagation:
         return_corr=False,
         return_Jacobian=False,
         repeat_dims=-99,
-        corr_axis=-99,
+        corr_dims=-99,
         fixed_corr_var=False,
         output_vars=1,
         Jx=None,
@@ -148,8 +148,8 @@ class LPUPropagation:
         :type return_Jacobian: bool, optional
         :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
         :type repeat_dims: integer or list of 2 integers, optional
-        :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
-        :type corr_axis: integer, optional
+        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+        :type corr_dims: integer, optional
         :param fixed_corr_var: set to integer to copy the correlation matrix of the dimension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
         :type fixed_corr_var: bool or integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
@@ -177,7 +177,7 @@ class LPUPropagation:
             return_corr=return_corr,
             return_Jacobian=return_Jacobian,
             repeat_dims=repeat_dims,
-            corr_axis=corr_axis,
+            corr_dims=corr_dims,
             fixed_corr_var=fixed_corr_var,
             output_vars=output_vars,
             Jx=Jx,
@@ -194,7 +194,7 @@ class LPUPropagation:
         return_corr=False,
         return_Jacobian=False,
         repeat_dims=-99,
-        corr_axis=-99,
+        corr_dims=-99,
         fixed_corr_var=False,
         output_vars=1,
         Jx=None,
@@ -223,8 +223,8 @@ class LPUPropagation:
         :type return_Jacobian: bool, optional
         :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
         :type repeat_dims: integer or list of 2 integers, optional
-        :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
-        :type corr_axis: integer, optional
+        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+        :type corr_dims: integer, optional
         :param fixed_corr_var: set to integer to copy the correlation matrix of the dimension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
         :type fixed_corr_var: bool or integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
@@ -250,7 +250,7 @@ class LPUPropagation:
             return_corr=return_corr,
             return_Jacobian=return_Jacobian,
             repeat_dims=repeat_dims,
-            corr_axis=corr_axis,
+            corr_dims=corr_dims,
             fixed_corr_var=fixed_corr_var,
             output_vars=output_vars,
             Jx=Jx,
@@ -268,7 +268,7 @@ class LPUPropagation:
         return_corr=False,
         return_Jacobian=False,
         repeat_dims=-99,
-        corr_axis=-99,
+        corr_dims=-99,
         fixed_corr_var=False,
         output_vars=1,
         Jx=None,
@@ -298,8 +298,8 @@ class LPUPropagation:
         :type return_Jacobian: bool, optional
         :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
         :type repeat_dims: integer or list of 2 integers, optional
-        :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
-        :type corr_axis: integer, optional
+        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+        :type corr_dims: integer, optional
         :param fixed_corr_var: set to integer to copy the correlation matrix of the dimension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
         :type fixed_corr_var: bool or integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
@@ -320,7 +320,7 @@ class LPUPropagation:
             repeat_dims,
             n_repeats,
             repeat_shape,
-            corr_axis,
+            corr_dims,
             fixed_corr,
             Jx_diag,
         ) = self.perform_checks(
@@ -329,7 +329,7 @@ class LPUPropagation:
             u_x,
             corr_x,
             repeat_dims,
-            corr_axis,
+            corr_dims,
             output_vars,
             fixed_corr_var,
             Jx_diag,
@@ -356,7 +356,7 @@ class LPUPropagation:
                     return_corr,
                     return_Jacobian,
                     -99,
-                    corr_axis,
+                    corr_dims,
                     fixed_corr_var,
                     output_vars,
                     Jxi,
@@ -408,7 +408,7 @@ class LPUPropagation:
                 cov_x,
                 yshape,
                 return_corr,
-                corr_axis,
+                corr_dims,
                 fixed_corr,
                 output_vars,
                 return_Jacobian,
@@ -421,7 +421,7 @@ class LPUPropagation:
         flat_cov_x,
         return_corr=False,
         return_Jacobian=False,
-        corr_axis=-99,
+        corr_dims=-99,
         output_vars=1,
         Jx=None,
         Jx_diag=None,
@@ -447,8 +447,8 @@ class LPUPropagation:
         :type return_Jacobian: bool, optional
         :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
         :type repeat_dims: integer or list of 2 integers, optional
-        :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
-        :type corr_axis: integer, optional
+        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+        :type corr_dims: integer, optional
         :param fixed_corr_var: set to integer to copy the correlation matrix of the dimension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
         :type fixed_corr_var: bool or integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
@@ -470,7 +470,7 @@ class LPUPropagation:
             repeat_dims,
             n_repeats,
             repeat_shape,
-            corr_axis,
+            corr_dims,
             fixed_corr,
             Jx_diag,
         ) = self.perform_checks(
@@ -479,7 +479,7 @@ class LPUPropagation:
             None,
             None,
             -99,
-            corr_axis,
+            corr_dims,
             output_vars,
             False,
             Jx_diag,
@@ -494,7 +494,7 @@ class LPUPropagation:
             flat_cov_x,
             yshape,
             return_corr,
-            corr_axis,
+            corr_dims,
             output_vars=output_vars,
             return_Jacobian=return_Jacobian,
         )
@@ -505,7 +505,7 @@ class LPUPropagation:
         covx,
         shape_y,
         return_corr,
-        corr_axis,
+        corr_dims,
         fixed_corr=None,
         output_vars=1,
         return_Jacobian=False,
@@ -516,8 +516,8 @@ class LPUPropagation:
             corr_y = cm.convert_cov_to_corr(covy, u_func)
         else:
             corr_y = fixed_corr
-        if corr_axis >= 0:
-            lencorr = shape_y[corr_axis] * output_vars
+        if corr_dims >= 0:
+            lencorr = shape_y[corr_dims] * output_vars
             corr_y = np.average(
                 [
                     corr_y[
@@ -559,7 +559,7 @@ class LPUPropagation:
         u_x,
         corr_x,
         repeat_dims,
-        corr_axis,
+        corr_dims,
         output_vars,
         fixed_corr_var,
         Jx_diag,
@@ -578,15 +578,15 @@ class LPUPropagation:
         :type corr_x: list[array], optional
         :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
         :type repeat_dims: integer or list of 2 integers, optional
-        :param corr_axis: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
-        :type corr_axis: integer, optional
+        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+        :type corr_dims: integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
         :type output_vars: integer, optional
         :param fixed_corr_var: set to integer to copy the correlation matrix of the dimiension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
         :type fixed_corr_var: bool or integer, optional
         :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
         :type param_fixed: list of bools, optional
-        :return: yshape,u_x,repeat_axis,repeat_dims,corr_axis,fixed_corr
+        :return: yshape,u_x,repeat_axis,repeat_dims,corr_dims,fixed_corr
         :rtype: tuple, list[array], int, int, int, array
         """
 
@@ -692,10 +692,10 @@ class LPUPropagation:
         if len(repeat_dims) == 1:
             if repeat_dims[0] >= 0:
                 n_repeats = yshape[repeat_dims[0]]
-                if corr_axis > repeat_dims[0]:
-                    corr_axis -= 1
-                elif corr_axis == repeat_dims[0]:
-                    print("corr_axis and repeat_axis keywords should not be the same.")
+                if corr_dims > repeat_dims[0]:
+                    corr_dims -= 1
+                elif corr_dims == repeat_dims[0]:
+                    print("corr_dims and repeat_axis keywords should not be the same.")
                     exit()
             else:
                 n_repeats = 0
@@ -709,15 +709,15 @@ class LPUPropagation:
             repeat_dims = -np.sort(-np.array(repeat_dims))
             n_repeats = yshape[repeat_dims[0]] * yshape[repeat_dims[1]]
             repeat_shape = (yshape[repeat_dims[0]], yshape[repeat_dims[1]])
-            if corr_axis > repeat_dims[0]:
-                corr_axis -= 1
-            elif corr_axis == repeat_dims[0]:
-                print("corr_axis and repeat_axis keywords should not be the same.")
+            if corr_dims > repeat_dims[0]:
+                corr_dims -= 1
+            elif corr_dims == repeat_dims[0]:
+                print("corr_dims and repeat_axis keywords should not be the same.")
                 exit()
-            if corr_axis > repeat_dims[1]:
-                corr_axis -= 1
-            elif corr_axis == repeat_dims[1]:
-                print("corr_axis and repeat_axis keywords should not be the same.")
+            if corr_dims > repeat_dims[1]:
+                corr_dims -= 1
+            elif corr_dims == repeat_dims[1]:
+                print("corr_dims and repeat_axis keywords should not be the same.")
                 exit()
 
         xflat = np.concatenate([xi.ravel() for xi in x])
@@ -735,7 +735,7 @@ class LPUPropagation:
             repeat_dims,
             n_repeats,
             repeat_shape,
-            corr_axis,
+            corr_dims,
             fixed_corr,
             Jx_diag,
         )

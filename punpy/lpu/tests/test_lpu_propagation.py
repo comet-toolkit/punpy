@@ -7,7 +7,6 @@ import unittest
 import comet_maths as cm
 import numpy as np
 import numpy.testing as npt
-
 from punpy.lpu.lpu_propagation import LPUPropagation
 
 """___Authorship___"""
@@ -255,7 +254,7 @@ class TestLPUPropagation(unittest.TestCase):
         npt.assert_allclose(ucorrb, np.ones_like(ucorrb), atol=0.01)
 
         ufb, ucorrb = prop.propagate_systematic(
-            functionb, xsb, xerrsb, return_corr=True, corr_axis=0
+            functionb, xsb, xerrsb, return_corr=True, corr_dims=0
         )
         npt.assert_allclose(ucorrb, np.ones_like(ucorrb), atol=0.01)
 
@@ -282,17 +281,17 @@ class TestLPUPropagation(unittest.TestCase):
     def test_propagate_systematic_3D_2out(self):
         prop = LPUPropagation()
         ufd, ucorrd, corr_out = prop.propagate_systematic(
-            functiond, xsd, xerrsd, return_corr=True, corr_axis=0, output_vars=2
+            functiond, xsd, xerrsd, return_corr=True, corr_dims=0, output_vars=2
         )
         npt.assert_allclose(ucorrd[0], np.ones_like(ucorrd[0]), atol=0.01)
 
         ufd, ucorrd, corr_out = prop.propagate_systematic(
-            functiond, xsd, xerrsd, return_corr=True, corr_axis=1, output_vars=2
+            functiond, xsd, xerrsd, return_corr=True, corr_dims=1, output_vars=2
         )
         npt.assert_allclose(ucorrd[1], np.ones_like(ucorrd[1]), atol=0.01)
 
         ufd, ucorrd, corr_out = prop.propagate_systematic(
-            functiond, xsd, xerrsd, return_corr=True, corr_axis=2, output_vars=2
+            functiond, xsd, xerrsd, return_corr=True, corr_dims=2, output_vars=2
         )
         npt.assert_allclose(ucorrd[0], np.ones_like(ucorrd[0]), atol=0.01)
 
@@ -433,7 +432,7 @@ class TestLPUPropagation(unittest.TestCase):
             xerrsb,
             corr_x=corrb,
             repeat_dims=0,
-            corr_axis=1,
+            corr_dims=1,
             return_corr=True,
         )
         ufb, ucorrb2 = prop.propagate_systematic(
@@ -442,7 +441,7 @@ class TestLPUPropagation(unittest.TestCase):
             xerrsb,
             corr_x=["rand", "rand"],
             repeat_dims=0,
-            corr_axis=1,
+            corr_dims=1,
             return_corr=True,
         )
         npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.01)
@@ -458,7 +457,7 @@ class TestLPUPropagation(unittest.TestCase):
             xerrsb,
             corr_x=corrb,
             repeat_dims=0,
-            corr_axis=1,
+            corr_dims=1,
             return_corr=True,
         )
         ufb, ucorrb2 = prop.propagate_systematic(
@@ -467,7 +466,7 @@ class TestLPUPropagation(unittest.TestCase):
             xerrsb,
             corr_x=["syst", None],
             repeat_dims=0,
-            corr_axis=1,
+            corr_dims=1,
             return_corr=True,
         )
         npt.assert_allclose(ucorrb, np.ones_like(ucorrb), atol=0.01)
@@ -484,7 +483,7 @@ class TestLPUPropagation(unittest.TestCase):
             xerrsd,
             corr_x=corrd,
             return_corr=True,
-            corr_axis=0,
+            corr_dims=0,
             repeat_dims=[1, 2],
             output_vars=2,
         )
@@ -502,7 +501,7 @@ class TestLPUPropagation(unittest.TestCase):
             xerrsd,
             corr_x=corrd,
             return_corr=True,
-            corr_axis=0,
+            corr_dims=0,
             repeat_dims=[1, 2],
             output_vars=2,
         )
@@ -515,7 +514,7 @@ class TestLPUPropagation(unittest.TestCase):
             xerrsd,
             corr_x=corrd,
             return_corr=True,
-            corr_axis=0,
+            corr_dims=0,
             repeat_dims=[1, 2],
             output_vars=1,
         )
@@ -537,7 +536,7 @@ class TestLPUPropagation(unittest.TestCase):
             xerrsc,
             corr_x=corrc,
             repeat_dims=0,
-            corr_axis=1,
+            corr_dims=1,
             output_vars=1,
             fixed_corr_var=None,
             Jx_diag=None,
@@ -550,7 +549,7 @@ class TestLPUPropagation(unittest.TestCase):
             xerrsd,
             corr_x=corrd,
             repeat_dims=[0, 1],
-            corr_axis=2,
+            corr_dims=2,
             output_vars=2,
             fixed_corr_var=None,
             Jx_diag=None,
@@ -563,7 +562,7 @@ class TestLPUPropagation(unittest.TestCase):
                 xerrsc,
                 corr_x=corrc,
                 repeat_dims=0,
-                corr_axis=0,
+                corr_dims=0,
                 output_vars=1,
                 fixed_corr_var=None,
                 Jx_diag=None,
@@ -575,7 +574,7 @@ class TestLPUPropagation(unittest.TestCase):
                 xerrsd,
                 corr_x=corrd,
                 repeat_dims=[0, 1],
-                corr_axis=1,
+                corr_dims=1,
                 output_vars=2,
                 fixed_corr_var=None,
                 Jx_diag=None,

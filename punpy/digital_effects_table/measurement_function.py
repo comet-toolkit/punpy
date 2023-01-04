@@ -7,7 +7,6 @@ from abc import ABC,abstractmethod
 
 import numpy as np
 import obsarray
-
 from punpy.digital_effects_table.digital_effects_table_templates import (
     DigitalEffectsTableTemplates,)
 from punpy.digital_effects_table.measurement_function_utils import (
@@ -591,6 +590,7 @@ class MeasurementFunction(ABC):
             ds_out[self.yvariable[i]].values = y[i]
 
         for icomp, comp in enumerate(comp_list):
+            corr_comp_y = None
             if comp == "random":
                 u_comp_y = self.propagate_random(*args, expand=expand)
 
@@ -614,40 +614,42 @@ class MeasurementFunction(ABC):
                     u_comp_y = self.propagate_specific(
                         comp, *args, return_corr=include_corr, expand=expand
                     )
-                    corr_comp_y = None
 
-                for i in range(self.output_vars):
-                    if corr_comp_y is not None:
-                        ds_out[
-                            "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable[i]
-                        ].values = corr_comp_y[i]
-                    else:
+            for i in range(self.output_vars):
+                if corr_comp_y is not None:
+                    ds_out[
+                        "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable[i]
+                    ].values = corr_comp_y[i]
+                else:
+                    try:
                         ds_out.drop(
                             "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable[i]
                         )
+                    except:
+                        pass
 
-                    if u_comp_y is None:
-                        if store_unc_percent:
-                            ds_out = self.templ.remove_unc_component(
-                                ds_out,
-                                self.yvariable[i],
-                                "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable[i],
-                                )
-                        else:
-                            ds_out = self.templ.remove_unc_component(
-                                ds_out,
-                                self.yvariable[i],
-                                "u_" + comp_list_out[icomp] + "_" + self.yvariable[i],
-                                )
+                if u_comp_y is None:
+                    if store_unc_percent:
+                        ds_out = self.templ.remove_unc_component(
+                            ds_out,
+                            self.yvariable[i],
+                            "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable[i],
+                            )
                     else:
-                        if store_unc_percent:
-                            ds_out[
-                                "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable[i]
-                                ].values = (u_comp_y[i] / y[i] * 100)
-                        else:
-                            ds_out[
-                                "u_" + comp_list_out[icomp] + "_" + self.yvariable[i]
-                                ].values = u_comp_y[i]
+                        ds_out = self.templ.remove_unc_component(
+                            ds_out,
+                            self.yvariable[i],
+                            "u_" + comp_list_out[icomp] + "_" + self.yvariable[i],
+                            )
+                else:
+                    if store_unc_percent:
+                        ds_out[
+                            "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable[i]
+                            ].values = (u_comp_y[i] / y[i] * 100)
+                    else:
+                        ds_out[
+                            "u_" + comp_list_out[icomp] + "_" + self.yvariable[i]
+                            ].values = u_comp_y[i]
 
         for i in range(self.output_vars):
             if (ds_out_pre is not None) and not use_ds_out_pre_unmodified:

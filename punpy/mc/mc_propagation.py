@@ -6,7 +6,6 @@ from multiprocessing import Pool
 
 import comet_maths as cm
 import numpy as np
-
 import punpy.utilities.utilities as util
 
 """___Authorship___"""
@@ -1287,7 +1286,6 @@ class MCPropagation:
             u_func = np.array(outs, dtype=self.dtype)
         else:
             u_func = np.array(outs[0], dtype=self.dtype)
-            print("here",u_func[-1].shape)
 
         if len(repeat_dims) == 1:
             if output_vars == 1:
@@ -1514,6 +1512,14 @@ class MCPropagation:
 
         # if hasattr(MC_y[0,0], '__len__'):
         #     print(yshape,np.array(MC_y[0,0]).shape,np.array(MC_y[1,0]).shape,np.array(MC_y[2,0]).shape,np.array(MC_y[3,0]).shape)
+        if len(MC_y)==0:
+            print("this one")
+            if output_vars == 1:
+                u_func= np.nan * np.zeros(yshapes[0])
+            else:
+                u_func = np.empty(output_vars, dtype=object)
+                for i in range(output_vars):
+                    u_func[i]= np.nan * np.zeros(yshapes[i])
         if output_vars == 1:
             u_func = np.std(MC_y, axis=0, dtype=self.dtype)
 
@@ -1524,7 +1530,7 @@ class MCPropagation:
             elif all([yshapes[i] == yshapes[0] for i in range(len(yshapes))]):
                 complex_shapes = False
 
-            if complex_shapes:
+            elif complex_shapes:
                 MC_y2 = np.empty(output_vars, dtype=object)
                 u_func = np.empty(output_vars, dtype=object)
 
@@ -1536,6 +1542,7 @@ class MCPropagation:
 
             else:
                 u_func = np.std(MC_y, axis=0, dtype=self.dtype)
+
 
         if self.verbose:
             print(

@@ -154,30 +154,20 @@ and measurement function themselves. Within punpy, the input quantities and meas
 be provided as python arrays (or scalars) and the measurement function in particular needs to be 
 a python function that can take the input quantities as function arguments and returns the measurand.
 
-To generate the PDF, punpy generates samples of draws from the PDF for each of the input quantities (total number of
-draws is set by keyword `MCsteps`). Currently, punpy assumes all PDF to be gaussian, but this can 
-easily be expanded upon in future work. Internally, punpy always generates independent random normally distributed
-samples first and then correlates them where necessary using the Cholesky decomposition method (see paragraph below). 
-Using this Cholesky decomposition correlates the PDF of the input quantities which means the joint PDF are defined. 
-Each draw in the sample is then run through the measurement function and as a result we can a sample (and thus the 
-PDF) of the measurand Y. Punpy then calculated the uncertainties from the standard deviation in the sample and the 
-correlation matrix from the correlation coefficients between the different values in Y. 
-
-Cholesky decomposition is a usefull method from linear algebra, which allows to efficiently draw samples from a 
-multivariate probability distribution (joint PDF). The Cholesky decomposition is a decomposition of a 
-positive-definite matrix into the product of a lower triangular matrix and its conjugate transpose. The positive-definite
-matrix being decomposed here is the correlation or covriance matrix (S(X)) and R is the upper triangular matrix given by the 
-Cholesky decomposition:
-
-:math:`S(X)=R^T R`.
-
-When sampling from the joint pdf, one can first draw samples :math:`Z = (Z_{i},\ldots,\ Z_{N})` for the input quantities :math:`X_i` from the
-independent PDF for the input quantities (i.e. as if they were uncorrelated). These samples :math:`Z_i` can then be combined 
-with the decomposition matrix R to obtain the correlated samples :math:`\xi = (\xi_1, ... , \xi_N)`:
-
-:math:`\xi = X + R^T Z`.
+To generate the joint PDF, comet_maths is used. The ATBD for the comet_maths PDF generator is given
+`here <https://comet-maths.readthedocs.io/en/latest/content/random_generator_atbd.html>`_.
 
 The measurand pdf is then defined by processing each draw :math:`\xi_i` to Y:
 
 :math:`Y = f(\xi)`.
 
+The measurands for each of these draws are then concatenated into one array containing the full measurand sample.
+The uncertainties are than calculated by taking the standard deviation along these draws.
+
+When no `corr_dims` are specified, but `return_corr` is set to True, the correlation matrix is calculated
+by calculating the Pearson product-moment correlation coefficients of the full measurand sample along the draw dimension.
+When `corr_dims` are specified, the correlation matrix is calculated along a subset of the full measurand sample.
+This subset is made by taking only the first index along every dimension that is not the correlation dimension.
+We note that `corr_dims` should only be used when the error correlation matrices do not vary along the other dimension(s).
+A warning is raised if any element of the correlation matrix varies by more than 0.05 between the one using a subset taking
+only the first index along each other dimension and the one using a subset taking only the last index along each other dimension.

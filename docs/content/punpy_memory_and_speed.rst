@@ -133,6 +133,10 @@ measurements, and x3 is an array with some calibration coefficients (with uncert
 Here only one matrix is returned for corr_y with a shape matching the provided corr_dims, rather than a correlation matrix per repeated measurement. The matrices for each repeated measurement have been averaged.
 We note that if no corr_dims are set, the default option is to return a combined error correlation matrix for all dimensions that are not in repeat_dims.
 
+In some cases, when there are multiple measurands with different shapes, it is not clear what dimension the repeat_dim refers to.
+In such cases, the `refyvar` keyword should be set to the index of the measurand with the most dimensions and the repeat_dims indexes should correspond to this measurand.
+
+
 Processing the MC samples in parallel
 ######################################
 At the start of this section we already saw that the optional `parallel_cores` keyword can be used to running the MC

@@ -130,6 +130,9 @@ This is done by setting the `return_corr` keyword to True::
 
 Here, the returned error correlation matrix will cover all dimensions of the associated uncertainty. If ur_y has shape (k,l), corr_y has shape (k*l,k*l).
 The order of the correlation coefficient elements corresponds to the order for a flattened version of ur_y (ur_y.flatten()).
+By default, the returned correlation matrices are forced to be positive-definite. This means they are sometimes slightly changed in order to accomodate this. If this is the case, a warning is shown.
+To just return the unmodified correlation matrices, it is possible to set the `PD_corr` keyword to False.
+
 
 Propagating uncertainties when measurements are correlated (within input quantity)
 ###################################################################################
@@ -202,7 +205,11 @@ More advanced punpy input and output
 ######################################
 When returning the error correlation functions, rather than providing this full correlation matrix, it is also possible to get punpy to only calculate the error correlation matrix along one (or a list of) dimensions.
 If `return_corr` is set to True, the keyword `corr_dims` can be used to indicate the dimension(s) for which the correlation should be calculated.
-In this case the correlation coefficients will be averaged over all dimensions other than `corr_dims`::
+In this case the correlation coefficients are calculated using only the first index along all dimensions other than `corr_dims`.
+We note that `corr_dims` should only be used when the error correlation matrices do not vary along the other dimension(s).
+A warning is raised if any element of the correlation matrix varies by more than 0.05 between using only the first index along
+all dimensions other than `corr_dims` or using only the last index along all dimensions other than `corr_dims`.
+The `corr_dims` keyword can be passed to any of the propagate_* functions::
 
    ur_y, corr_y = prop.propagate_random(measurement_function,
           [x1, x2, x3], [ur_x1, ur_x2, ur_x3], return_corr=True, corr_dims=0)
@@ -318,11 +325,11 @@ The resulting sample of valid measurands will thus have about 900 samples, which
 
 By default, numpy will only ignore MC samples where all the values are non-finite.
 However, it is also possible to ignore all MC samples where any of the values are non-finite.
-This can be done by setting the `allow_some_nans` keyword to False::
+This can be done by setting the `allow_some_nans` keyword to False.
 
 
 Shape of input quanties within the measurement function
-########################################################
+##########################################################
 When setting parallel_cores to 1 or more, the shape of the input quantities used for each iteration in the measurement function matches the shape of the input quantities themselves.
 However, when parallel_cores is set to 0, all iterations will be processed simultaneously and there will be an additional dimension for the MC iterations.
 Generally within punpy, the MC dimension in the samples is the first one (i.e. internally as well as when MC samples are returned).
@@ -333,8 +340,3 @@ However, in some cases it is more helpful to have the MC iterations as the first
 If this is the case, the MC iteration dimension can be made the first dimension by setting the `MClastdim` keyword to False::
 
       prop = punpy.MCPropagation(1000,MCdimlast=False)
-
- dtype=None,
-PD_corr=True,
-refyvar=0,
-allow_some_nans=True,
