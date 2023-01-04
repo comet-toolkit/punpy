@@ -97,14 +97,16 @@ class MCPropagation:
         :type fixed_corr_var: bool or integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
         :type output_vars: integer, optional
-        :param PD_corr: set to True to make sure returned correlation matrices are positive semi-definite, default to True
+        :param PD_corr: set to True to make sure returned correlation matrices are positive semi-definite, default to True.
         :type PD_corr: bool, optional
-        :param refyvar: Index of output variable with reference shape (only relevant when output_vars>1; should be output variable with most dimensions; affects things like repeat_dims)
+        :param refyvar: Index of output variable with reference shape (only relevant when output_vars>1; should be output variable with most dimensions; affects things like repeat_dims).
         :type refyvar: int, optional
-        :param pdf_shape: string identifier of the probability density function shape, defaults to gaussian
+        :param pdf_shape: string identifier of the probability density function shape, defaults to gaussian.
         :type pdf_shape: str, optional
-        :param pdf_params: dictionaries defining optional additional parameters that define the probability density function, Defaults to None (gaussian does not require additional parameters)
+        :param pdf_params: dictionaries defining optional additional parameters that define the probability density function, Defaults to None (gaussian does not require additional parameters).
         :type pdf_params: dict, optional
+        :param allow_some_nans: set to False to ignore any MC sample which has any nan's in the measurand. Defaults to True, in which case only MC samples with only nan's are ignored.
+        :type allow_some_nans: bool, optional
         :return: uncertainties on measurand
         :rtype: array
         """
@@ -196,6 +198,8 @@ class MCPropagation:
         :type pdf_shape: str, optional
         :param pdf_params: dictionaries defining optional additional parameters that define the probability density function, Defaults to None (gaussian does not require additional parameters)
         :type pdf_params: dict, optional
+        :param allow_some_nans: set to False to ignore any MC sample which has any nan's in the measurand. Defaults to True, in which case only MC samples with only nan's are ignored.
+        :type allow_some_nans: bool, optional
         :return: uncertainties on measurand
         :rtype: array
         """
@@ -285,6 +289,8 @@ class MCPropagation:
         :type pdf_shape: str, optional
         :param pdf_params: dictionaries defining optional additional parameters that define the probability density function, Defaults to None (gaussian does not require additional parameters)
         :type pdf_params: dict, optional
+        :param allow_some_nans: set to False to ignore any MC sample which has any nan's in the measurand. Defaults to True, in which case only MC samples with only nan's are ignored.
+        :type allow_some_nans: bool, optional
         :return: uncertainties on measurand
         :rtype: array
         """
@@ -378,6 +384,8 @@ class MCPropagation:
         :type pdf_shape: str, optional
         :param pdf_params: dictionaries defining optional additional parameters that define the probability density function, Defaults to None (gaussian does not require additional parameters)
         :type pdf_params: dict, optional
+        :param allow_some_nans: set to False to ignore any MC sample which has any nan's in the measurand. Defaults to True, in which case only MC samples with only nan's are ignored.
+        :type allow_some_nans: bool, optional
         :return: uncertainties on measurand
         :rtype: array
         """
@@ -1397,8 +1405,16 @@ class MCPropagation:
         :type func: function
         :param MC_x: MC-generated samples of input quantities
         :type MC_x: array[array]
-        :param yshapes: shape of the measurand(s)
-        :type yshapes: tuple or list of tuples
+        :param output_vars: number of output parameters in the measurement function. Defaults to 1.
+        :type output_vars: integer, optional
+        :param start: set this parameter to propagate the input quantities through the measurement function starting from a specfic index. All input quantities before this index are ignored. Defaults to None, in which case no input quantities are ignored.
+        :type start: integer, optional
+        :param end: set this parameter to propagate the input quantities through the measurement function up until a specfic index. All input quantities after this index are ignored. Defaults to None, in which case no input quantities are ignored.
+        :type end: integer, optional
+        :param sli: set this parameter to a slice to set which input quantities will be processed through the measurment function. All other input quantities are ignored. Can only be used if start and end are not set. Defaults to None, in which case no input quantities are ignored.
+        :type sli: slice, optional
+        :param allow_some_nans: set to False to ignore any MC sample which has any nan's in the measurand. Defaults to True, in which case only MC samples with only nan's are ignored.
+        :type allow_some_nans: bool, optional
         :return: MC sample of measurand
         :rtype: array[array]
         """
