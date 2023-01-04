@@ -13,7 +13,15 @@ __status__ = "Development"
 
 class MeasurementFunctionUtils:
     def __init__(
-        self, xvariables, uncxvariables, ydims, str_repeat_dims,str_repeat_noncorr_dims, verbose, templ, use_err_corr_dict
+        self,
+        xvariables,
+        uncxvariables,
+        ydims,
+        str_repeat_dims,
+        str_repeat_noncorr_dims,
+        verbose,
+        templ,
+        use_err_corr_dict,
     ):
         """
         Initialise MeasurementFunctionUtils
@@ -139,7 +147,8 @@ class MeasurementFunctionUtils:
                 pass
             else:
                 raise ValueError(
-                    "punpy.measurement_function: Not all included uncertainty contributions have the same error correlation along the repeat_dims. Either don't use repeat_dims or use a different method, where components are propagated seperately. (%s,%s)"%(repeat_dims_errcorr["form"] , uvar)
+                    "punpy.measurement_function: Not all included uncertainty contributions have the same error correlation along the repeat_dims. Either don't use repeat_dims or use a different method, where components are propagated seperately. (%s,%s)"
+                    % (repeat_dims_errcorr["form"], uvar)
                 )
         else:
             if (
@@ -351,7 +360,9 @@ class MeasurementFunctionUtils:
                         if var in dataset.variables:
                             if ydims is not None:
                                 if np.all([dim in dataset[var].dims for dim in ydims]):
-                                    inputs_unc[iv] = self.calculate_unc(form, dataset, var)
+                                    inputs_unc[iv] = self.calculate_unc(
+                                        form, dataset, var
+                                    )
 
                                 else:
                                     inputs_unc[iv] = self.calculate_unc_missingdim(
@@ -526,11 +537,13 @@ class MeasurementFunctionUtils:
                                     ydims=ydims,
                                 )
                             else:
-                                inputs_corr[iv] = self.calculate_corr(form, dataset, var)
+                                inputs_corr[iv] = self.calculate_corr(
+                                    form, dataset, var
+                                )
 
-                #check if corr is filled with zeros
+                # check if corr is filled with zeros
                 if not np.any(inputs_corr[iv]):
-                    inputs_corr[iv]=None
+                    inputs_corr[iv] = None
 
                 if inputs_corr[iv] is None:
                     if self.verbose:
@@ -562,12 +575,19 @@ class MeasurementFunctionUtils:
         dsu = ds.unc[var][tuple(sli)]
         if form == "tot":
             if self.use_err_corr_dict:
-                return [self.convert_err_corr_dict_to_num(unc.err_corr_dict(),var_dims) for unc in dsu]
+                return [
+                    self.convert_err_corr_dict_to_num(unc.err_corr_dict(), var_dims)
+                    for unc in dsu
+                ]
             else:
                 return dsu.total_err_corr_matrix().values
         elif form == "stru":
             if self.use_err_corr_dict:
-                return [self.convert_err_corr_dict_to_num(unc.err_corr_dict(),var_dims) for unc in dsu if unc.is_structured]
+                return [
+                    self.convert_err_corr_dict_to_num(unc.err_corr_dict(), var_dims)
+                    for unc in dsu
+                    if unc.is_structured
+                ]
             else:
                 return dsu.structured_err_corr_matrix().values
         elif form == "rand":
@@ -592,7 +612,9 @@ class MeasurementFunctionUtils:
             try:
                 uvar = "%s_%s" % (form, var)
                 if self.use_err_corr_dict:
-                    return self.convert_err_corr_dict_to_num(dsu[uvar].err_corr_dict(),var_dims)
+                    return self.convert_err_corr_dict_to_num(
+                        dsu[uvar].err_corr_dict(), var_dims
+                    )
                 else:
                     return dsu[uvar].err_corr_matrix().values
             except:
@@ -603,13 +625,15 @@ class MeasurementFunctionUtils:
                 uvar = keys[uvar_ids]
                 if len(uvar) > 0:
                     if self.use_err_corr_dict:
-                        return self.convert_err_corr_dict_to_num(dsu[uvar[0]].err_corr_dict(),var_dims)
+                        return self.convert_err_corr_dict_to_num(
+                            dsu[uvar[0]].err_corr_dict(), var_dims
+                        )
                     else:
                         return dsu[uvar[0]].err_corr_matrix().values
                 else:
                     return None
 
-    def convert_err_corr_dict_to_num(self,err_corr_dict,var_dims):
+    def convert_err_corr_dict_to_num(self, err_corr_dict, var_dims):
         """
         Function to convert err_corr dictionary with dimension names as key, to dictionary with dimension indices as keys
 
@@ -661,7 +685,10 @@ class MeasurementFunctionUtils:
         missingdims = [
             ydim
             for ydim in ydims
-            if ((ydim not in ds[var].dims) and (ydim not in self.str_repeat_noncorr_dims))
+            if (
+                (ydim not in ds[var].dims)
+                and (ydim not in self.str_repeat_noncorr_dims)
+            )
         ]
 
         missingshape = [sizes_dict[dim] for dim in missingdims]

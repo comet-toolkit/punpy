@@ -17,7 +17,9 @@ __status__ = "Development"
 
 
 class MCPropagation:
-    def __init__(self, steps, parallel_cores=0, dtype=None, verbose=False, MCdimlast=True):
+    def __init__(
+        self, steps, parallel_cores=0, dtype=None, verbose=False, MCdimlast=True
+    ):
         """
         Initialise MC Propagator
 
@@ -61,7 +63,7 @@ class MCPropagation:
         refyvar=0,
         pdf_shape="gaussian",
         pdf_params=None,
-            allow_some_nans=True,
+        allow_some_nans=True,
     ):
         """
         Propagate random uncertainties through measurement function with n input quantities.
@@ -130,7 +132,7 @@ class MCPropagation:
             refyvar=refyvar,
             pdf_shape=pdf_shape,
             pdf_params=pdf_params,
-            allow_some_nans=allow_some_nans
+            allow_some_nans=allow_some_nans,
         )
 
     def propagate_systematic(
@@ -152,7 +154,7 @@ class MCPropagation:
         refyvar=0,
         pdf_shape="gaussian",
         pdf_params=None,
-            allow_some_nans=True,
+        allow_some_nans=True,
     ):
         """
         Propagate systematic uncertainties through measurement function with n input quantities.
@@ -221,7 +223,7 @@ class MCPropagation:
             refyvar=refyvar,
             pdf_shape=pdf_shape,
             pdf_params=pdf_params,
-            allow_some_nans=allow_some_nans
+            allow_some_nans=allow_some_nans,
         )
 
     def propagate_cov(
@@ -242,7 +244,7 @@ class MCPropagation:
         refyvar=0,
         pdf_shape="gaussian",
         pdf_params=None,
-            allow_some_nans=True,
+        allow_some_nans=True,
     ):
         """
         Propagate uncertainties with given covariance matrix through measurement function with n input quantities.
@@ -312,7 +314,7 @@ class MCPropagation:
             refyvar=refyvar,
             pdf_shape=pdf_shape,
             pdf_params=pdf_params,
-            allow_some_nans=allow_some_nans
+            allow_some_nans=allow_some_nans,
         )
 
     def propagate_standard(
@@ -529,7 +531,9 @@ class MCPropagation:
                     pdf_params=pdf_params,
                 )
 
-            MC_y = self.run_samples(func, MC_x, output_vars=output_vars,allow_some_nans=allow_some_nans)
+            MC_y = self.run_samples(
+                func, MC_x, output_vars=output_vars, allow_some_nans=allow_some_nans
+            )
 
             return self.process_samples(
                 MC_x,
@@ -1430,36 +1434,97 @@ class MCPropagation:
         #     print(np.all([np.any(np.isfinite(MC_y[i][ivar])) for ivar in range(output_vars)]),)
         #     print(np.isfinite(MC_y[i]))
 
-
-        if output_vars==1:
+        if output_vars == 1:
             if allow_some_nans:
-                MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.any(np.isfinite(MC_y[i]))],dtype=self.dtype)
+                MC_y = np.array(
+                    [
+                        MC_y[i]
+                        for i in range(len(indices))
+                        if np.any(np.isfinite(MC_y[i]))
+                    ],
+                    dtype=self.dtype,
+                )
             else:
-                MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.all(np.isfinite(MC_y[i]))],dtype=self.dtype)
+                MC_y = np.array(
+                    [
+                        MC_y[i]
+                        for i in range(len(indices))
+                        if np.all(np.isfinite(MC_y[i]))
+                    ],
+                    dtype=self.dtype,
+                )
         else:
             if allow_some_nans:
                 try:
-                    MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.all([np.any(np.isfinite(MC_y[i][ivar])) for ivar in range(output_vars)])],dtype=self.dtype)
+                    MC_y = np.array(
+                        [
+                            MC_y[i]
+                            for i in range(len(indices))
+                            if np.all(
+                                [
+                                    np.any(np.isfinite(MC_y[i][ivar]))
+                                    for ivar in range(output_vars)
+                                ]
+                            )
+                        ],
+                        dtype=self.dtype,
+                    )
                 except:
-                    MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.all([np.any(np.isfinite(MC_y[i][ivar])) for ivar in range(output_vars)])],dtype=object)
+                    MC_y = np.array(
+                        [
+                            MC_y[i]
+                            for i in range(len(indices))
+                            if np.all(
+                                [
+                                    np.any(np.isfinite(MC_y[i][ivar]))
+                                    for ivar in range(output_vars)
+                                ]
+                            )
+                        ],
+                        dtype=object,
+                    )
 
             else:
                 try:
-                    MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.all([np.all(np.isfinite(MC_y[i][ivar])) for ivar in range(output_vars)])],dtype=self.dtype)
+                    MC_y = np.array(
+                        [
+                            MC_y[i]
+                            for i in range(len(indices))
+                            if np.all(
+                                [
+                                    np.all(np.isfinite(MC_y[i][ivar]))
+                                    for ivar in range(output_vars)
+                                ]
+                            )
+                        ],
+                        dtype=self.dtype,
+                    )
                 except:
-                    MC_y = np.array([MC_y[i] for i in range(len(indices)) if np.all([np.all(np.isfinite(MC_y[i][ivar])) for ivar in range(output_vars)])],dtype=object)
+                    MC_y = np.array(
+                        [
+                            MC_y[i]
+                            for i in range(len(indices))
+                            if np.all(
+                                [
+                                    np.all(np.isfinite(MC_y[i][ivar]))
+                                    for ivar in range(output_vars)
+                                ]
+                            )
+                        ],
+                        dtype=object,
+                    )
 
-        if len(MC_y)<len(indices):
+        if len(MC_y) < len(indices):
             if allow_some_nans:
                 print(
                     "%s of the %s MC samples were not processed correctly (contained only nans) and will be ignored in the punpy output"
-                    % (len(indices)-len(MC_y),len(indices))
+                    % (len(indices) - len(MC_y), len(indices))
                 )
 
             else:
                 print(
                     "%s of the %s MC samples were not processed correctly (contained some nans) and will be ignored in the punpy output"
-                    % (len(indices)-len(MC_y),len(indices))
+                    % (len(indices) - len(MC_y), len(indices))
                 )
 
         if self.verbose:
@@ -1512,14 +1577,14 @@ class MCPropagation:
 
         # if hasattr(MC_y[0,0], '__len__'):
         #     print(yshape,np.array(MC_y[0,0]).shape,np.array(MC_y[1,0]).shape,np.array(MC_y[2,0]).shape,np.array(MC_y[3,0]).shape)
-        if len(MC_y)==0:
+        if len(MC_y) == 0:
             print("this one")
             if output_vars == 1:
-                u_func= np.nan * np.zeros(yshapes[0])
+                u_func = np.nan * np.zeros(yshapes[0])
             else:
                 u_func = np.empty(output_vars, dtype=object)
                 for i in range(output_vars):
-                    u_func[i]= np.nan * np.zeros(yshapes[i])
+                    u_func[i] = np.nan * np.zeros(yshapes[i])
         if output_vars == 1:
             u_func = np.std(MC_y, axis=0, dtype=self.dtype)
 
@@ -1543,7 +1608,6 @@ class MCPropagation:
             else:
                 u_func = np.std(MC_y, axis=0, dtype=self.dtype)
 
-
         if self.verbose:
             print(
                 "std calculated (%s s since creation of prop object)"
@@ -1558,7 +1622,9 @@ class MCPropagation:
         else:
             if output_vars == 1:
                 if fixed_corr is None:
-                    corr_y = cm.calculate_corr(MC_y, corr_dims,PD_corr,dtype=self.dtype)
+                    corr_y = cm.calculate_corr(
+                        MC_y, corr_dims, PD_corr, dtype=self.dtype
+                    )
                 else:
                     corr_y = fixed_corr
 
@@ -1579,10 +1645,13 @@ class MCPropagation:
                 for i in range(output_vars):
                     if fixed_corr is None:
                         if complex_shapes:
-                            corr_ys[i] = cm.calculate_corr(MC_y2[i], corr_dims, PD_corr, self.dtype)
+                            corr_ys[i] = cm.calculate_corr(
+                                MC_y2[i], corr_dims, PD_corr, self.dtype
+                            )
                         else:
                             corr_ys[i] = cm.calculate_corr(
-                                MC_y[:, i], corr_dims, PD_corr, self.dtype)
+                                MC_y[:, i], corr_dims, PD_corr, self.dtype
+                            )
 
                     else:
                         corr_ys[i] = fixed_corr
@@ -1595,7 +1664,9 @@ class MCPropagation:
 
                     corr_out = np.mean(
                         [
-                            cm.calculate_corr(MC_y2[:, :, i],PD_corr=PD_corr,dtype=self.dtype)
+                            cm.calculate_corr(
+                                MC_y2[:, :, i], PD_corr=PD_corr, dtype=self.dtype
+                            )
                             for i in range(len(MC_y2[0, 0]))
                         ],
                         axis=0,

@@ -24,7 +24,7 @@ class DigitalEffectsTableTemplates(ABC):
         :param yunit: unit of the measurand
         :type yunit: string
         """
-        if isinstance(yvariable,str):
+        if isinstance(yvariable, str):
             self.yvariable = [yvariable]
             self.yunit = [yunit]
         else:
@@ -37,8 +37,8 @@ class DigitalEffectsTableTemplates(ABC):
         self,
         dims,
         dim_sizes,
-            str_corr_dims=[],
-            str_repeat_noncorr_dims=[],
+        str_corr_dims=[],
+        str_repeat_noncorr_dims=[],
         store_unc_percent=False,
         repeat_dim_err_corrs=[],
     ):
@@ -72,51 +72,68 @@ class DigitalEffectsTableTemplates(ABC):
                 units = self.yunit[i]
 
             template[self.yvariable[i]] = {
-                    "dtype": np.float32,
-                    "dim": dims[i],
-                    "attributes": {
-                        "units": self.yunit[i],
-                        "unc_comps": [
-                            self.make_ucomp_name(self.yvariable[i],
-                                "ran", store_unc_percent=store_unc_percent
-                            ),
-                            self.make_ucomp_name(self.yvariable[i],
-                                "sys", store_unc_percent=store_unc_percent
-                            ),
-                            self.make_ucomp_name(self.yvariable[i],
-                                "str", store_unc_percent=store_unc_percent
-                            ),
-                        ],
-                    },
-                }
-            template[self.make_ucomp_name(self.yvariable[i],"ran", store_unc_percent=store_unc_percent)] = {
-                    "dtype": np.float32,
-                    "dim": dims[i],
-                    "attributes": {
-                        "units": units,
-                        "err_corr": [
-                            {"dim": dim, "form": "random", "params": [], "units": []}
-                            for dim in dims
-                        ],
-                    },
-                }
-            template[self.make_ucomp_name(self.yvariable[i],"sys", store_unc_percent=store_unc_percent)] ={
-                    "dtype": np.float32,
-                    "dim": dims[i],
-                    "attributes": {
-                        "units": units,
-                        "err_corr": [
-                            {"dim": dim, "form": "systematic", "params": [], "units": []}
-                            for dim in dims
-                        ],
-                    },
-                }
-            template[self.make_ucomp_name(self.yvariable[i],"str", store_unc_percent=store_unc_percent)] = {
-                    "dtype": np.float32,
-                    "dim": dims[i],
-                    "attributes": {"units": units, "err_corr": err_corr},
-                }
-
+                "dtype": np.float32,
+                "dim": dims[i],
+                "attributes": {
+                    "units": self.yunit[i],
+                    "unc_comps": [
+                        self.make_ucomp_name(
+                            self.yvariable[i],
+                            "ran",
+                            store_unc_percent=store_unc_percent,
+                        ),
+                        self.make_ucomp_name(
+                            self.yvariable[i],
+                            "sys",
+                            store_unc_percent=store_unc_percent,
+                        ),
+                        self.make_ucomp_name(
+                            self.yvariable[i],
+                            "str",
+                            store_unc_percent=store_unc_percent,
+                        ),
+                    ],
+                },
+            }
+            template[
+                self.make_ucomp_name(
+                    self.yvariable[i], "ran", store_unc_percent=store_unc_percent
+                )
+            ] = {
+                "dtype": np.float32,
+                "dim": dims[i],
+                "attributes": {
+                    "units": units,
+                    "err_corr": [
+                        {"dim": dim, "form": "random", "params": [], "units": []}
+                        for dim in dims
+                    ],
+                },
+            }
+            template[
+                self.make_ucomp_name(
+                    self.yvariable[i], "sys", store_unc_percent=store_unc_percent
+                )
+            ] = {
+                "dtype": np.float32,
+                "dim": dims[i],
+                "attributes": {
+                    "units": units,
+                    "err_corr": [
+                        {"dim": dim, "form": "systematic", "params": [], "units": []}
+                        for dim in dims
+                    ],
+                },
+            }
+            template[
+                self.make_ucomp_name(
+                    self.yvariable[i], "str", store_unc_percent=store_unc_percent
+                )
+            ] = {
+                "dtype": np.float32,
+                "dim": dims[i],
+                "attributes": {"units": units, "err_corr": err_corr},
+            }
 
             if custom_err_corr is not None:
                 for key in custom_err_corr.keys():
@@ -161,21 +178,29 @@ class DigitalEffectsTableTemplates(ABC):
             else:
                 units = self.yunit[i]
 
-            template[self.yvariable[i]]={
-                    "dtype": np.float32,
-                    "dim": dims[i],
-                    "attributes": {
-                        "units": self.yunit[i],
-                        "unc_comps": [
-                            self.make_ucomp_name(self.yvariable[i],"tot", store_unc_percent=store_unc_percent)
-                        ],
-                    },
-                }
-            template[self.make_ucomp_name(self.yvariable[i],"tot", store_unc_percent=store_unc_percent)]={
-                    "dtype": np.float32,
-                    "dim": dims[i],
-                    "attributes": {"units": units, "err_corr": err_corr},
-                }
+            template[self.yvariable[i]] = {
+                "dtype": np.float32,
+                "dim": dims[i],
+                "attributes": {
+                    "units": self.yunit[i],
+                    "unc_comps": [
+                        self.make_ucomp_name(
+                            self.yvariable[i],
+                            "tot",
+                            store_unc_percent=store_unc_percent,
+                        )
+                    ],
+                },
+            }
+            template[
+                self.make_ucomp_name(
+                    self.yvariable[i], "tot", store_unc_percent=store_unc_percent
+                )
+            ] = {
+                "dtype": np.float32,
+                "dim": dims[i],
+                "attributes": {"units": units, "err_corr": err_corr},
+            }
 
             if custom_err_corr is not None:
                 for key in custom_err_corr.keys():
@@ -196,8 +221,8 @@ class DigitalEffectsTableTemplates(ABC):
         comp_list,
         dims,
         dim_sizes,
-            str_corr_dims=[],
-            str_repeat_noncorr_dims=[],
+        str_corr_dims=[],
+        str_repeat_noncorr_dims=[],
         store_unc_percent=False,
         repeat_dim_err_corrs=[],
         simple_random=True,
@@ -222,28 +247,37 @@ class DigitalEffectsTableTemplates(ABC):
                 units = self.yunit[i]
 
             template[self.yvariable[i]] = {
-                    "dtype": np.float32,
-                    "dim": dims[i],
-                    "attributes": {
-                        "units": self.yunit[i],
-                        "unc_comps": [
-                            self.make_ucomp_name(self.yvariable[i],comp, store_unc_percent=store_unc_percent)
-                            for comp in comp_list
-                        ],
-                    },
-                }
+                "dtype": np.float32,
+                "dim": dims[i],
+                "attributes": {
+                    "units": self.yunit[i],
+                    "unc_comps": [
+                        self.make_ucomp_name(
+                            self.yvariable[i], comp, store_unc_percent=store_unc_percent
+                        )
+                        for comp in comp_list
+                    ],
+                },
+            }
 
             for ic, comp in enumerate(comp_list):
                 if comp == "random" and simple_random:
                     template[
-                        self.make_ucomp_name(self.yvariable[i],comp, store_unc_percent=store_unc_percent)
+                        self.make_ucomp_name(
+                            self.yvariable[i], comp, store_unc_percent=store_unc_percent
+                        )
                     ] = {
                         "dtype": np.float32,
                         "dim": dims[i],
                         "attributes": {
                             "units": units,
                             "err_corr": [
-                                {"dim": dim, "form": "random", "params": [], "units": []}
+                                {
+                                    "dim": dim,
+                                    "form": "random",
+                                    "params": [],
+                                    "units": [],
+                                }
                                 for dim in dims[i]
                             ],
                         },
@@ -251,7 +285,9 @@ class DigitalEffectsTableTemplates(ABC):
 
                 elif comp == "systematic" and simple_systematic:
                     template[
-                        self.make_ucomp_name(self.yvariable[i], comp, store_unc_percent=store_unc_percent)
+                        self.make_ucomp_name(
+                            self.yvariable[i], comp, store_unc_percent=store_unc_percent
+                        )
                     ] = {
                         "dtype": np.float32,
                         "dim": dims[i],
@@ -280,7 +316,9 @@ class DigitalEffectsTableTemplates(ABC):
                     )
 
                     template[
-                        self.make_ucomp_name(self.yvariable[i], comp, store_unc_percent=store_unc_percent)
+                        self.make_ucomp_name(
+                            self.yvariable[i], comp, store_unc_percent=store_unc_percent
+                        )
                     ] = {
                         "dtype": np.float32,
                         "dim": dims[i],
@@ -333,7 +371,7 @@ class DigitalEffectsTableTemplates(ABC):
             else:
                 custom_corr_dims.append(dim)
 
-        if len(str_corr_dims)==0:
+        if len(str_corr_dims) == 0:
             if len(custom_corr_dims) > 0:
                 if len(custom_corr_dims) == 1:
                     corrdim = custom_corr_dims[0]
@@ -344,11 +382,13 @@ class DigitalEffectsTableTemplates(ABC):
                     # for cust_dim in custom_corr_dims:
                     #     dim_sizes[corrdim] *= dim_sizes[cust_dim]
 
-                custom_err_corr_dict = {err_corr_name:{
-                    "dtype": np.float32,
-                    "dim": [corrdim, corrdim],
-                    "attributes": {"units": ""},
-                }}
+                custom_err_corr_dict = {
+                    err_corr_name: {
+                        "dtype": np.float32,
+                        "dim": [corrdim, corrdim],
+                        "attributes": {"units": ""},
+                    }
+                }
 
             # make a combined custom form for the variables that are not repeated dims
             if len(custom_corr_dims) > 0:
@@ -361,9 +401,9 @@ class DigitalEffectsTableTemplates(ABC):
                     }
                 )
         else:
-            custom_err_corr_dict={}
+            custom_err_corr_dict = {}
             for corrdim in str_corr_dims:
-                custom_err_corr_dict[err_corr_name+"_"+corrdim]={
+                custom_err_corr_dict[err_corr_name + "_" + corrdim] = {
                     "dtype": np.float32,
                     "dim": [corrdim, corrdim],
                     "attributes": {"units": ""},
@@ -373,7 +413,7 @@ class DigitalEffectsTableTemplates(ABC):
                     {
                         "dim": corrdim.split("."),
                         "form": "err_corr_matrix",
-                        "params": [err_corr_name+"_"+corrdim],
+                        "params": [err_corr_name + "_" + corrdim],
                         "units": [],
                     }
                 )

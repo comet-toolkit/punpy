@@ -7,7 +7,6 @@ import unittest
 import comet_maths as cm
 import numpy as np
 import numpy.testing as npt
-
 from punpy.mc.mc_propagation import MCPropagation
 
 """___Authorship___"""
@@ -38,17 +37,19 @@ yerr_corr = 2 ** 0.5 * np.ones(200)
 def functionb(x1, x2):
     return 2 * x1 - x2
 
+
 def functionb_fail(x1, x2):
-    zero_or_one=np.random.choice([0,1],p=[0.1,0.9])
-    with np.errstate(divide='raise'):
+    zero_or_one = np.random.choice([0, 1], p=[0.1, 0.9])
+    with np.errstate(divide="raise"):
         try:
-            return 2 * x1 - x2/zero_or_one
+            return 2 * x1 - x2 / zero_or_one
         except:
             return np.nan
 
+
 def functionb_failnan(x1, x2):
-    zero_or_one=np.random.choice([0,1],p=[0.1,0.9])
-    return 2 * x1 - x2/zero_or_one
+    zero_or_one = np.random.choice([0, 1], p=[0.1, 0.9])
+    return 2 * x1 - x2 / zero_or_one
 
 
 x1b = np.ones((20, 30)) * 50
@@ -282,7 +283,10 @@ class TestMCPropagation(unittest.TestCase):
     def test_propagate_systematic_2D_corrdict(self):
         prop = MCPropagation(20000)
 
-        corrb = [{"0":np.eye(len(xerrb[:,0].ravel())),"1":np.eye(len(xerrb[0].ravel()))} for xerrb in xerrsb]
+        corrb = [
+            {"0": np.eye(len(xerrb[:, 0].ravel())), "1": np.eye(len(xerrb[0].ravel()))}
+            for xerrb in xerrsb
+        ]
         ufb, ucorrb = prop.propagate_systematic(
             functionb,
             xsb,
@@ -295,7 +299,7 @@ class TestMCPropagation(unittest.TestCase):
             functionb,
             xsb,
             xerrsb,
-            corr_x=[{"0":np.eye(len(xerrsb[0])),"1":"syst"}, "syst"],
+            corr_x=[{"0": np.eye(len(xerrsb[0])), "1": "syst"}, "syst"],
             return_corr=True,
         )
 
@@ -762,20 +766,19 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ufd[1], yerr_uncorrd[1], rtol=0.06)
 
     def test_failed_processing(self):
-        prop = MCPropagation(10000, parallel_cores=4,verbose=True)
+        prop = MCPropagation(10000, parallel_cores=4, verbose=True)
         ufb, ucorrb = prop.propagate_random(
             functionb_fail, xsb, xerrsb, return_corr=True
         )
         npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.06)
         npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
 
-        prop = MCPropagation(10000, parallel_cores=4,verbose=True)
+        prop = MCPropagation(10000, parallel_cores=4, verbose=True)
         ufb, ucorrb = prop.propagate_random(
             functionb_failnan, xsb, xerrsb, return_corr=True
         )
         npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.06)
         npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
-
 
     def test_perform_checks(self):
         prop = MCPropagation(20000)

@@ -61,10 +61,11 @@ class IdealGasLaw(MeasurementFunction):
     def meas_function(pres, temp, n):
         return (n * temp * 8.134) / pres
 
+
 # Define your measurement function inside a subclass of MeasurementFunction
 class IdealGasLaw_2out(MeasurementFunction):
     def meas_function(self, pres, temp, n):
-        return (n * temp * 8.134) / pres, pres/temp
+        return (n * temp * 8.134) / pres, pres / temp
 
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -96,11 +97,17 @@ class TestMeasurementFunction(unittest.TestCase):
         prop = MCPropagation(1000, dtype="float32", verbose=False, parallel_cores=4)
 
         gl = IdealGasLaw(
-            prop, ["pressure", "temperature", "n_moles"], yvariable="volume", yunit="m^3"
+            prop,
+            ["pressure", "temperature", "n_moles"],
+            yvariable="volume",
+            yunit="m^3",
         )
         ds_y_tot = gl.propagate_ds_total(ds)
 
-        npt.assert_(ds_y_tot["u_tot_volume"].attrs["err_corr_1_params"][0] in list(ds_y_tot.variables))
+        npt.assert_(
+            ds_y_tot["u_tot_volume"].attrs["err_corr_1_params"][0]
+            in list(ds_y_tot.variables)
+        )
 
         npt.assert_allclose(ds_y_tot["volume"].values, volume, rtol=0.002)
 
@@ -116,7 +123,9 @@ class TestMeasurementFunction(unittest.TestCase):
         )
         ds_y = gl.propagate_ds(ds)
 
-        npt.assert_(ds_y["u_str_volume"].attrs["err_corr_3_params"][0] in list(ds_y.variables))
+        npt.assert_(
+            ds_y["u_str_volume"].attrs["err_corr_3_params"][0] in list(ds_y.variables)
+        )
 
         npt.assert_allclose(ds_y["volume"].values, volume, rtol=0.002)
         npt.assert_allclose(ds_y["u_ran_volume"].values, u_ran_volume, rtol=0.08)
@@ -143,7 +152,10 @@ class TestMeasurementFunction(unittest.TestCase):
         prop = MCPropagation(1000, dtype="float32", verbose=False)
 
         gl = IdealGasLaw_2out(
-            prop, ["pressure", "temperature", "n_moles"], yvariable=["volume","P/T"], yunit=["m^3","Pa/K"]
+            prop,
+            ["pressure", "temperature", "n_moles"],
+            yvariable=["volume", "P/T"],
+            yunit=["m^3", "Pa/K"],
         )
         ds_y_tot = gl.propagate_ds_total(ds)
 
@@ -193,7 +205,7 @@ class TestMeasurementFunction(unittest.TestCase):
             ["pressure", "temperature", "n_moles"],
             yvariable="volume",
             yunit="m^3",
-            corr_dims=["0.1",2],
+            corr_dims=["0.1", 2],
         )
         ds_y_tot = gl.propagate_ds_total(ds)
 
@@ -206,14 +218,13 @@ class TestMeasurementFunction(unittest.TestCase):
             ["pressure", "temperature", "n_moles"],
             yvariable="volume",
             yunit="m^3",
-            corr_dims=["x.y","time"],
+            corr_dims=["x.y", "time"],
         )
         ds_y_tot = gl.propagate_ds_total(ds)
 
         npt.assert_allclose(ds_y_tot["volume"].values, volume, rtol=0.002)
 
         npt.assert_allclose(ds_y_tot["u_tot_volume"].values, u_tot_volume, rtol=0.1)
-
 
     def test_hypernets_repeat_dim(self):
         prop = MCPropagation(3000, dtype="float32", parallel_cores=1, verbose=False)
@@ -234,7 +245,7 @@ class TestMeasurementFunction(unittest.TestCase):
         )
 
         hmf.setup(0.1)
-        y = hmf.run(calib_data, L0data.variables,L0data)
+        y = hmf.run(calib_data, L0data.variables, L0data)
         u_y_rand = hmf.propagate_random(L0data, calib_data)
         # print(u_y_rand,L0data)
         mask = np.where(
