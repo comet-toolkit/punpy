@@ -8,7 +8,7 @@
 punpy in combination with digital effects tables
 =======================================================
 In this section we explain how punpy can be used for propagating uncertainties in digital effects tables through a measurement function.
-For details on how to create these digital effects tables, we refer to the `obsarray documentation <>`_.
+For details on how to create these digital effects tables, we refer to the `obsarray documentation <https://obsarray.readthedocs.io/en/latest/>`_.
 Once the digital effects tables are created, this is the most concise method for propagating uncertainties.
 The code in this section is just as illustration and we refer to the the CoMet website `examples <https://www.comet-toolkit.org/examples/>`_ for example with all requied information for running punpy.
 The punpy package can propagate the various types of correlated uncertainties that can be stored in digital effects tables through a given measurement function. In the next subsection we discuss how these measurement functions need to be defined in order to use the digital effects tables.
@@ -152,10 +152,10 @@ functions for propagating uncertainties
 In the above example, we show an example of using the propagate_ds() function to obtain a
 measurand effects table that has separate contributions for the random, systematic and structured uncertainties.
 Depending on what uncertainty components one is interested in, there are a number of functions that can be used:
--  propagate_ds: measurand digital effects table with separate contributions for the random, systematic and structured uncertainties.
--  propagate_ds_tot: measurand digital effects table with one combined contribution for the total uncertainty (and error correlation matrix).
--  propagate_ds_specific: measurand digital effects table with separate contributions for a list of named uncertainty contributions provided by the user.
--  propagate_ds_all: measurand digital effects table with separate contributions for all the individual uncertainty contributions in the input quantities in the provided input digital effects tables.
+*  propagate_ds: measurand digital effects table with separate contributions for the random, systematic and structured uncertainties.
+*  propagate_ds_tot: measurand digital effects table with one combined contribution for the total uncertainty (and error correlation matrix).
+*  propagate_ds_specific: measurand digital effects table with separate contributions for a list of named uncertainty contributions provided by the user.
+*  propagate_ds_all: measurand digital effects table with separate contributions for all the individual uncertainty contributions in the input quantities in the provided input digital effects tables.
 
 It is worth noting that the uncertainty components labelled in the measurand digital effect tables as
 "random" or "systematic" (either in propagate_ds, propagate_ds_specific or propagate_ds_all),
@@ -180,8 +180,11 @@ the introduced error-correlation along the measurand dimension should be random 
 a constant temperature is assumed and applied along the time dimension, but we know in
 reality the temperature is fluctuating randomly w.r.t. to assumed temperature). It can
 also be structured. Detailed understanding of the problem is thus required when the measurand
-dimensions are not present along the measurand dimensions. These broadcast error correlations can
-be set in punpy using ... Depending on how this broadcast error correlation combines with
+dimensions are not present along the measurand dimensions. By default, punpy assumes that
+the error correlation along the missing dimensions is systematic. If another error correlation is required,
+this can be done by setting the `expand` keyword to True and the `broadcast_correlation` to the
+appropriate error correlation (either "rand", "syst" or an error correlation matrix as a numpy array).
+Depending on how this broadcast error correlation combines with
 the error correlations in the other dimensions, can also affect which measurand uncertainty component
 (random, systematic or structured) it contributes to when using propagate_ds.
 

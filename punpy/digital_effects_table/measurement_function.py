@@ -38,6 +38,7 @@ class MeasurementFunction(ABC):
         refxvar=None,
         sizes_dict=None,
         use_err_corr_dict=False,
+        broadcast_correlation="syst"
     ):
         """
         Initialise MeasurementFunction
@@ -54,7 +55,7 @@ class MeasurementFunction(ABC):
         :type yunit: str, optional
         :param corr_between: Allows to specify the (average) error correlation coefficient between the various input quantities. Defaults to None, in which case no error-correlation is assumed.
         :type corr_between: numpy.ndarray , optional
-        :param param_fixed: when repeat_dims>=0, set to true or false to indicate for each input quantity whether it has repeated measurements that should be split (param_fixed=False) or whether the input is fixed (param fixed=True), defaults to None (no inputs fixed).
+        :param param_fixed: set to true or false to indicate for each input quantity whether it has to remain unmodified either when expand=true or when using repeated measurements, defaults to None (no inputs fixed).
         :type param_fixed: list of bools, optional
         :param repeat_dims: Used to select the axis which has repeated measurements. Axis can be specified using the name(s) of the dimension, or their index in the ydims. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
         :type repeat_dims: str or int or list(str) or list(int), optional
@@ -171,6 +172,8 @@ class MeasurementFunction(ABC):
             self.prop.verbose,
             self.templ,
             use_err_corr_dict,
+            broadcast_correlation,
+            param_fixed
         )
 
         self.use_err_corr_dict = use_err_corr_dict
@@ -486,7 +489,7 @@ class MeasurementFunction(ABC):
                     ds_out[ucomp].values = u_tot_y[i]
 
                 if include_corr:
-                    if len(self.str_corr_dims) == 1:
+                    if len(self.str_corr_dims) <= 1:
                         ds_out["err_corr_tot_" + self.yvariable[i]].values = corr_tot_y[
                             i
                         ]
@@ -614,7 +617,6 @@ class MeasurementFunction(ABC):
             corr_comp_y = None
             if comp == "random":
                 u_comp_y = self.propagate_random(*args, expand=expand)
-
             elif comp == "systematic":
                 u_comp_y = self.propagate_systematic(*args, expand=expand)
 
@@ -642,9 +644,12 @@ class MeasurementFunction(ABC):
 
             for i in range(self.output_vars):
                 if corr_comp_y is not None:
-                    ds_out[
-                        "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable[i]
-                    ].values = corr_comp_y[i]
+                    try:
+                        ds_out[
+                            "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable[i]
+                        ].values = corr_comp_y[i]
+                    except:
+                        warnings.warn("not able to set %s in the output dataset"%("err_corr_" + comp_list_out[icomp] + "_" + self.yvariable[i]))
                 else:
                     try:
                         ds_out.drop(
@@ -783,6 +788,20 @@ class MeasurementFunction(ABC):
                     for dataset in args:
                         try:
                             self.ydims[i] = dataset[self.refxvar].dims
+                        except:
+                            continue
+
+        if self.sizes_dict is None:
+            self.sizes_dict = {}
+            for i in range(self.output_vars):
+                if ds_out_pre is not None:
+                    for idim, dim in enumerate(self.ydims[i]):
+                        self.sizes_dict[dim] = ds_out_pre[self.yvariable[i]].values.shape[idim]
+                else:
+                    for dataset in args:
+                        try:
+                            for idim, dim in enumerate(self.ydims[i]):
+                                self.sizes_dict[dim] = dataset[self.refxvar].values.shape[idim]
                         except:
                             continue
 
@@ -1038,11 +1057,12 @@ class MeasurementFunction(ABC):
         """
         y = self.check_sizes_and_run(*args, expand=expand)
         input_qty = self.utils.get_input_qty(
-            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
+            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
         input_unc = self.utils.get_input_unc(
-            "rand", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
+            "rand", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
+
         if all([iu is None for iu in input_unc]):
             return None
 
@@ -1073,10 +1093,10 @@ class MeasurementFunction(ABC):
         """
         y = self.check_sizes_and_run(*args, expand=expand)
         input_qty = self.utils.get_input_qty(
-            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
+            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
         input_unc = self.utils.get_input_unc(
-            "syst", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
+            "syst", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
         if all([iu is None for iu in input_unc]):
             return None
@@ -1109,13 +1129,13 @@ class MeasurementFunction(ABC):
         """
         y = self.check_sizes_and_run(*args, expand=expand)
         input_qty = self.utils.get_input_qty(
-            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
+            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
         input_unc = self.utils.get_input_unc(
-            "stru", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
+            "stru", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
         input_corr = self.utils.get_input_corr(
-            "stru", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
+            "stru", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
 
         if all([iu is None for iu in input_unc]):
@@ -1172,13 +1192,13 @@ class MeasurementFunction(ABC):
         y = self.check_sizes_and_run(*args, expand=expand)
 
         input_qty = self.utils.get_input_qty(
-            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
+            args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
         input_unc = self.utils.get_input_unc(
-            form, args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
+            form, args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
         input_corr = self.utils.get_input_corr(
-            form, args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims[0]
+            form, args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
         if all([iu is None for iu in input_unc]):
             return None, None
@@ -1193,6 +1213,7 @@ class MeasurementFunction(ABC):
                 MC_y = self.prop.run_samples(
                     self.meas_function, MC_x, output_vars=self.output_vars
                 )
+
                 return self.prop.process_samples(
                     MC_x,
                     MC_y,

@@ -1091,11 +1091,13 @@ class MCPropagation:
                 outs[0] = np.empty(
                     (
                         output_vars,
-                        n_repeats,
-                    )
-                    + out_0[0].shape,
-                    dtype=self.dtype,
+                    ),
+                    dtype=object,
                 )
+                for i in range(output_vars):
+                    outs[0][i]=np.empty((n_repeats,
+                                         )
+                                        + out_0[i].shape,dtype=self.dtype)
 
             # elif (out_0[0][0].ndim) > 1:
             #     outs[0] = np.empty((output_vars,len(out_0[0][0]),n_repeats,)+out_0[0][0].shape)
@@ -1104,11 +1106,14 @@ class MCPropagation:
                 outs[0] = np.empty(
                     (
                         output_vars,
-                        n_repeats,
-                    )
-                    + out_0[0][0].shape,
-                    dtype=self.dtype,
+                    ),
+                    dtype=object,
                 )
+                for i in range(output_vars):
+                    outs[0][i]=np.empty((n_repeats,
+                                         )
+                                        + out_0[0][i].shape,dtype=self.dtype)
+
 
             extra_index = 0
             if return_corr:
@@ -1297,8 +1302,7 @@ class MCPropagation:
         if not return_corr and output_vars == 1 and not return_samples:
             u_func = np.array(outs, dtype=self.dtype)
         else:
-            u_func = np.array(outs[0], dtype=self.dtype)
-
+            u_func = np.array(outs[0])
         if len(repeat_dims) == 1:
             if output_vars == 1:
                 u_func = np.squeeze(np.moveaxis(u_func, 0, repeat_dims[0]))
@@ -1593,8 +1597,13 @@ class MCPropagation:
 
         # if hasattr(MC_y[0,0], '__len__'):
         #     print(yshape,np.array(MC_y[0,0]).shape,np.array(MC_y[1,0]).shape,np.array(MC_y[2,0]).shape,np.array(MC_y[3,0]).shape)
+        if yshapes is None:
+            if output_vars>1:
+                yshapes=[MC_y[0][i].shape for i in range(output_vars)]
+            else:
+                yshapes=MC_y[0].shape
+
         if len(MC_y) == 0:
-            print("this one")
             if output_vars == 1:
                 u_func = np.nan * np.zeros(yshapes[0])
             else:
@@ -1611,7 +1620,7 @@ class MCPropagation:
             elif all([yshapes[i] == yshapes[0] for i in range(len(yshapes))]):
                 complex_shapes = False
 
-            elif complex_shapes:
+            if complex_shapes:
                 MC_y2 = np.empty(output_vars, dtype=object)
                 u_func = np.empty(output_vars, dtype=object)
 

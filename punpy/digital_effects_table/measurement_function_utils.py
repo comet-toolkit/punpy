@@ -22,6 +22,8 @@ class MeasurementFunctionUtils:
         verbose,
         templ,
         use_err_corr_dict,
+        broadcast_correlation,
+        param_fixed
     ):
         """
         Initialise MeasurementFunctionUtils
@@ -46,6 +48,8 @@ class MeasurementFunctionUtils:
         self.templ = templ
         self.repeat_dims_form = "structured"
         self.use_err_corr_dict = use_err_corr_dict
+        self.broadcast_correlation = broadcast_correlation
+        self.param_fixed = param_fixed
 
     def find_repeat_dim_corr(self, form, *args, store_unc_percent=False, ydims=None):
         """
@@ -168,7 +172,7 @@ class MeasurementFunctionUtils:
                 pass
             else:
                 raise ValueError(
-                    "punpy.measurement_function: Not all included uncertainty contributions have the same error correlation along the repeat_dims. Either don't use repeat_dims or use a different method, where components are propagated seperately."
+                    "punpy.measurement_function: Not all included uncertainty contributions have the same error correlation along the %s dim. Either don't use repeat_dims and/or corr_dims or use a different method, where components are propagated seperately."%(repeat_dims_errcorr['dim'])
                 )
 
     def set_repeat_dims_form(self, repeat_dims_errcorrs):
@@ -248,7 +252,7 @@ class MeasurementFunctionUtils:
             comps = dataset.unc[var].random_comps
             if comps is not None:
                 comps = list(comps.variables.mapping.keys())
-            if len(dataset[var].dims) < len(ydims):
+            if len(dataset[var].dims) < len(ydims[0]):
                 comps = []
         elif form == "sys" or form == "systematic":
             comps = dataset.unc[var].systematic_comps
@@ -260,7 +264,7 @@ class MeasurementFunctionUtils:
                 comps = list(comps.variables.mapping.keys())
             else:
                 comps = []
-            if len(dataset[var].dims) < len(ydims):
+            if len(dataset[var].dims) < len(ydims[0]):
                 comps_rand = dataset.unc[var].random_comps
                 if comps_rand is not None:
                     comps.append(*list(comps_rand.variables.mapping.keys()))
@@ -296,9 +300,9 @@ class MeasurementFunctionUtils:
         if expand:
             if sizes_dict is None:
                 raise ValueError("sizes_dict should be set when using expand.")
-            if ydims is None:
+            if ydims[0] is None:
                 raise ValueError("ydims should be set when using expand.")
-            datashape = [sizes_dict[dim] for dim in ydims]
+            datashape = [sizes_dict[dim] for dim in ydims[0]]
 
         inputs = np.empty(len(self.xvariables), dtype=object)
         for iv, var in enumerate(self.xvariables):
@@ -309,21 +313,21 @@ class MeasurementFunctionUtils:
                         inputs[iv] = dataset[var].values
                         found = True
                         if expand:
-                            if inputs[iv].shape != datashape:
+                            if (inputs[iv].shape != datashape) and (not self.param_fixed[iv]):
                                 add_dims = [
-                                    dim for dim in ydims if dim not in dataset[var].dims
+                                    dim for dim in ydims[0] if dim not in dataset[var].dims
                                 ]
                                 for dim in add_dims:
-                                    tileshape = np.ones(len(ydims), dtype=int)
+                                    tileshape = np.ones(len(ydims[0]), dtype=int)
                                     if len(inputs[iv].shape) != len(datashape):
                                         tileshape[0] = sizes_dict[dim]
                                         inputs[iv] = np.tile(inputs[iv], tileshape)
                                         for idim2, dim2 in enumerate(add_dims):
                                             inputs[iv] = np.moveaxis(
-                                                inputs[iv], idim2, ydims.index(dim2)
+                                                inputs[iv], idim2, ydims[0].index(dim2)
                                             )
                                     else:
-                                        tileshape[ydims.index(dim)] = sizes_dict[dim]
+                                        tileshape[ydim[0].index(dim)] = sizes_dict[dim]
                                         inputs[iv] = np.tile(inputs[iv], tileshape)
                 elif var in dataset.keys():
                     inputs[iv] = dataset[var]
@@ -358,8 +362,8 @@ class MeasurementFunctionUtils:
                 for dataset in args[0]:
                     if hasattr(dataset, "variables"):
                         if var in dataset.variables:
-                            if ydims is not None:
-                                if np.all([dim in dataset[var].dims for dim in ydims]):
+                            if ydims[0] is not None:
+                                if np.all([dim in dataset[var].dims for dim in ydims[0]]):
                                     inputs_unc[iv] = self.calculate_unc(
                                         form, dataset, var
                                     )
@@ -466,9 +470,9 @@ class MeasurementFunctionUtils:
         if expand:
             if sizes_dict is None:
                 raise ValueError("sizes_dict should be set when using expand.")
-            if ydims is None:
+            if ydims[0] is None:
                 raise ValueError("ydims should be set when using expand.")
-            datashape = [sizes_dict[dim] for dim in ydims]
+            datashape = [sizes_dict[dim] for dim in ydims[0]]
 
         if (form == "rand") and (self.repeat_dims_form != "random"):
             out = None
@@ -492,14 +496,14 @@ class MeasurementFunctionUtils:
             out = self.calculate_unc(form, ds, var)
 
         if expand and (out is not None):
-            add_dims = [dim for dim in ydims if dim not in ds[var].dims]
+            add_dims = [dim for dim in ydims[0] if dim not in ds[var].dims]
             for dim in add_dims:
-                tileshape = np.ones(len(ydims), dtype=int)
+                tileshape = np.ones(len(ydims[0]), dtype=int)
                 if len(out.shape) != len(datashape):
                     tileshape[0] = sizes_dict[dim]
-                    out = np.moveaxis(np.tile(out, tileshape), 0, ydims.index(dim))
+                    out = np.moveaxis(np.tile(out, tileshape), 0, ydims[0].index(dim))
                 else:
-                    tileshape[ydims.index(dim)] = sizes_dict[dim]
+                    tileshape[ydims[0].index(dim)] = sizes_dict[dim]
                     out = np.tile(out, tileshape)
         return out
 
@@ -714,8 +718,16 @@ class MeasurementFunctionUtils:
 
         if expand and (out is not None):
             out_1 = cm.expand_errcorr_dims(out, vardims, outdims, sizes_dict)
+            if self.broadcast_correlation=="syst" or self.broadcast_correlation=="systematic":
+                broadcast_correlation=np.ones((missinglen, missinglen))
+            elif self.broadcast_correlation=="rand" or self.broadcast_correlation=="random":
+                broadcast_correlation=np.eye(missinglen)
+            elif isinstance(self.broadcast_correlation, np.ndarray):
+                broadcast_correlation=self.broadcast_correlation
+            else:
+                raise ValueError("punpy.measurement_function_utils: The provided broadcast_correlation is not valid.")
             out_2 = cm.expand_errcorr_dims(
-                np.ones((missinglen, missinglen)), missingdims, outdims, sizes_dict
+                broadcast_correlation, missingdims, outdims, sizes_dict
             )
             out = out_1.dot(out_2)
 

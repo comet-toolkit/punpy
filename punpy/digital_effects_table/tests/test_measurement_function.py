@@ -226,7 +226,7 @@ class TestMeasurementFunction(unittest.TestCase):
 
         npt.assert_allclose(ds_y_tot["u_tot_volume"].values, u_tot_volume, rtol=0.1)
 
-    def test_hypernets_repeat_dim(self):
+    def test_hypernets(self):
         prop = MCPropagation(3000, dtype="float32", parallel_cores=1, verbose=False)
 
         hmf = HypernetsMF(
@@ -247,11 +247,12 @@ class TestMeasurementFunction(unittest.TestCase):
         hmf.setup(0.1)
         y = hmf.run(calib_data, L0data.variables, L0data)
         u_y_rand = hmf.propagate_random(L0data, calib_data)
+        print(u_y_rand)
         # print(u_y_rand,L0data)
         mask = np.where(
             (
-                (L1data["wavelength"].values < 1350)
-                | (L1data["wavelength"].values > 1450)
+                    (L1data["wavelength"].values < 1350)
+                    | (L1data["wavelength"].values > 1450)
             )
         )
 
@@ -272,9 +273,39 @@ class TestMeasurementFunction(unittest.TestCase):
             u_y_tot[mask] / y[mask] * 100,
             rtol=0.05,
             atol=0.05,
+            )
+
+    def test_hypernets_expand(self):
+        prop = MCPropagation(3000, dtype="float32", parallel_cores=1, verbose=False)
+
+        hmf = HypernetsMF(
+            prop=prop,
+            xvariables=[
+                "digital_number",
+                "gains",
+                "dark_signal",
+                "non_linearity_coefficients",
+                "integration_time",
+            ],
+            uncxvariables=["gains"],
+            yvariable="irradiance",
+            yunit="W m^-2",
+            corr_between=None,
+            param_fixed=[False,False,False,True,False],
+            broadcast_correlation="rand",
         )
 
-    def test_hypernets_repeat_dim2(self):
+        hmf.setup(0.1)
+
+        ds_tot = hmf.propagate_ds_total(L0data, calib_data, store_unc_percent=True, expand=True)
+        npt.assert_allclose(ds_tot["err_corr_tot_irradiance"].values[:9,:9], np.eye(9), atol=0.07)
+
+        ds_tot = hmf.propagate_ds_total(L0data, calib_data, store_unc_percent=True, expand=False)
+        npt.assert_allclose(ds_tot["err_corr_tot_irradiance"].values[:9,:9], np.ones((9,9)), atol=0.07)
+
+
+
+    def test_hypernets_repeat_dim(self):
         prop = MCPropagation(3000, dtype="float32", parallel_cores=0, verbose=False)
 
         hmf = HypernetsMF(
