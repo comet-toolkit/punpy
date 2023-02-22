@@ -998,7 +998,7 @@ class MeasurementFunction(ABC):
             args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
         input_unc = self.utils.get_input_unc(
-            "tot", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+            "tot", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims,corr_dims=self.str_corr_dims,
         )
         input_corr = self.utils.get_input_corr(
             "tot", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
@@ -1060,7 +1060,7 @@ class MeasurementFunction(ABC):
             args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
         input_unc = self.utils.get_input_unc(
-            "rand", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+            "rand", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims,corr_dims=self.str_corr_dims,
         )
 
         if all([iu is None for iu in input_unc]):
@@ -1096,7 +1096,7 @@ class MeasurementFunction(ABC):
             args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
         input_unc = self.utils.get_input_unc(
-            "syst", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+            "syst", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims,corr_dims=self.str_corr_dims,
         )
         if all([iu is None for iu in input_unc]):
             return None
@@ -1132,7 +1132,7 @@ class MeasurementFunction(ABC):
             args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
         input_unc = self.utils.get_input_unc(
-            "stru", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+            "stru", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims,corr_dims=self.str_corr_dims,
         )
         input_corr = self.utils.get_input_corr(
             "stru", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
@@ -1195,7 +1195,7 @@ class MeasurementFunction(ABC):
             args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
         input_unc = self.utils.get_input_unc(
-            form, args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
+            form, args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims,corr_dims=self.str_corr_dims,
         )
         input_corr = self.utils.get_input_corr(
             form, args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims

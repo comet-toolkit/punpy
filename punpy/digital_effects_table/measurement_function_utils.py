@@ -338,7 +338,7 @@ class MeasurementFunctionUtils:
 
         return inputs
 
-    def get_input_unc(self, form, *args, ydims=None, sizes_dict=None, expand=False):
+    def get_input_unc(self, form, *args, ydims=None, sizes_dict=None, expand=False, corr_dims=[]):
         """
         Function to extract uncertainties on the input quantities from datasets and return as list of arrays.
 
@@ -355,6 +355,12 @@ class MeasurementFunctionUtils:
         :return: list of uncertainty values (as np.ndarray) for each of the input quantites.
         :rtype: list(np.ndarray)
         """
+
+        if len(corr_dims)>0:
+            required_dims=corr_dims
+        else:
+            required_dims=ydims[0]
+
         inputs_unc = np.empty(len(self.xvariables), dtype=object)
         for iv, var in enumerate(self.xvariables):
             inputs_unc[iv] = None
@@ -363,7 +369,7 @@ class MeasurementFunctionUtils:
                     if hasattr(dataset, "variables"):
                         if var in dataset.variables:
                             if ydims[0] is not None:
-                                if np.all([dim in dataset[var].dims for dim in ydims[0]]):
+                                if np.all([dim in dataset[var].dims for dim in required_dims]):
                                     inputs_unc[iv] = self.calculate_unc(
                                         form, dataset, var
                                     )

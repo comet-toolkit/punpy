@@ -311,6 +311,7 @@ class LPUPropagation:
         :return: uncertainties on measurand
         :rtype: array
         """
+        x=[np.array(xi) for xi in x]
         (
             fun,
             xflat,
@@ -397,6 +398,8 @@ class LPUPropagation:
                     corrs[i] = np.ones((len(x[i].ravel()), len(x[i].ravel())))
                 elif corr_x[i] == "rand":
                     corrs[i] = np.eye(len(x[i].ravel()))
+                elif corr_x[i] is None:
+                    corrs[i] = np.zeros((len(x[i].ravel()), len(x[i].ravel())))
                 else:
                     corrs[i] = corr_x[i]
 
