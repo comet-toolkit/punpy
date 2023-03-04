@@ -4,6 +4,7 @@ from multiprocessing import Pool
 
 import comet_maths as cm
 import numpy as np
+
 import punpy.utilities.utilities as util
 
 """___Authorship___"""
@@ -311,7 +312,7 @@ class LPUPropagation:
         :return: uncertainties on measurand
         :rtype: array
         """
-        x=[np.array(xi) for xi in x]
+        x = [np.array(xi) for xi in x]
         (
             fun,
             xflat,

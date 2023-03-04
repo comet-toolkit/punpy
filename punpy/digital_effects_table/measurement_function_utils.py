@@ -23,7 +23,7 @@ class MeasurementFunctionUtils:
         templ,
         use_err_corr_dict,
         broadcast_correlation,
-        param_fixed
+        param_fixed,
     ):
         """
         Initialise MeasurementFunctionUtils
@@ -172,7 +172,8 @@ class MeasurementFunctionUtils:
                 pass
             else:
                 raise ValueError(
-                    "punpy.measurement_function: Not all included uncertainty contributions have the same error correlation along the %s dim. Either don't use repeat_dims and/or corr_dims or use a different method, where components are propagated seperately."%(repeat_dims_errcorr['dim'])
+                    "punpy.measurement_function: Not all included uncertainty contributions have the same error correlation along the %s dim. Either don't use repeat_dims and/or corr_dims or use a different method, where components are propagated seperately."
+                    % (repeat_dims_errcorr["dim"])
                 )
 
     def set_repeat_dims_form(self, repeat_dims_errcorrs):
@@ -313,9 +314,13 @@ class MeasurementFunctionUtils:
                         inputs[iv] = dataset[var].values
                         found = True
                         if expand:
-                            if (inputs[iv].shape != datashape) and (not self.param_fixed[iv]):
+                            if (inputs[iv].shape != datashape) and (
+                                not self.param_fixed[iv]
+                            ):
                                 add_dims = [
-                                    dim for dim in ydims[0] if dim not in dataset[var].dims
+                                    dim
+                                    for dim in ydims[0]
+                                    if dim not in dataset[var].dims
                                 ]
                                 for dim in add_dims:
                                     tileshape = np.ones(len(ydims[0]), dtype=int)
@@ -338,7 +343,9 @@ class MeasurementFunctionUtils:
 
         return inputs
 
-    def get_input_unc(self, form, *args, ydims=None, sizes_dict=None, expand=False, corr_dims=[]):
+    def get_input_unc(
+        self, form, *args, ydims=None, sizes_dict=None, expand=False, corr_dims=[]
+    ):
         """
         Function to extract uncertainties on the input quantities from datasets and return as list of arrays.
 
@@ -356,10 +363,10 @@ class MeasurementFunctionUtils:
         :rtype: list(np.ndarray)
         """
 
-        if len(corr_dims)>0:
-            required_dims=corr_dims
+        if len(corr_dims) > 0:
+            required_dims = corr_dims
         else:
-            required_dims=ydims[0]
+            required_dims = ydims[0]
 
         inputs_unc = np.empty(len(self.xvariables), dtype=object)
         for iv, var in enumerate(self.xvariables):
@@ -369,7 +376,9 @@ class MeasurementFunctionUtils:
                     if hasattr(dataset, "variables"):
                         if var in dataset.variables:
                             if ydims[0] is not None:
-                                if np.all([dim in dataset[var].dims for dim in required_dims]):
+                                if np.all(
+                                    [dim in dataset[var].dims for dim in required_dims]
+                                ):
                                     inputs_unc[iv] = self.calculate_unc(
                                         form, dataset, var
                                     )
@@ -724,14 +733,22 @@ class MeasurementFunctionUtils:
 
         if expand and (out is not None):
             out_1 = cm.expand_errcorr_dims(out, vardims, outdims, sizes_dict)
-            if self.broadcast_correlation=="syst" or self.broadcast_correlation=="systematic":
-                broadcast_correlation=np.ones((missinglen, missinglen))
-            elif self.broadcast_correlation=="rand" or self.broadcast_correlation=="random":
-                broadcast_correlation=np.eye(missinglen)
+            if (
+                self.broadcast_correlation == "syst"
+                or self.broadcast_correlation == "systematic"
+            ):
+                broadcast_correlation = np.ones((missinglen, missinglen))
+            elif (
+                self.broadcast_correlation == "rand"
+                or self.broadcast_correlation == "random"
+            ):
+                broadcast_correlation = np.eye(missinglen)
             elif isinstance(self.broadcast_correlation, np.ndarray):
-                broadcast_correlation=self.broadcast_correlation
+                broadcast_correlation = self.broadcast_correlation
             else:
-                raise ValueError("punpy.measurement_function_utils: The provided broadcast_correlation is not valid.")
+                raise ValueError(
+                    "punpy.measurement_function_utils: The provided broadcast_correlation is not valid."
+                )
             out_2 = cm.expand_errcorr_dims(
                 broadcast_correlation, missingdims, outdims, sizes_dict
             )

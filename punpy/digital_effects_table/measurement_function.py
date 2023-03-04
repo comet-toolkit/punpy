@@ -7,6 +7,7 @@ from abc import ABC,abstractmethod
 
 import numpy as np
 import obsarray
+
 from punpy.digital_effects_table.digital_effects_table_templates import (
     DigitalEffectsTableTemplates,)
 from punpy.digital_effects_table.measurement_function_utils import (
@@ -38,7 +39,7 @@ class MeasurementFunction(ABC):
         refxvar=None,
         sizes_dict=None,
         use_err_corr_dict=False,
-        broadcast_correlation="syst"
+        broadcast_correlation="syst",
     ):
         """
         Initialise MeasurementFunction
@@ -173,7 +174,7 @@ class MeasurementFunction(ABC):
             self.templ,
             use_err_corr_dict,
             broadcast_correlation,
-            param_fixed
+            param_fixed,
         )
 
         self.use_err_corr_dict = use_err_corr_dict
@@ -649,7 +650,15 @@ class MeasurementFunction(ABC):
                             "err_corr_" + comp_list_out[icomp] + "_" + self.yvariable[i]
                         ].values = corr_comp_y[i]
                     except:
-                        warnings.warn("not able to set %s in the output dataset"%("err_corr_" + comp_list_out[icomp] + "_" + self.yvariable[i]))
+                        warnings.warn(
+                            "not able to set %s in the output dataset"
+                            % (
+                                "err_corr_"
+                                + comp_list_out[icomp]
+                                + "_"
+                                + self.yvariable[i]
+                            )
+                        )
                 else:
                     try:
                         ds_out.drop(
@@ -796,12 +805,16 @@ class MeasurementFunction(ABC):
             for i in range(self.output_vars):
                 if ds_out_pre is not None:
                     for idim, dim in enumerate(self.ydims[i]):
-                        self.sizes_dict[dim] = ds_out_pre[self.yvariable[i]].values.shape[idim]
+                        self.sizes_dict[dim] = ds_out_pre[
+                            self.yvariable[i]
+                        ].values.shape[idim]
                 else:
                     for dataset in args:
                         try:
                             for idim, dim in enumerate(self.ydims[i]):
-                                self.sizes_dict[dim] = dataset[self.refxvar].values.shape[idim]
+                                self.sizes_dict[dim] = dataset[
+                                    self.refxvar
+                                ].values.shape[idim]
                         except:
                             continue
 
@@ -998,7 +1011,12 @@ class MeasurementFunction(ABC):
             args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
         input_unc = self.utils.get_input_unc(
-            "tot", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims,corr_dims=self.str_corr_dims,
+            "tot",
+            args,
+            expand=expand,
+            sizes_dict=self.sizes_dict,
+            ydims=self.ydims,
+            corr_dims=self.str_corr_dims,
         )
         input_corr = self.utils.get_input_corr(
             "tot", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
@@ -1060,7 +1078,12 @@ class MeasurementFunction(ABC):
             args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
         input_unc = self.utils.get_input_unc(
-            "rand", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims,corr_dims=self.str_corr_dims,
+            "rand",
+            args,
+            expand=expand,
+            sizes_dict=self.sizes_dict,
+            ydims=self.ydims,
+            corr_dims=self.str_corr_dims,
         )
 
         if all([iu is None for iu in input_unc]):
@@ -1096,7 +1119,12 @@ class MeasurementFunction(ABC):
             args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
         input_unc = self.utils.get_input_unc(
-            "syst", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims,corr_dims=self.str_corr_dims,
+            "syst",
+            args,
+            expand=expand,
+            sizes_dict=self.sizes_dict,
+            ydims=self.ydims,
+            corr_dims=self.str_corr_dims,
         )
         if all([iu is None for iu in input_unc]):
             return None
@@ -1132,7 +1160,12 @@ class MeasurementFunction(ABC):
             args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
         input_unc = self.utils.get_input_unc(
-            "stru", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims,corr_dims=self.str_corr_dims,
+            "stru",
+            args,
+            expand=expand,
+            sizes_dict=self.sizes_dict,
+            ydims=self.ydims,
+            corr_dims=self.str_corr_dims,
         )
         input_corr = self.utils.get_input_corr(
             "stru", args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
@@ -1195,7 +1228,12 @@ class MeasurementFunction(ABC):
             args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
         input_unc = self.utils.get_input_unc(
-            form, args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims,corr_dims=self.str_corr_dims,
+            form,
+            args,
+            expand=expand,
+            sizes_dict=self.sizes_dict,
+            ydims=self.ydims,
+            corr_dims=self.str_corr_dims,
         )
         input_corr = self.utils.get_input_corr(
             form, args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
