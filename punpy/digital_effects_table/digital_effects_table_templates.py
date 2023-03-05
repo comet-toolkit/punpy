@@ -460,6 +460,7 @@ class DigitalEffectsTableTemplates(ABC):
         """
         for var in ds.variables:
             ds[var].encoding = ds_pre[var].encoding
+            ds[var].values = ds[var].values.astype(ds_pre[var].values.dtype)
             err_corr_warn = False
             for key in ds_pre[var].attrs.keys():
                 if "err_corr" in key:
