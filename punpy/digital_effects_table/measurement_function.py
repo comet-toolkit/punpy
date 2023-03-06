@@ -775,7 +775,7 @@ class MeasurementFunction(ABC):
             args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
 
-        return np.array(self.meas_function(*input_qty),dtype=self.prop.dtype)
+        return np.array(self.meas_function(*input_qty))
 
     def check_sizes_and_run(self, *args, expand=False, ds_out_pre=None):
         """
