@@ -942,8 +942,6 @@ class MCPropagation:
                     if x[i].shape != yshape and self.parallel_cores == 0:
                         shapewarning = True
             else:
-                if self.dtype is not None:
-                    x[i] = np.array(x[i], dtype=self.dtype)
                 if self.parallel_cores == 0 and not hasattr(x[i], "__len__"):
                     shapewarning = True
 
@@ -1536,7 +1534,7 @@ class MCPropagation:
                 )
 
         if len(MC_y_out)==0:
-            MC_y_out=np.array(MC_y)
+            MC_y_out=np.array(MC_y,dtype=self.dtype)
 
         if self.verbose:
             print(
