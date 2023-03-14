@@ -237,7 +237,7 @@ class MeasurementFunction(ABC):
 
         :param args: One or multiple digital effects tables with input quantities, defined with obsarray
         :type args: obsarray dataset(s)
-        :param store_unc_percent: Boolean defining whether relative uncertainties should be returned or not. Default to True (relative uncertaintie returned)
+        :param store_unc_percent: Boolean defining whether relative uncertainties should be returned or not. Default to False (absolute uncertainties returned)
         :type store_unc_percent: bool (optional)
         :param expand: boolean to indicate whether the input quantities should be expanded/broadcasted to the shape of the measurand. Defaults to False.
         :type expand: bool (optional)
@@ -300,7 +300,6 @@ class MeasurementFunction(ABC):
             )
 
             self.utils.set_repeat_dims_form(repeat_dim_err_corrs)
-
             template = self.templ.make_template_main(
                 self.ydims,
                 self.sizes_dict,
@@ -311,6 +310,8 @@ class MeasurementFunction(ABC):
 
             # create dataset template
             ds_out = obsarray.create_ds(template, self.sizes_dict)
+
+
 
         # add trivial first dimension to so we can loop over output_vars later
         if self.output_vars == 1:
@@ -1077,7 +1078,7 @@ class MeasurementFunction(ABC):
         input_qty = self.utils.get_input_qty(
             args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
-        input_unc = self.utils.get_input_unc(
+        input_unc = self.utils.get_input_unc( # this should always be absolute
             "rand",
             args,
             expand=expand,

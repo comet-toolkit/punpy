@@ -376,13 +376,13 @@ class MeasurementFunctionUtils:
                     if hasattr(dataset, "variables"):
                         if var in dataset.variables:
                             if ydims[0] is not None:
-                                if np.all(
-                                    [dim in dataset[var].dims for dim in required_dims]
-                                ):
+                                if True:
+                                # if np.all(
+                                #     [dim in dataset[var].dims for dim in required_dims]
+                                # ):
                                     inputs_unc[iv] = self.calculate_unc(
                                         form, dataset, var
                                     )
-
                                 else:
                                     inputs_unc[iv] = self.calculate_unc_missingdim(
                                         form,
@@ -504,7 +504,7 @@ class MeasurementFunctionUtils:
             else:
                 usyst = None
 
-            out = [ucomp ** 2 for ucomp in [ustru, urand, usyst] if ucomp is not None]
+            out = [ucomp ** 2 for ucomp in [ustru, urand, usyst] if ucomp is not None and len(ucomp)]
 
             out = np.sum(out, axis=0) ** 0.5
         else:

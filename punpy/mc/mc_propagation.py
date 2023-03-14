@@ -1603,7 +1603,6 @@ class MCPropagation:
                     u_func[i] = np.nan * np.zeros(yshapes[i])
         if output_vars == 1:
             u_func = np.std(MC_y, axis=0, dtype=self.dtype)
-
         else:
             complex_shapes = True
             if yshapes is None:
