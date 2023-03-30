@@ -627,7 +627,6 @@ class MeasurementFunction(ABC):
                         u_comp_y, corr_comp_y = self.propagate_specific(
                             comp, *args, return_corr=include_corr, expand=expand
                         )
-                        u_comp_y = u_comp_y[None, ...]
                         corr_comp_y = corr_comp_y[None, ...]
 
                     else:
@@ -642,6 +641,9 @@ class MeasurementFunction(ABC):
                     u_comp_y = self.propagate_specific(
                         comp, *args, return_corr=include_corr, expand=expand
                     )
+
+            if self.output_vars == 1:
+                u_comp_y = u_comp_y[None, ...]
 
             for i in range(self.output_vars):
                 if corr_comp_y is not None:
@@ -775,7 +777,10 @@ class MeasurementFunction(ABC):
             args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
 
-        return np.array(self.meas_function(*input_qty))
+        try:
+            return np.array(self.meas_function(*input_qty))
+        except:
+            return np.array(self.meas_function(*input_qty),dtype=object)
 
     def check_sizes_and_run(self, *args, expand=False, ds_out_pre=None):
         """
