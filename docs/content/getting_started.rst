@@ -17,7 +17,6 @@ Punpy has the following dependencies:
 * `numpy <https://numpy.org>`_
 * `scipy <https://scipy.org>`_
 * `emcee <https://emcee.readthedocs.io/en/stable/>`_
-* `numdifftools <https://numdifftools.readthedocs.io/en/latest/>`_
 * `comet_maths <https://comet-maths.readthedocs.io/en/latest/>`_
 * `obsarray <https://obsarray.readthedocs.io/en/latest/>`_
 

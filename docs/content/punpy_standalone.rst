@@ -93,7 +93,7 @@ In order to pass each MC sample individually to the measurement function, it is 
 `parallel_cores` keyword to 1. In :ref:`punpy_memory_and_speed`, we will show how the same keyword can be used to do parallel processing for such measurement functions.
 
 
-For the LPU methods, the numdifftools package is used to calculate the Jacobian. This package automatically determines the stepsize in the numerical
+For the LPU methods, the numdifftools package (used within comet_maths) is used to calculate the Jacobian. This package automatically determines the stepsize in the numerical
 differentiation, unless a manual stepsize is set. For some measurement functions, it can be necessary to set a manual stepsize (e.g. because of the limited
 range of the input quantities). It is possible to set the stepsize to be passed to
 the numdifftools jacobian method by setting the `step` keyword when creating the propagation object::
