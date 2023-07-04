@@ -18,7 +18,7 @@ __status__ = "Development"
 
 
 def function(x1, x2):
-    return x1 ** 2 - 10 * x2 + 30.0
+    return x1**2 - 10 * x2 + 30.0
 
 
 x1 = np.ones(200) * 10
@@ -30,8 +30,8 @@ xs = [x1, x2]
 xerrs = [x1err, x2err]
 
 # below, the higher order Taylor expansion terms have been taken into account, and amount to 2.
-yerr_uncorr = 802 ** 0.5 * np.ones(200)
-yerr_corr = 2 ** 0.5 * np.ones(200)
+yerr_uncorr = 802**0.5 * np.ones(200)
+yerr_corr = 2**0.5 * np.ones(200)
 
 
 def functionb(x1, x2):
@@ -46,7 +46,7 @@ x2errb = 2 * np.ones((20, 30))
 xsb = np.array([x1b, x2b])
 xerrsb = np.array([x1errb, x2errb])
 
-yerr_uncorrb = 8 ** 0.5 * np.ones((20, 30))
+yerr_uncorrb = 8**0.5 * np.ones((20, 30))
 yerr_corrb = np.zeros((20, 30))
 
 
@@ -65,8 +65,8 @@ x3errc = np.zeros(200)
 xsc = np.array([x1c, x2c, x3c])
 xerrsc = np.array([x1errc, x2errc, x3errc])
 corr_c = np.array([[1, 0.9999999, 0], [0.99999999, 1.0, 0], [0.0, 0.0, 1.0]])
-yerr_uncorrc = 544 ** 0.5 * np.ones(200)
-yerr_corrc = 1024 ** 0.5 * np.ones(200)
+yerr_uncorrc = 544**0.5 * np.ones(200)
+yerr_corrc = 1024**0.5 * np.ones(200)
 
 
 def functiond(x1, x2):
@@ -85,10 +85,10 @@ corr_d = np.ones(
 )  # np.array([[1,0.9999999,0.9999999],[0.99999999,1.,0.99999999],[0.9999999,0.9999999,1.]])
 
 yerr_uncorrd = [
-    np.array(8 ** 0.5 * np.ones((20, 3, 4))),
-    np.array(8 ** 0.5 * np.ones((20, 3, 4))),
+    np.array(8**0.5 * np.ones((20, 3, 4))),
+    np.array(8**0.5 * np.ones((20, 3, 4))),
 ]
-yerr_corrd = [np.zeros((20, 3, 4)), 16 ** 0.5 * np.ones((20, 3, 4))]
+yerr_corrd = [np.zeros((20, 3, 4)), 16**0.5 * np.ones((20, 3, 4))]
 
 
 class TestUtilities(unittest.TestCase):
@@ -97,8 +97,8 @@ class TestUtilities(unittest.TestCase):
     """
 
     def test_select_repeated_x(self):
-        xsb2 = np.array([x1b, 1.0])
-        xerrsb2 = np.array([x1errb, 2.0])
+        xsb2 = [x1b, 1.0]
+        xerrsb2 = [x1errb, 2.0]
 
         out = util.select_repeated_x(xsb2, xerrsb2, [False, True], 0, [0], x1b.shape)
         npt.assert_allclose(out[0][0], x1b[0], atol=0.06)

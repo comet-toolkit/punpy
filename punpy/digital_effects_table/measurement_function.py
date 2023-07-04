@@ -3,15 +3,17 @@
 import copy
 import time
 import warnings
-from abc import ABC,abstractmethod
+from abc import ABC, abstractmethod
 
 import numpy as np
 import obsarray
 
 from punpy.digital_effects_table.digital_effects_table_templates import (
-    DigitalEffectsTableTemplates,)
+    DigitalEffectsTableTemplates,
+)
 from punpy.digital_effects_table.measurement_function_utils import (
-    MeasurementFunctionUtils,)
+    MeasurementFunctionUtils,
+)
 from punpy.mc.mc_propagation import MCPropagation
 
 """___Authorship___"""
@@ -780,7 +782,7 @@ class MeasurementFunction(ABC):
         try:
             return np.array(self.meas_function(*input_qty))
         except:
-            return np.array(self.meas_function(*input_qty),dtype=object)
+            return np.array(self.meas_function(*input_qty), dtype=object)
 
     def check_sizes_and_run(self, *args, expand=False, ds_out_pre=None):
         """

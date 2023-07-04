@@ -1533,8 +1533,8 @@ class MCPropagation:
                     % (len(indices) - len(MC_y_out), len(indices))
                 )
 
-        if len(MC_y_out)==0:
-            MC_y_out=np.array(MC_y,dtype=self.dtype)
+        if len(MC_y_out) == 0:
+            MC_y_out = np.array(MC_y, dtype=self.dtype)
 
         if self.verbose:
             print(
@@ -1589,9 +1589,9 @@ class MCPropagation:
         if yshapes is None:
             if output_vars > 1:
                 yshapes = [MC_y[0][i].shape for i in range(output_vars)]
-            elif len(MC_y)>0:
+            elif len(MC_y) > 0:
                 yshapes = MC_y[0].shape
-           
+
         if len(MC_y) == 0:
             if output_vars == 1:
                 u_func = np.nan * np.zeros(yshapes[0])

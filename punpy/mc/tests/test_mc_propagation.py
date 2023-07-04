@@ -9,6 +9,8 @@ import numpy as np
 import numpy.testing as npt
 from punpy.mc.mc_propagation import MCPropagation
 
+np.random.seed(12434)
+
 """___Authorship___"""
 __author__ = "Pieter De Vis"
 __created__ = "14/4/2020"
@@ -18,7 +20,7 @@ __status__ = "Development"
 
 
 def function(x1, x2):
-    return x1 ** 2 - 10 * x2 + 30.0
+    return x1**2 - 10 * x2 + 30.0
 
 
 x1 = np.ones(200) * 10
@@ -30,8 +32,8 @@ xs = [x1, x2]
 xerrs = [x1err, x2err]
 
 # below, the higher order Taylor expansion terms have been taken into account, and amount to 2.
-yerr_uncorr = 802 ** 0.5 * np.ones(200)
-yerr_corr = 2 ** 0.5 * np.ones(200)
+yerr_uncorr = 802**0.5 * np.ones(200)
+yerr_corr = 2**0.5 * np.ones(200)
 
 
 def functionb(x1, x2):
@@ -60,7 +62,7 @@ x2errb = 2 * np.ones((20, 30))
 xsb = np.array([x1b, x2b])
 xerrsb = np.array([x1errb, x2errb])
 
-yerr_uncorrb = 8 ** 0.5 * np.ones((20, 30))
+yerr_uncorrb = 8**0.5 * np.ones((20, 30))
 yerr_corrb = np.zeros((20, 30))
 
 
@@ -79,8 +81,8 @@ x3errc = np.zeros(200)
 xsc = np.array([x1c, x2c, x3c])
 xerrsc = np.array([x1errc, x2errc, x3errc])
 corr_c = np.array([[1, 0.9999999, 0], [0.99999999, 1.0, 0], [0.0, 0.0, 1.0]])
-yerr_uncorrc = 544 ** 0.5 * np.ones(200)
-yerr_corrc = 1024 ** 0.5 * np.ones(200)
+yerr_uncorrc = 544**0.5 * np.ones(200)
+yerr_corrc = 1024**0.5 * np.ones(200)
 
 
 def functiond(x1, x2):
@@ -99,10 +101,10 @@ corr_d = np.ones(
 )  # np.array([[1,0.9999999,0.9999999],[0.99999999,1.,0.99999999],[0.9999999,0.9999999,1.]])
 
 yerr_uncorrd = [
-    np.array(8 ** 0.5 * np.ones((20, 3, 4))),
-    np.array(8 ** 0.5 * np.ones((20, 3, 4))),
+    np.array(8**0.5 * np.ones((20, 3, 4))),
+    np.array(8**0.5 * np.ones((20, 3, 4))),
 ]
-yerr_corrd = [np.zeros((20, 3, 4)), 16 ** 0.5 * np.ones((20, 3, 4))]
+yerr_corrd = [np.zeros((20, 3, 4)), 16**0.5 * np.ones((20, 3, 4))]
 
 
 def functione(x1, x2):
@@ -116,7 +118,6 @@ class TestMCPropagation(unittest.TestCase):
 
     def test_propagate_random_1D(self):
         prop = MCPropagation(40000, parallel_cores=0)
-
         uf, ucorr = prop.propagate_random(function, xs, xerrs, return_corr=True)
         npt.assert_allclose(ucorr, np.eye(len(ucorr)), atol=0.06)
         npt.assert_allclose(uf, yerr_uncorr, rtol=0.06)
@@ -130,6 +131,8 @@ class TestMCPropagation(unittest.TestCase):
         uf, ucorr, yvalues, xvalues = prop.propagate_random(
             function, xs, xerrs, return_corr=True, return_samples=True
         )
+
+        print(xvalues)
 
         npt.assert_allclose(uf, yerr_uncorr, rtol=0.06)
 
@@ -364,8 +367,8 @@ class TestMCPropagation(unittest.TestCase):
         ufc = prop.propagate_systematic(functionc, xsc, xerrsc, corr_between=corr_c)
         npt.assert_allclose(ufc, yerr_corrc, rtol=0.06)
 
-        xsc2 = np.array([x1c, 10.0, x3c])
-        xerrsc2 = np.array([x1errc, 5.0, x3errc])
+        xsc2 = [x1c, 10.0, x3c]
+        xerrsc2 = [x1errc, 5.0, x3errc]
 
         ufc, ucorrc = prop.propagate_systematic(
             functionc, xsc2, xerrsc2, return_corr=True, param_fixed=[False, True, False]
@@ -373,8 +376,8 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ucorrc, np.ones_like(ucorrc), atol=0.06)
         npt.assert_allclose(ufc, yerr_uncorrc, rtol=0.06)
 
-        xsc2 = np.array([x1c, 10.0, x3c])
-        xerrsc2 = np.array([x1errc, 5.0, x3errc])
+        xsc2 = [x1c, 10.0, x3c]
+        xerrsc2 = [x1errc, 5.0, x3errc]
 
         ufc = prop.propagate_systematic(functionc, xsc2, xerrsc2)
         npt.assert_allclose(ufc, yerr_uncorrc, rtol=0.06)
@@ -421,7 +424,7 @@ class TestMCPropagation(unittest.TestCase):
             for xerr in xerrs
         ]
         uf, ucorr = prop.propagate_cov(function, xs, cov, return_corr=True)
-        npt.assert_allclose(uf, yerr_uncorr * 2 ** 0.5, rtol=0.06)
+        npt.assert_allclose(uf, yerr_uncorr * 2**0.5, rtol=0.06)
 
         cov = [
             cm.convert_corr_to_cov(np.eye(len(xerr.ravel())), xerr) for xerr in xerrs
@@ -483,7 +486,7 @@ class TestMCPropagation(unittest.TestCase):
             for xerrb in xerrsb
         ]
         ufb, ucorrb = prop.propagate_cov(functionb, xsb, covb, return_corr=True)
-        npt.assert_allclose(ufb, yerr_uncorrb * 2 ** 0.5, rtol=0.06)
+        npt.assert_allclose(ufb, yerr_uncorrb * 2**0.5, rtol=0.06)
 
         covb = [
             cm.convert_corr_to_cov(np.eye(len(xerrb.ravel())), xerrb)
@@ -513,7 +516,7 @@ class TestMCPropagation(unittest.TestCase):
             for xerrc in xerrsc
         ]
         ufc, ucorrc = prop.propagate_cov(functionc, xsc, covc, return_corr=True)
-        npt.assert_allclose(ufc, yerr_uncorrc * 2 ** 0.5, rtol=0.06)
+        npt.assert_allclose(ufc, yerr_uncorrc * 2**0.5, rtol=0.06)
 
         covc = [
             cm.convert_corr_to_cov(np.eye(len(xerrc.ravel())), xerrc)

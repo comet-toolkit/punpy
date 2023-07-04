@@ -18,7 +18,7 @@ __status__ = "Development"
 
 
 def function(x1, x2):
-    return x1 ** 2 - 10 * x2
+    return x1**2 - 10 * x2
 
 
 def Jac_function(x1, x2):
@@ -37,11 +37,11 @@ xs = np.array([x1, x2])
 xerrs = np.array([x1err, x2err])
 
 # below, the higher order Taylor expansion terms have been taken into account, and amount to 2.
-yerr_uncorr = 802 ** 0.5 * np.ones(200)
-yerr_corr = 2 ** 0.5 * np.ones(200)
+yerr_uncorr = 802**0.5 * np.ones(200)
+yerr_corr = 2**0.5 * np.ones(200)
 
 # below, the higher order Taylor expansion terms have not been taken into account
-yerr_uncorr_1order = 800 ** 0.5 * np.ones(200)
+yerr_uncorr_1order = 800**0.5 * np.ones(200)
 yerr_corr_1order = 0 * np.ones(200)
 
 
@@ -57,7 +57,7 @@ x2errb = 2 * np.ones((20, 3))
 xsb = np.array([x1b, x2b])
 xerrsb = np.array([x1errb, x2errb])
 
-yerr_uncorrb = 8 ** 0.5 * np.ones((20, 3))
+yerr_uncorrb = 8**0.5 * np.ones((20, 3))
 yerr_corrb = np.zeros((20, 3))
 
 
@@ -84,8 +84,8 @@ x3errc = np.zeros(200)
 xsc = np.array([x1c, x2c, x3c])
 xerrsc = np.array([x1errc, x2errc, x3errc])
 corr_c = np.array([[1, 0.9999999, 0], [0.99999999, 1.0, 0], [0.0, 0.0, 1.0]])
-yerr_uncorrc = 544 ** 0.5 * np.ones(200)
-yerr_corrc = 1024 ** 0.5 * np.ones(200)
+yerr_uncorrc = 544**0.5 * np.ones(200)
+yerr_corrc = 1024**0.5 * np.ones(200)
 
 
 def functiond(x1, x2):
@@ -103,8 +103,8 @@ corr_d = np.ones(
     (2, 2)
 )  # np.array([[1,0.9999999,0.9999999],[0.99999999,1.,0.99999999],[0.9999999,0.9999999,1.]])
 
-yerr_uncorrd = [8 ** 0.5 * np.ones((5, 3, 2)), 8 ** 0.5 * np.ones((5, 3, 2))]
-yerr_corrd = [np.zeros((5, 3, 2)), 16 ** 0.5 * np.ones((5, 3, 2))]
+yerr_uncorrd = [8**0.5 * np.ones((5, 3, 2)), 8**0.5 * np.ones((5, 3, 2))]
+yerr_corrd = [np.zeros((5, 3, 2)), 16**0.5 * np.ones((5, 3, 2))]
 
 
 class TestLPUPropagation(unittest.TestCase):
@@ -348,7 +348,7 @@ class TestLPUPropagation(unittest.TestCase):
         ufb, ucorrb = prop.propagate_cov(
             functionb, xsb, covb, return_corr=True, Jx_diag=True
         )
-        npt.assert_allclose(ufb, yerr_uncorrb * 2 ** 0.5, rtol=0.01)
+        npt.assert_allclose(ufb, yerr_uncorrb * 2**0.5, rtol=0.01)
 
         covb = [
             cm.convert_corr_to_cov(np.eye(len(xerrb.ravel())), xerrb)
@@ -385,7 +385,7 @@ class TestLPUPropagation(unittest.TestCase):
             for xerrc in xerrsc
         ]
         ufc, ucorrc = prop.propagate_cov(functionc, xsc, covc, return_corr=True, Jx=Jx)
-        npt.assert_allclose(ufc, yerr_uncorrc * 2 ** 0.5, rtol=0.01)
+        npt.assert_allclose(ufc, yerr_uncorrc * 2**0.5, rtol=0.01)
 
         covc = [
             cm.convert_corr_to_cov(np.eye(len(xerrc.ravel())), xerrc)

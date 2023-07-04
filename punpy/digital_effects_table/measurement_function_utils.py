@@ -504,7 +504,7 @@ class MeasurementFunctionUtils:
             else:
                 usyst = None
 
-            out = [ucomp ** 2 for ucomp in [ustru, urand, usyst] if ucomp is not None]
+            out = [ucomp**2 for ucomp in [ustru, urand, usyst] if ucomp is not None]
 
             out = np.sum(out, axis=0) ** 0.5
         else:
