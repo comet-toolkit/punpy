@@ -4,6 +4,7 @@ from multiprocessing import Pool
 
 import comet_maths as cm
 import numpy as np
+from inspect import signature
 
 import punpy.utilities.utilities as util
 
@@ -395,10 +396,11 @@ class LPUPropagation:
 
             corrs = np.empty(len(x), dtype=object)
             for i in range(len(x)):
-                if corr_x[i] == "syst":
-                    corrs[i] = np.ones((len(x[i].ravel()), len(x[i].ravel())))
-                elif corr_x[i] == "rand":
-                    corrs[i] = np.eye(len(x[i].ravel()))
+                if isinstance(corr_x[i], str):
+                    if corr_x[i] == "syst":
+                        corrs[i] = np.ones((len(x[i].ravel()), len(x[i].ravel())))
+                    elif corr_x[i] == "rand":
+                        corrs[i] = np.eye(len(x[i].ravel()))
                 elif corr_x[i] is None:
                     corrs[i] = np.zeros((len(x[i].ravel()), len(x[i].ravel())))
                 else:
@@ -597,9 +599,17 @@ class LPUPropagation:
         xshapes = [xi.shape for xi in x]
         if (xshapes.count(xshapes[0]) == len(xshapes)) and repeat_dims == -99:
             if output_vars == 1:
-                fun = lambda c: func(*c.reshape(len(x), -1))
+                fun = (
+                    lambda c: func(*c)
+                    if len(c) == len(xshapes)
+                    else func(*c.reshape(len(x), -1))
+                )
             else:
-                fun = lambda c: np.concatenate(func(*c.reshape(len(x), -1)))
+                fun = (
+                    lambda c: np.concatenate(func(*c))
+                    if len(c) == len(xshapes)
+                    else np.concatenate(func(*c.reshape(len(x), -1)))
+                )
         else:
 
             clims = [0]
@@ -677,12 +687,13 @@ class LPUPropagation:
             fixed_corr_var = -99
 
         if fixed_corr_var >= 0 and corr_x is not None:
-            if corr_x[fixed_corr_var] == "rand":
-                fixed_corr = np.eye(len(u_x[fixed_corr_var]))
-            elif corr_x[fixed_corr_var] == "syst":
-                fixed_corr = np.ones(
-                    (len(u_x[fixed_corr_var]), len(u_x[fixed_corr_var]))
-                )
+            if isinstance(corr_x[fixed_corr_var], str):
+                if corr_x[fixed_corr_var] == "rand":
+                    fixed_corr = np.eye(len(u_x[fixed_corr_var]))
+                elif corr_x[fixed_corr_var] == "syst":
+                    fixed_corr = np.ones(
+                        (len(u_x[fixed_corr_var]), len(u_x[fixed_corr_var]))
+                    )
             else:
                 fixed_corr = corr_x[fixed_corr_var]
 
