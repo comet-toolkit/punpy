@@ -7,7 +7,9 @@ punpy is part of the [CoMet Toolkit](https://www.comet-toolkit.org) (community m
 ## Installation
 
 punpy is installable via pip.
-
+```
+pip install punpy
+```
 ## Documentation
 
 For more information visit our [documentation](https://punpy.readthedocs.io/en/latest).
