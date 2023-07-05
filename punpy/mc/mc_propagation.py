@@ -991,12 +991,13 @@ class MCPropagation:
             fixed_corr_var = -99
 
         if fixed_corr_var >= 0 and corr_x is not None:
-            if corr_x[fixed_corr_var] == "rand":
-                fixed_corr = np.eye(len(u_x[fixed_corr_var]))
-            elif corr_x[fixed_corr_var] == "syst":
-                fixed_corr = np.ones(
-                    (len(u_x[fixed_corr_var]), len(u_x[fixed_corr_var]))
-                )
+            if isinstance(corr_x[fixed_corr_var], str):
+                if corr_x[fixed_corr_var] == "rand":
+                    fixed_corr = np.eye(len(u_x[fixed_corr_var]))
+                elif corr_x[fixed_corr_var] == "syst":
+                    fixed_corr = np.ones(
+                        (len(u_x[fixed_corr_var]), len(u_x[fixed_corr_var]))
+                    )
             else:
                 fixed_corr = corr_x[fixed_corr_var]
 
