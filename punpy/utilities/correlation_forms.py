@@ -10,7 +10,7 @@ __status__ = "Development"
 
 def bell_relative(len, n, sigma=None):
     if sigma is None:
-        sigma = (n / 2 - 1) / 3 ** 0.5
+        sigma = (n / 2 - 1) / 3**0.5
     corr = np.eye(len)
     for i in range(n):
         idx_row = np.arange(i, len)

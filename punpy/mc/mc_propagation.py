@@ -942,8 +942,6 @@ class MCPropagation:
                     if x[i].shape != yshape and self.parallel_cores == 0:
                         shapewarning = True
             else:
-                if self.dtype is not None:
-                    x[i] = np.array(x[i], dtype=self.dtype)
                 if self.parallel_cores == 0 and not hasattr(x[i], "__len__"):
                     shapewarning = True
 
@@ -993,12 +991,13 @@ class MCPropagation:
             fixed_corr_var = -99
 
         if fixed_corr_var >= 0 and corr_x is not None:
-            if corr_x[fixed_corr_var] == "rand":
-                fixed_corr = np.eye(len(u_x[fixed_corr_var]))
-            elif corr_x[fixed_corr_var] == "syst":
-                fixed_corr = np.ones(
-                    (len(u_x[fixed_corr_var]), len(u_x[fixed_corr_var]))
-                )
+            if isinstance(corr_x[fixed_corr_var], str):
+                if corr_x[fixed_corr_var] == "rand":
+                    fixed_corr = np.eye(len(u_x[fixed_corr_var]))
+                elif corr_x[fixed_corr_var] == "syst":
+                    fixed_corr = np.ones(
+                        (len(u_x[fixed_corr_var]), len(u_x[fixed_corr_var]))
+                    )
             else:
                 fixed_corr = corr_x[fixed_corr_var]
 
@@ -1535,8 +1534,8 @@ class MCPropagation:
                     % (len(indices) - len(MC_y_out), len(indices))
                 )
 
-        if len(MC_y_out)==0:
-            MC_y_out=np.array(MC_y)
+        if len(MC_y_out) == 0:
+            MC_y_out = np.array(MC_y, dtype=self.dtype)
 
         if self.verbose:
             print(
@@ -1591,9 +1590,9 @@ class MCPropagation:
         if yshapes is None:
             if output_vars > 1:
                 yshapes = [MC_y[0][i].shape for i in range(output_vars)]
-            elif len(MC_y)>0:
+            elif len(MC_y) > 0:
                 yshapes = MC_y[0].shape
-           
+
         if len(MC_y) == 0:
             if output_vars == 1:
                 u_func = np.nan * np.zeros(yshapes[0])

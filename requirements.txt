@@ -1,10 +1,10 @@
 # required modules
 numpy >= 1.18.1
 matplotlib >= 3.1.0
-numdifftools==0.9.39
 xarray
 scipy
 obsarray
+comet_maths
 
 # for docs
 sphinx==3.0.1

@@ -8,7 +8,7 @@ import numpy as np
 import numpy.testing as npt
 import xarray as xr
 
-from punpy import MeasurementFunction,MCPropagation
+from punpy import MeasurementFunction, MCPropagation
 
 """___Authorship___"""
 __author__ = "Pieter De Vis"
@@ -28,12 +28,12 @@ class HypernetsMF(MeasurementFunction):
         corrected_DN = DN / (
             non_linear[0]
             + non_linear[1] * DN
-            + non_linear[2] * DN ** 2
-            + non_linear[3] * DN ** 3
-            + non_linear[4] * DN ** 4
-            + non_linear[5] * DN ** 5
-            + non_linear[6] * DN ** 6
-            + non_linear[7] * DN ** 7
+            + non_linear[2] * DN**2
+            + non_linear[3] * DN**3
+            + non_linear[4] * DN**4
+            + non_linear[5] * DN**5
+            + non_linear[6] * DN**6
+            + non_linear[7] * DN**7
         )
         if gains.ndim == 1:
             return gains[:, None] * corrected_DN / int_time * 1000
@@ -262,8 +262,8 @@ class TestMeasurementFunction(unittest.TestCase):
             "u_rel_systematic_corr_rad_irr", L0data, calib_data
         )
 
-        u_y_syst = (u_y_syst_indep ** 2 + u_y_syst_corr ** 2) ** 0.5
-        u_y_tot = (u_y_syst_indep ** 2 + u_y_syst_corr ** 2 + u_y_rand ** 2) ** 0.5
+        u_y_syst = (u_y_syst_indep**2 + u_y_syst_corr**2) ** 0.5
+        u_y_tot = (u_y_syst_indep**2 + u_y_syst_corr**2 + u_y_rand**2) ** 0.5
 
         ds_tot = hmf.propagate_ds_total(L0data, calib_data, store_unc_percent=True)
         mask = np.where(
@@ -363,8 +363,8 @@ class TestMeasurementFunction(unittest.TestCase):
             "u_rel_systematic_corr_rad_irr", L0data, calib_data, return_corr=False
         )
 
-        u_y_syst = (u_y_syst_indep ** 2 + u_y_syst_corr ** 2) ** 0.5
-        u_y_tot = (u_y_syst_indep ** 2 + u_y_syst_corr ** 2 + u_y_rand ** 2) ** 0.5
+        u_y_syst = (u_y_syst_indep**2 + u_y_syst_corr**2) ** 0.5
+        u_y_tot = (u_y_syst_indep**2 + u_y_syst_corr**2 + u_y_rand**2) ** 0.5
 
         npt.assert_allclose(
             L1data["u_rel_systematic_indep_irradiance"].values[mask],
