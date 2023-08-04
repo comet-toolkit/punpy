@@ -606,6 +606,22 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ucorrb2, np.ones_like(ucorrb2), atol=0.06)
         npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
 
+    def test_separate_corr_dims(self):
+        prop = MCPropagation(20000, parallel_cores=1)
+
+        ufd, ucorrd, corr_out = prop.propagate_systematic(
+            functione,
+            xsd,
+            xerrsd,
+            return_corr=True,
+            corr_dims=[-99,1],
+            separate_corr_dims=True,
+            output_vars=2,
+            param_fixed=[False, True],
+        )
+        npt.assert_allclose(ucorrd[0], np.ones_like(ucorrd[0]), atol=0.06)
+        npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
+
     def test_propagate_syst_corr_3D_2out(self):
         prop = MCPropagation(20000, parallel_cores=1)
 
@@ -761,12 +777,46 @@ class TestMCPropagation(unittest.TestCase):
         MC_y = prop.combine_samples([MC_y1, MC_y2])
 
         ufd, ucorrd, corr_out = prop.process_samples(
-            MC_x, MC_y, return_corr=True, corr_dims=0, output_vars=2
+            MC_x, MC_y, return_corr=True, corr_dims=[0, 0], output_vars=2, separate_corr_dims=True,
         )
 
         npt.assert_allclose(ucorrd[0], np.eye(len(ucorrd[0])), atol=0.06)
         npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
         npt.assert_allclose(ufd[1], yerr_uncorrd[1], rtol=0.06)
+
+    def test_separate_corrdims(self):
+
+        prop = MCPropagation(30000)
+
+        ufd, ucorrd, corr_out = prop.propagate_systematic(
+            functiond, xsd, xerrsd, return_corr=True, corr_dims=[0,1], output_vars=2, separate_corr_dims=True
+        )
+        npt.assert_allclose(ucorrd[0], np.ones_like(ucorrd[0]), atol=0.06)
+        npt.assert_allclose(ucorrd[1], np.ones_like(ucorrd[1]), atol=0.06)
+
+
+        ufd, ucorrd, corr_out = prop.propagate_systematic(
+            functiond, xsd, xerrsd, return_corr=True, corr_dims=[1,1], output_vars=2, separate_corr_dims=True
+        )
+        npt.assert_allclose(ucorrd[1], np.ones_like(ucorrd[1]), atol=0.06)
+
+        prop = MCPropagation(20000, parallel_cores=4)
+
+        corrd = [np.eye(len(xerrd[:, 0, 0].ravel())) for xerrd in xerrsd]
+
+        MC_x = prop.generate_MC_sample(xsd, xerrsd, corr_x=["rand", "rand"])
+        MC_y1 = prop.run_samples(functiond, MC_x, output_vars=2, start=0, end=10000)
+        MC_y2 = prop.run_samples(functiond, MC_x, output_vars=2, start=10000, end=20000)
+        MC_y = prop.combine_samples([MC_y1, MC_y2])
+
+        ufd, ucorrd, corr_out = prop.process_samples(
+            MC_x, MC_y, return_corr=True, corr_dims=[0, 0], output_vars=2, separate_corr_dims=True,
+        )
+
+        npt.assert_allclose(ucorrd[0], np.eye(len(ucorrd[0])), atol=0.06)
+        npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
+        npt.assert_allclose(ufd[1], yerr_uncorrd[1], rtol=0.06)
+
 
     def test_failed_processing(self):
         prop = MCPropagation(10000, parallel_cores=4, verbose=True)
@@ -799,6 +849,7 @@ class TestMCPropagation(unittest.TestCase):
             corr_x=corrc,
             repeat_dims=0,
             corr_dims=1,
+            separate_corr_dims=False,
             output_vars=1,
             fixed_corr_var=None,
             param_fixed=None,
@@ -812,6 +863,7 @@ class TestMCPropagation(unittest.TestCase):
             corr_x=corrd,
             repeat_dims=[0, 1],
             corr_dims=2,
+            separate_corr_dims=False,
             output_vars=2,
             fixed_corr_var=None,
             param_fixed=[True, False, False],
@@ -825,6 +877,7 @@ class TestMCPropagation(unittest.TestCase):
                 corr_x=corrc,
                 repeat_dims=0,
                 corr_dims=0,
+                separate_corr_dims=False,
                 output_vars=1,
                 fixed_corr_var=None,
                 param_fixed=None,
@@ -837,6 +890,7 @@ class TestMCPropagation(unittest.TestCase):
                 corr_x=corrd,
                 repeat_dims=[0, 1],
                 corr_dims=1,
+                separate_corr_dims=False,
                 output_vars=2,
                 fixed_corr_var=None,
                 param_fixed=[True, False, False],

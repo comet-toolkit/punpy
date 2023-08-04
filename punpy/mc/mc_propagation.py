@@ -58,6 +58,7 @@ class MCPropagation:
         return_samples=False,
         repeat_dims=-99,
         corr_dims=-99,
+        separate_corr_dims=False,
         fixed_corr_var=False,
         output_vars=1,
         PD_corr=True,
@@ -92,8 +93,10 @@ class MCPropagation:
         :type return_samples: bool, optional
         :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
         :type repeat_dims: integer or list of 2 integers, optional
-        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated. When the combined correlation of 2 or more (but not all) dimensions is required, they can be provided as a string containing the different dimension integers, separated by a dot (e.g. "0.2"). When multiple error_correlations should be calculated, they can be provided as a list.  
         :type corr_dims: integer, optional
+        :param separate_corr_dims: When set to True and output_vars>1, corr_dims should be a list providing the corr_dims for each output variable, each following the format defined in the corr_dims description. Defaults to False
+        :type separate_corr_dims: bool, optional
         :param fixed_corr_var: set to integer to copy the correlation matrix of the dimiension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
         :type fixed_corr_var: bool or integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
@@ -129,6 +132,7 @@ class MCPropagation:
             return_samples=return_samples,
             repeat_dims=repeat_dims,
             corr_dims=corr_dims,
+            separate_corr_dims=separate_corr_dims,
             fixed_corr_var=fixed_corr_var,
             output_vars=output_vars,
             PD_corr=PD_corr,
@@ -151,6 +155,7 @@ class MCPropagation:
         return_samples=False,
         repeat_dims=-99,
         corr_dims=-99,
+        separate_corr_dims=False,
         fixed_corr_var=False,
         output_vars=1,
         PD_corr=True,
@@ -185,8 +190,10 @@ class MCPropagation:
         :type return_samples: bool, optional
         :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
         :type repeat_dims: integer or list of 2 integers, optional
-        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated. When the combined correlation of 2 or more (but not all) dimensions is required, they can be provided as a string containing the different dimension integers, separated by a dot (e.g. "0.2"). When multiple error_correlations should be calculated, they can be provided as a list.  
         :type corr_dims: integer, optional
+        :param separate_corr_dims: When set to True and output_vars>1, corr_dims should be a list providing the corr_dims for each output variable, each following the format defined in the corr_dims description. Defaults to False
+        :type separate_corr_dims: bool, optional
         :param fixed_corr_var: set to integer to copy the correlation matrix of the dimiension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
         :type fixed_corr_var: bool or integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
@@ -222,6 +229,7 @@ class MCPropagation:
             return_samples=return_samples,
             repeat_dims=repeat_dims,
             corr_dims=corr_dims,
+            separate_corr_dims=separate_corr_dims,
             fixed_corr_var=fixed_corr_var,
             output_vars=output_vars,
             PD_corr=PD_corr,
@@ -243,6 +251,7 @@ class MCPropagation:
         return_samples=False,
         repeat_dims=-99,
         corr_dims=-99,
+        separate_corr_dims=False,
         fixed_corr_var=False,
         output_vars=1,
         PD_corr=True,
@@ -276,8 +285,10 @@ class MCPropagation:
         :type return_samples: bool, optional
         :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
         :type repeat_dims: integer or list of 2 integers, optional
-        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated. When the combined correlation of 2 or more (but not all) dimensions is required, they can be provided as a string containing the different dimension integers, separated by a dot (e.g. "0.2"). When multiple error_correlations should be calculated, they can be provided as a list.  
         :type corr_dims: integer, optional
+        :param separate_corr_dims: When set to True and output_vars>1, corr_dims should be a list providing the corr_dims for each output variable, each following the format defined in the corr_dims description. Defaults to False
+        :type separate_corr_dims: bool, optional
         :param fixed_corr_var: set to integer to copy the correlation matrix of the dimiension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
         :type fixed_corr_var: bool or integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
@@ -315,6 +326,7 @@ class MCPropagation:
             return_samples=return_samples,
             repeat_dims=repeat_dims,
             corr_dims=corr_dims,
+            separate_corr_dims=separate_corr_dims,
             fixed_corr_var=fixed_corr_var,
             output_vars=output_vars,
             PD_corr=PD_corr,
@@ -337,6 +349,7 @@ class MCPropagation:
         return_samples=False,
         repeat_dims=-99,
         corr_dims=-99,
+        separate_corr_dims=False,
         fixed_corr_var=False,
         output_vars=1,
         PD_corr=True,
@@ -371,8 +384,10 @@ class MCPropagation:
         :type return_samples: bool, optional
         :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
         :type repeat_dims: integer or list of 2 integers, optional
-        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated. When the combined correlation of 2 or more (but not all) dimensions is required, they can be provided as a string containing the different dimension integers, separated by a dot (e.g. "0.2"). When multiple error_correlations should be calculated, they can be provided as a list.  
         :type corr_dims: integer, optional
+        :param separate_corr_dims: When set to True and output_vars>1, corr_dims should be a list providing the corr_dims for each output variable, each following the format defined in the corr_dims description. Defaults to False
+        :type separate_corr_dims: bool, optional
         :param fixed_corr_var: set to integer to copy the correlation matrix of the dimension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
         :type fixed_corr_var: bool or integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
@@ -412,6 +427,7 @@ class MCPropagation:
             corr_x,
             repeat_dims,
             corr_dims,
+            separate_corr_dims,
             output_vars,
             fixed_corr_var,
             param_fixed,
@@ -434,6 +450,7 @@ class MCPropagation:
                 return_samples,
                 -99,
                 corr_dims=corr_dims,
+                separate_corr_dims=separate_corr_dims,
                 fixed_corr_var=fixed_corr_var,
                 output_vars=output_vars,
                 PD_corr=False,
@@ -485,6 +502,7 @@ class MCPropagation:
                     return_samples,
                     -99,
                     corr_dims=corr_dims,
+                    separate_corr_dims=separate_corr_dims,
                     fixed_corr_var=fixed_corr_var,
                     output_vars=output_vars,
                     PD_corr=False,
@@ -551,6 +569,7 @@ class MCPropagation:
                 return_samples,
                 yshapes,
                 corr_dims,
+                separate_corr_dims,
                 fixed_corr,
                 PD_corr,
                 output_vars,
@@ -581,7 +600,7 @@ class MCPropagation:
         :type pdf_shape: str, optional
         :param pdf_params: dictionaries defining optional additional parameters that define the probability density function, Defaults to None (gaussian does not require additional parameters)
         :type pdf_params: dict, optional
-        :param comp_list: boolean to define whether u_x and corr_x are given as a list or individual uncertainty components. Defaults to False, in chich case a single combined uncertainty component is given per input quantity.
+        :param comp_list: boolean to define whether u_x and corr_x are given as a list or individual uncertainty components. Defaults to False, in which case a single combined uncertainty component is given per input quantity.
         :type comp_list: bool, optional
         :return: MC sample for input quantities
         :rtype: list[array]
@@ -667,6 +686,7 @@ class MCPropagation:
         return_samples=False,
         repeat_dims=-99,
         corr_dims=-99,
+        separate_corr_dims=False,
         fixed_corr_var=False,
         output_vars=1,
         PD_corr=True,
@@ -699,8 +719,10 @@ class MCPropagation:
         :type return_samples: bool, optional
         :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
         :type repeat_dims: integer or list of 2 integers, optional
-        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated. When the combined correlation of 2 or more (but not all) dimensions is required, they can be provided as a string containing the different dimension integers, separated by a dot (e.g. "0.2"). When multiple error_correlations should be calculated, they can be provided as a list.  
         :type corr_dims: integer, optional
+        :param separate_corr_dims: When set to True and output_vars>1, corr_dims should be a list providing the corr_dims for each output variable, each following the format defined in the corr_dims description. Defaults to False
+        :type separate_corr_dims: bool, optional
         :param fixed_corr_var: set to integer to copy the correlation matrix of the dimiension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
         :type fixed_corr_var: bool or integer, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
@@ -734,6 +756,7 @@ class MCPropagation:
             None,
             repeat_dims,
             corr_dims,
+            separate_corr_dims,
             output_vars,
             fixed_corr_var,
             param_fixed,
@@ -754,6 +777,7 @@ class MCPropagation:
                 return_samples,
                 -99,
                 corr_dims=corr_dims,
+                separate_corr_dims=separate_corr_dims,
                 output_vars=output_vars,
                 PD_corr=False,
                 pdf_shape=pdf_shape,
@@ -803,6 +827,7 @@ class MCPropagation:
                     return_samples,
                     -99,
                     corr_dims=corr_dims,
+                    separate_corr_dims=separate_corr_dims,
                     output_vars=output_vars,
                     PD_corr=False,
                     pdf_shape=pdf_shape,
@@ -858,6 +883,7 @@ class MCPropagation:
             return_samples,
             yshapes,
             corr_dims,
+            separate_corr_dims,
             fixed_corr,
             PD_corr,
             output_vars,
@@ -871,6 +897,7 @@ class MCPropagation:
         corr_x,
         repeat_dims,
         corr_dims,
+        separate_corr_dims,
         output_vars,
         fixed_corr_var,
         param_fixed,
@@ -889,8 +916,10 @@ class MCPropagation:
         :type corr_x: list[array], optional
         :param repeat_dims: set to positive integer(s) to select the axis which has repeated measurements. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
         :type repeat_dims: integer or list of 2 integers, optional
-        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
-        :type corr_dims: integer, optional
+        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated. When the combined correlation of 2 or more (but not all) dimensions is required, they can be provided as a string containing the different dimension integers, separated by a dot (e.g. "0.2"). When multiple error_correlations should be calculated, they can be provided as a list.  
+        :type corr_dims: integer or list, optional
+        :param separate_corr_dims: When set to True and output_vars>1, corr_dims should be a list providing the corr_dims for each output variable, each following the format defined in the corr_dims description. Defaults to False
+        :type separate_corr_dims: bool, optional
         :param output_vars: number of output parameters in the measurement function. Defaults to 1.
         :type output_vars: integer, optional
         :param fixed_corr_var: set to integer to copy the correlation matrix of the dimiension the integer refers to. Set to True to automatically detect if only one uncertainty is present and the correlation matrix of that dimension should be copied. Defaults to False.
@@ -908,12 +937,13 @@ class MCPropagation:
             repeat_dims = [repeat_dims]
 
         # find the shape
+        y = func(*x)
         if output_vars == 1:
-            yshape = np.array(func(*x)).shape
-            yshapes = [np.array(func(*x)).shape]
+            yshape = np.array(y).shape
+            yshapes = [np.array(y).shape]
         else:
-            yshape = np.array(func(*x)[refyvar]).shape
-            yshapes = [np.array(func(*x)[i]).shape for i in range(output_vars)]
+            yshape = np.array(y[refyvar]).shape
+            yshapes = [np.array(y[i]).shape for i in range(output_vars)]
 
         shapewarning = False
         for i in range(len(x)):
@@ -1004,15 +1034,19 @@ class MCPropagation:
         else:
             fixed_corr = None
 
+        if (isinstance(corr_dims, int)) or (isinstance(corr_dims, str)):
+            corr_dims = [corr_dims]
+
         if len(repeat_dims) == 1:
             if repeat_dims[0] >= 0:
                 n_repeats = yshape[repeat_dims[0]]
-                if corr_dims > repeat_dims[0]:
-                    corr_dims -= 1
-                elif corr_dims == repeat_dims[0]:
-                    raise ValueError(
-                        "punpy.mc_propagation: corr_dims and repeat_axis keywords should not be the same."
-                    )
+                for ico in range(len(corr_dims)):
+                    if corr_dims[ico] > repeat_dims[0]:
+                        corr_dims[ico] -= 1
+                    elif corr_dims[ico] == repeat_dims[0]:
+                        raise ValueError(
+                            "punpy.mc_propagation: corr_dims and repeat_axis keywords should not be the same."
+                        )
             else:
                 n_repeats = 0
             repeat_shape = (n_repeats,)  # repeat_dims = -99
@@ -1021,12 +1055,19 @@ class MCPropagation:
             repeat_shape = tuple([yshape[repeat_dim] for repeat_dim in repeat_dims])
             n_repeats = np.prod(repeat_shape)
             for repeat_dim in repeat_dims:
-                if corr_dims > repeat_dim:
-                    corr_dims -= 1
-                elif corr_dims == repeat_dim:
-                    raise ValueError(
-                        "punpy.mc_propagation: corr_dims and repeat_axis keywords should not be the same."
-                    )
+                for ico in range(len(corr_dims)):
+                    if corr_dims[ico] > repeat_dim:
+                        corr_dims[ico] -= 1
+                    elif corr_dims[ico] == repeat_dim:
+                        raise ValueError(
+                            "punpy.mc_propagation: corr_dims and repeat_axis keywords should not be the same."
+                        )
+
+        if output_vars > 1 and separate_corr_dims:
+            if output_vars != len(corr_dims):
+                raise ValueError(
+                    "The provided corr_dims was not a list with the corr_dims for each output variable. This needs to be the case when setting separate_corr_dims to True"
+                )
 
         return (
             yshapes,
@@ -1556,6 +1597,7 @@ class MCPropagation:
         return_samples=False,
         yshapes=None,
         corr_dims=-99,
+        separate_corr_dims=False,
         fixed_corr=None,
         PD_corr=True,
         output_vars=1,
@@ -1572,9 +1614,10 @@ class MCPropagation:
         :type return_corr: bool
         :param return_samples: set to True to return generated samples
         :type return_samples: bool
-
-        :param corr_dims: set to positive integer to select the axis used in the correla[ tion matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated. When the combined correlation of 2 or more (but not all) dimensions is required, they can be provided as a string containing the different dimension integers, separated by a dot (e.g. "0.2"). When multiple error_correlations should be calculated, they can be provided as a list.  
         :type corr_dims: integer, optional
+        :param separate_corr_dims: When set to True and output_vars>1, corr_dims should be a list providing the corr_dims for each output variable, each following the format defined in the corr_dims description. Defaults to False
+        :type separate_corr_dims: bool, optional
         :param fixed_corr: correlation matrix to be copied without changing, defaults to None (correlation matrix is calculated rather than copied)
         :type fixed_corr: array
         :param PD_corr: set to True to make sure returned correlation matrices are positive semi-definite, default to True
@@ -1656,15 +1699,21 @@ class MCPropagation:
             else:
                 # create an empty arrays and then populate it with the correlation matrix for each output parameter individually
                 corr_ys = np.empty(output_vars, dtype=object)
+
                 for i in range(output_vars):
+                    if separate_corr_dims:
+                        corrdims=corr_dims[i]
+                    else:
+                        corrdims=corr_dims
+
                     if fixed_corr is None:
                         if complex_shapes:
                             corr_ys[i] = cm.calculate_corr(
-                                MC_y2[i], corr_dims, PD_corr, self.dtype
+                                MC_y2[i], corrdims , PD_corr, self.dtype
                             )
                         else:
                             corr_ys[i] = cm.calculate_corr(
-                                MC_y[:, i], corr_dims, PD_corr, self.dtype
+                                MC_y[:, i], corrdims, PD_corr, self.dtype
                             )
 
                     else:
