@@ -275,8 +275,21 @@ These functions can still be handled by punpy, but require the `output_vars` key
                             [x1, x2, x3], [us_x1, us_x2, us_x3], 
                             return_corr=True, corr_dims=0, output_vars=2)
 
-Note that now there is an additional output corr_out, which gives the correlation between the different output variables (in the above case a 2 by 2 matrix).
+Note that now the `corr_dims` keyword is set to a list with the corr_dims for each output variable, and there is an additional output corr_out, which gives the correlation between the different output variables (in the above case a 2 by 2 matrix).
 Here the correlation coefficients between the 2 variables are averaged over all measurements. 
+
+When there are multiple output variables, it is also possible to specify separate corr_dims for each measurand.
+This is done by setting the `separate_corr_dims` keyword to True, and passing a list of corr_dims::
+
+   us_y, corr_y, corr_out = prop.propagate_systematic(measurement_function,
+                            [x1, x2, x3], [us_x1, us_x2, us_x3],
+                            return_corr=True, corr_dims=[0,1],separate_corr_dims=True, output_vars=2)
+
+It is also possible to set one of the separate `corr_dims' to None if you do not want the error correltion to be calculated for that measurand. In that case None will be returned (as corr_y[1] in below example)::
+
+   us_y, corr_y, corr_out = prop.propagate_systematic(measurement_function,
+                            [x1, x2, x3], [us_x1, us_x2, us_x3],
+                            return_corr=True, corr_dims=[0,None],separate_corr_dims=True, output_vars=2)
 
 
 Different Probability Density Functions
