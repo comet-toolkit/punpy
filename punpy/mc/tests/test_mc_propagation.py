@@ -614,12 +614,29 @@ class TestMCPropagation(unittest.TestCase):
             xsd,
             xerrsd,
             return_corr=True,
-            corr_dims=[-99,1],
+            corr_dims=[-99, 1],
             separate_corr_dims=True,
             output_vars=2,
             param_fixed=[False, True],
         )
-        npt.assert_allclose(ucorrd[0], np.ones_like(ucorrd[0]), atol=0.06)
+        npt.assert_allclose(ucorrd[0], np.ones((240,240)), atol=0.06)
+        npt.assert_allclose(ucorrd[1], np.ones((4,4)), atol=0.06)
+        npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
+
+        prop = MCPropagation(20000, parallel_cores=1)
+
+        ufd, ucorrd, corr_out = prop.propagate_systematic(
+            functione,
+            xsd,
+            xerrsd,
+            return_corr=True,
+            corr_dims=[None, 1],
+            separate_corr_dims=True,
+            output_vars=2,
+            param_fixed=[False, True],
+        )
+        npt.assert_equal(ucorrd[0], [None])
+        npt.assert_allclose(ucorrd[1], np.ones((4,4)), atol=0.06)
         npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
 
     def test_propagate_syst_corr_3D_2out(self):
