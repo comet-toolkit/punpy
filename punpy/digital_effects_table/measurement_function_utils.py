@@ -32,12 +32,22 @@ class MeasurementFunctionUtils:
         :type xvariables: list(str)
         :param uncxvariables: list of input quantity names for which uncertainties should be propagated. Should be a subset of input quantity names. Defaults to None, in which case uncertainties on all input quantities are used.
         :type uncxvariables: list(str), optional
+        :param ydims: list of dimensions of the measurand, in correct order. list of list of dimensions when there are multiple measurands. Default to None, in which case it is assumed to be the same as refxvar (see below) input quantity.
+        :type ydims: list(str), optional
+        :param str_repeat_dims: Strings used to select the axis which has repeated measurements. Axis can be specified using the name(s) of the dimension.
+        :type str_repeat_dims: list(str)
         :param str_repeat_noncorr_dims: list of dimension names to be used as repeated dims
         :type str_repeat_noncorr_dims: list(str)
         :param verbose: boolean to set verbosity
         :type verbose: bool
         :param templ: templater object
         :type templ: punpy.digital_effects_table_template
+        :param use_err_corr_dict: when possible, use dictionaries with separate error-correlation info per dimension in order to save memory
+        :type use_err_corr_dict: bool, optional
+        :param broadcast_correlation: correlation form ("rand" or "syst" to use when broadcasting
+        :type broadcast_correlation: str
+        :param param_fixed: set to true or false to indicate for each input quantity whether it has to remain unmodified either when expand=true or when using repeated measurements, defaults to None (no inputs fixed).
+        :type param_fixed: list of bools, optional
         """
         self.xvariables = xvariables
         self.uncxvariables = uncxvariables
@@ -359,6 +369,8 @@ class MeasurementFunctionUtils:
         :type sizes_dict: dict
         :param expand: boolean to indicate whether the input quantities should be expanded/broadcasted to the shape of the measurand.
         :type expand: bool
+        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+        :type corr_dims: integer, optional
         :return: list of uncertainty values (as np.ndarray) for each of the input quantites.
         :rtype: list(np.ndarray)
         """
@@ -503,7 +515,11 @@ class MeasurementFunctionUtils:
             else:
                 usyst = None
 
-            out = [ucomp ** 2 for ucomp in [ustru, urand, usyst] if ucomp is not None and len(ucomp)]
+            out = [
+                ucomp**2
+                for ucomp in [ustru, urand, usyst]
+                if ucomp is not None and len(ucomp)
+            ]
 
             out = np.sum(out, axis=0) ** 0.5
         else:

@@ -69,6 +69,12 @@ class IdealGasLaw_2out(MeasurementFunction):
         return (n * temp * 8.134) / pres, pres / temp
 
 
+# Define your measurement function inside a subclass of MeasurementFunction
+class IdealGasLaw_2out_diffdim(MeasurementFunction):
+    def meas_function(self, pres, temp, n):
+        return (n * temp * 8.134) / pres, np.mean(pres / temp, axis=0)
+
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 ds = xr.open_dataset(os.path.join(dir_path, "digital_effects_table_gaslaw_example.nc"))
 
@@ -161,8 +167,72 @@ class TestMeasurementFunction(unittest.TestCase):
         ds_y_tot = gl.propagate_ds_total(ds)
 
         npt.assert_allclose(ds_y_tot["volume"].values, volume, rtol=0.002)
+        npt.assert_equal(ds_y_tot["err_corr_tot_volume"].values.shape, (3600, 3600))
+        npt.assert_equal(ds_y_tot["err_corr_tot_P/T"].values.shape, (3600, 3600))
 
         npt.assert_allclose(ds_y_tot["u_tot_volume"].values, u_tot_volume, rtol=0.1)
+
+    def test_gaslaw_2out_diffdim(self):
+        prop = MCPropagation(100, dtype="float32", verbose=False, parallel_cores=1)
+
+        gl = IdealGasLaw_2out_diffdim(
+            prop,
+            ["pressure", "temperature", "n_moles"],
+            yvariable=["volume", "P/T"],
+            yunit=["m^3", "Pa/K"],
+            ydims=[["x", "y", "time"], ["y", "time"]],
+        )
+        ds_y = gl.propagate_ds(ds)
+
+        npt.assert_allclose(ds_y["volume"].values, volume, rtol=0.002)
+        npt.assert_equal(ds_y["err_corr_str_volume"].values.shape, (3600, 3600))
+        npt.assert_equal(ds_y["err_corr_str_P/T"].values.shape, (180, 180))
+
+        gl = IdealGasLaw_2out_diffdim(
+            prop,
+            ["pressure", "temperature", "n_moles"],
+            yvariable=["volume", "P/T"],
+            yunit=["m^3", "Pa/K"],
+            ydims=[["x", "y", "time"], ["y", "time"]],
+            corr_dims=["x", None],
+            separate_corr_dims=True,
+        )
+        ds_y = gl.propagate_ds(ds)
+
+        npt.assert_allclose(ds_y["volume"].values, volume, rtol=0.002)
+        npt.assert_equal(ds_y["err_corr_str_volume_x"].values.shape, (20, 20))
+
+        gl = IdealGasLaw_2out_diffdim(
+            prop,
+            ["pressure", "temperature", "n_moles"],
+            yvariable=["volume", "P/T"],
+            yunit=["m^3", "Pa/K"],
+            ydims=[["x", "y", "time"], ["y", "time"]],
+            corr_dims=["x"],
+        )
+        ds_y = gl.propagate_ds(ds)
+
+        npt.assert_allclose(ds_y["volume"].values, volume, rtol=0.002)
+        npt.assert_equal(ds_y["err_corr_str_volume_x"].values.shape, (20, 20))
+
+        gl = IdealGasLaw_2out_diffdim(
+            prop,
+            ["pressure", "temperature", "n_moles"],
+            yvariable=["volume", "P/T"],
+            yunit=["m^3", "Pa/K"],
+            ydims=[["x", "y", "time"], ["y", "time"]],
+            corr_dims=["x", "y.time"],
+        )
+        ds_y_tot = gl.propagate_ds_total(ds)
+
+        npt.assert_allclose(ds_y_tot["volume"].values, volume, rtol=0.002)
+        npt.assert_equal(ds_y_tot["err_corr_tot_volume_x"].values.shape, (20, 20))
+        npt.assert_equal(
+            ds_y_tot["err_corr_tot_volume_y.time"].values.shape, (180, 180)
+        )
+        npt.assert_equal(ds_y_tot["err_corr_tot_P/T_y.time"].values.shape, (180, 180))
+
+        npt.assert_allclose(ds_y_tot["u_tot_volume"].values, u_tot_volume, rtol=0.4)
 
     def test_gaslaw_errcorrdict(self):
         prop = MCPropagation(1000, dtype="float32", verbose=False)
