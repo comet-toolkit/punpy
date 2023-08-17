@@ -1679,7 +1679,7 @@ class MCPropagation:
         else:
             if output_vars == 1:
                 if fixed_corr is None:
-                    #if separate_corr_dims, the corr_dims are wrapped in an additional list
+                    # if separate_corr_dims, the corr_dims are wrapped in an additional list
                     if separate_corr_dims:
                         corrdims = corr_dims[0]
                     else:

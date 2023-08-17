@@ -107,11 +107,10 @@ yerr_uncorrd = [8**0.5 * np.ones((5, 3, 2)), 8**0.5 * np.ones((5, 3, 2))]
 yerr_corrd = [np.zeros((5, 3, 2)), 16**0.5 * np.ones((5, 3, 2))]
 
 
-
 x1e = np.array(10.0)
-x2e= np.array(30.0)
+x2e = np.array(30.0)
 x1erre = np.array(1.0)
-x2erre= np.array(2.0)
+x2erre = np.array(2.0)
 
 xse = np.array([x1e, x2e])
 xerrse = np.array([x1erre, x2erre])
@@ -123,8 +122,6 @@ yerr_corre = 2**0.5 * np.ones(1)
 # below, the higher order Taylor expansion terms have not been taken into account
 yerr_uncorr_1ordere = 800**0.5 * np.ones(1)
 yerr_corr_1ordere = 0 * np.ones(1)
-
-
 
 
 class TestLPUPropagation(unittest.TestCase):
@@ -175,12 +172,14 @@ class TestLPUPropagation(unittest.TestCase):
         npt.assert_allclose(uf, yerr_uncorr_1ordere, rtol=0.01)
 
         uf, ucorr = prop.propagate_random(
-            function, xse, xerrse, corr_x=["rand", None], return_corr=True)
+            function, xse, xerrse, corr_x=["rand", None], return_corr=True
+        )
         npt.assert_allclose(ucorr, np.eye(len(ucorr)), atol=0.01)
         npt.assert_allclose(uf, yerr_uncorr_1ordere, rtol=0.01)
 
         uf, ucorr = prop.propagate_standard(
-            function, xse, xerrse, ["rand", "rand"], return_corr=True)
+            function, xse, xerrse, ["rand", "rand"], return_corr=True
+        )
         npt.assert_allclose(ucorr, np.eye(len(ucorr)), atol=0.01)
         npt.assert_allclose(uf, yerr_uncorr_1ordere, rtol=0.01)
 
@@ -188,15 +187,13 @@ class TestLPUPropagation(unittest.TestCase):
         ucorr2 = cm.convert_cov_to_corr(ucov, uf)
         npt.assert_allclose(ucorr, ucorr2, atol=0.01)
 
-        uf = prop.propagate_random(
-            function, xse, xerrse, corr_between=np.ones((2, 2)))
+        uf = prop.propagate_random(function, xse, xerrse, corr_between=np.ones((2, 2)))
         npt.assert_allclose(uf, yerr_corr_1ordere, atol=0.01)
 
         uf, ucorr = prop.propagate_random(function, xse, xerrse, return_corr=True)
         npt.assert_allclose(uf, yerr_uncorr_1ordere, rtol=0.01)
 
-        uf = prop.propagate_random(
-            function, xse, xerrse, corr_between=np.ones((2, 2)))
+        uf = prop.propagate_random(function, xse, xerrse, corr_between=np.ones((2, 2)))
         npt.assert_allclose(uf, yerr_corr_1ordere, atol=0.01)
 
     def test_propagate_random_2D(self):
