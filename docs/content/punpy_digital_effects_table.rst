@@ -213,9 +213,10 @@ We refer to the API for a full list of the keywords, but here highlight some of 
 
 When creating the MeasurementFunction object, we previously discussed the `prop`, `xvariables`, `uncxvariables`, `yvariable` and
 `yunit` keywords. Next, there are a number of keywords that are the same as the keywords for using punpy as standalone. These are
-`corr_between`,`param_fixed`, `repeat_dims`, `corr_dims`, `allow_some_nans`. Here these keywords work in the same way as for standalone
+`corr_between`,`param_fixed`, `repeat_dims`, `corr_dims`, `seperate_corr_dims`, `allow_some_nans`. Here these keywords work in the same way as for standalone
 punpy and we refer to the :ref:`punpy_standalone` Section for further explanation. The one difference is that here, the repeat_dims and
 corr_dims can be provided as dimension names rather than dimension indices (dimension indices are also still allowed).
+If a string corr_dim is provided that is present in some but not all of the measurand dimensions (only relevant when there are multiple differently-shaped measurands), the `seperate_corr_dims` will automatically be set to True, and the appropriate separate corr_dims will be worked out automatically.
 
 The options we have not previously explained are the `ydims`, `refxvar` and `sizes_dict`. These all have to do with the handling of dimensions when they differ between input quantities (or between input quantities and measurand).
 In the typical punpy usecase, the dimensions of the measurand are the same as the dimensions of the input quantities.
