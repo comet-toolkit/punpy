@@ -619,8 +619,8 @@ class TestMCPropagation(unittest.TestCase):
             output_vars=2,
             param_fixed=[False, True],
         )
-        npt.assert_allclose(ucorrd[0], np.ones((240,240)), atol=0.06)
-        npt.assert_allclose(ucorrd[1], np.ones((4,4)), atol=0.06)
+        npt.assert_allclose(ucorrd[0], np.ones((240, 240)), atol=0.06)
+        npt.assert_allclose(ucorrd[1], np.ones((4, 4)), atol=0.06)
         npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
 
         prop = MCPropagation(20000, parallel_cores=1)
@@ -636,7 +636,7 @@ class TestMCPropagation(unittest.TestCase):
             param_fixed=[False, True],
         )
         npt.assert_equal(ucorrd[0], [None])
-        npt.assert_allclose(ucorrd[1], np.ones((4,4)), atol=0.06)
+        npt.assert_allclose(ucorrd[1], np.ones((4, 4)), atol=0.06)
         npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
 
     def test_propagate_syst_corr_3D_2out(self):
@@ -794,7 +794,12 @@ class TestMCPropagation(unittest.TestCase):
         MC_y = prop.combine_samples([MC_y1, MC_y2])
 
         ufd, ucorrd, corr_out = prop.process_samples(
-            MC_x, MC_y, return_corr=True, corr_dims=[0, 0], output_vars=2, separate_corr_dims=True,
+            MC_x,
+            MC_y,
+            return_corr=True,
+            corr_dims=[0, 0],
+            output_vars=2,
+            separate_corr_dims=True,
         )
 
         npt.assert_allclose(ucorrd[0], np.eye(len(ucorrd[0])), atol=0.06)
@@ -806,14 +811,25 @@ class TestMCPropagation(unittest.TestCase):
         prop = MCPropagation(30000)
 
         ufd, ucorrd, corr_out = prop.propagate_systematic(
-            functiond, xsd, xerrsd, return_corr=True, corr_dims=[0,1], output_vars=2, separate_corr_dims=True
+            functiond,
+            xsd,
+            xerrsd,
+            return_corr=True,
+            corr_dims=[0, 1],
+            output_vars=2,
+            separate_corr_dims=True,
         )
         npt.assert_allclose(ucorrd[0], np.ones_like(ucorrd[0]), atol=0.06)
         npt.assert_allclose(ucorrd[1], np.ones_like(ucorrd[1]), atol=0.06)
 
-
         ufd, ucorrd, corr_out = prop.propagate_systematic(
-            functiond, xsd, xerrsd, return_corr=True, corr_dims=[1,1], output_vars=2, separate_corr_dims=True
+            functiond,
+            xsd,
+            xerrsd,
+            return_corr=True,
+            corr_dims=[1, 1],
+            output_vars=2,
+            separate_corr_dims=True,
         )
         npt.assert_allclose(ucorrd[1], np.ones_like(ucorrd[1]), atol=0.06)
 
@@ -827,13 +843,17 @@ class TestMCPropagation(unittest.TestCase):
         MC_y = prop.combine_samples([MC_y1, MC_y2])
 
         ufd, ucorrd, corr_out = prop.process_samples(
-            MC_x, MC_y, return_corr=True, corr_dims=[0, 0], output_vars=2, separate_corr_dims=True,
+            MC_x,
+            MC_y,
+            return_corr=True,
+            corr_dims=[0, 0],
+            output_vars=2,
+            separate_corr_dims=True,
         )
 
         npt.assert_allclose(ucorrd[0], np.eye(len(ucorrd[0])), atol=0.06)
         npt.assert_allclose(ufd[0], yerr_uncorrd[0], rtol=0.06)
         npt.assert_allclose(ufd[1], yerr_uncorrd[1], rtol=0.06)
-
 
     def test_failed_processing(self):
         prop = MCPropagation(10000, parallel_cores=4, verbose=True)
