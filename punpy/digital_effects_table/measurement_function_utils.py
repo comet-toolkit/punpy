@@ -453,7 +453,7 @@ class MeasurementFunctionUtils:
                 uvar = "%s_%s" % (form, var)
                 data = ds[uvar]
                 if data.attrs["units"] == "%":
-                    return data.values / 100 * ds[var].values
+                    return data.values / 100 * np.abs(ds[var].values)
             except:
                 keys = np.array(list(ds.keys()))
                 uvar_ids = [
@@ -464,7 +464,7 @@ class MeasurementFunctionUtils:
                 if len(uvar) > 0:
                     data = ds[uvar[0]]
                     if data.attrs["units"] == "%":
-                        return data.values / 100 * ds[var].values
+                        return data.values / 100 * np.abs(ds[var].values)
                     else:
                         return data.values
 

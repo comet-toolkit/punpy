@@ -354,7 +354,7 @@ class MeasurementFunction(ABC):
                 )
             else:
                 if store_unc_percent:
-                    ds_out[ucomp_ran].values = u_rand_y[i] / y[i] * 100
+                    ds_out[ucomp_ran].values = u_rand_y[i] / np.abs(y[i]) * 100
                 else:
                     ds_out[ucomp_ran].values = u_rand_y[i]
 
@@ -364,7 +364,7 @@ class MeasurementFunction(ABC):
                 )
             else:
                 if store_unc_percent:
-                    ds_out[ucomp_sys].values = u_syst_y[i] / y[i] * 100
+                    ds_out[ucomp_sys].values = u_syst_y[i] / np.abs(y[i]) * 100
                 else:
                     ds_out[ucomp_sys].values = u_syst_y[i]
 
@@ -377,7 +377,7 @@ class MeasurementFunction(ABC):
                 )
             else:
                 if store_unc_percent:
-                    ds_out[ucomp_str].values = u_stru_y[i] / y[i] * 100
+                    ds_out[ucomp_str].values = u_stru_y[i] / np.abs(y[i]) * 100
                 else:
                     ds_out[ucomp_str].values = u_stru_y[i]
 
@@ -508,7 +508,7 @@ class MeasurementFunction(ABC):
                 )
             else:
                 if store_unc_percent:
-                    ds_out[ucomp].values = u_tot_y[i] / y[i] * 100
+                    ds_out[ucomp].values = u_tot_y[i] / np.abs(y[i]) * 100
                 else:
                     ds_out[ucomp].values = u_tot_y[i]
 
@@ -637,9 +637,9 @@ class MeasurementFunction(ABC):
 
         for icomp, comp in enumerate(comp_list):
             corr_comp_y = None
-            if comp == "random":
+            if comp == "random" and simple_random:
                 u_comp_y = self.propagate_random(*args, expand=expand)
-            elif comp == "systematic":
+            elif comp == "systematic" and simple_systematic:
                 u_comp_y = self.propagate_systematic(*args, expand=expand)
 
             else:
@@ -712,7 +712,7 @@ class MeasurementFunction(ABC):
                     if store_unc_percent:
                         ds_out[
                             "u_rel_" + comp_list_out[icomp] + "_" + self.yvariable[i]
-                        ].values = (u_comp_y[i] / y[i] * 100)
+                        ].values = (u_comp_y[i] / np.abs(y[i]) * 100)
                     else:
                         ds_out[
                             "u_" + comp_list_out[icomp] + "_" + self.yvariable[i]
@@ -1113,6 +1113,13 @@ class MeasurementFunction(ABC):
         try:
             if len(self.str_corr_dims[i]) == 0:
                 ds_out[err_corr_string + self.yvariable[i]].values = corr_y[i]
+            elif len(self.str_corr_dims[i]) == 1:
+                try:
+                    ds_out[
+                        err_corr_string + self.yvariable[i] + "_" + self.str_corr_dims[i][0]
+                        ].values = corr_y[i]
+                except:
+                    ds_out[err_corr_string + self.yvariable[i]].values = corr_y[i]
             else:
                 for j, corr_dim in enumerate(self.str_corr_dims[i]):
                     if isinstance(corr_dim, str):
@@ -1136,9 +1143,9 @@ class MeasurementFunction(ABC):
         except:
             if use_ds_out_pre_unmodified:
                 valid_keys = [
-                    key
-                    for key in ds_out.variables
-                    if ((err_corr_string in key) and (self.yvariable[i] in key))
+                key
+                for key in ds_out.variables
+                if ((err_corr_string in key) and (self.yvariable[i] in key))
                 ]
                 if len(valid_keys) == 1:
                     ds_out[valid_keys[0]].values = corr_y[i]

@@ -1,6 +1,7 @@
 import obsarray
 import xarray as xr
 from variables import L0_IRR_VARIABLES, CAL_VARIABLES
+import numpy as np
 
 ds_in = xr.open_dataset("test_l0.nc")  # read digital effects table
 ds_cal = xr.open_dataset("test_cal.nc")  # read digital effects table
@@ -24,8 +25,14 @@ dim_sizes_cal = {
 ds_out = obsarray.create_ds(L0_IRR_VARIABLES, dim_sizes)
 ds_cal_out = obsarray.create_ds(CAL_VARIABLES, dim_sizes_cal)
 
+print(ds_out.digital_number)
+
 for key in ds_out.keys():
-    ds_out[key].values = ds_in[key].values
+    if key=="digital_number":
+        continue
+    else:
+        ds_out[key].values = ds_in[key].values
+
 ds_out.assign_coords(wavelength=ds_in.wavelength)
 ds_out.assign_coords(scan=ds_in.scan)
 

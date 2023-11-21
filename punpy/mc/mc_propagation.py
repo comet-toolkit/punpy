@@ -548,6 +548,15 @@ class MCPropagation:
         else:
             if samples is not None:
                 MC_x = samples
+            elif all([not np.any(u_xi) for u_xi in u_x]):
+                out = None
+                if return_corr:
+                    out = [None, None]
+                    if return_samples:
+                        out = [None, None, None, None]
+                elif return_samples:
+                    out = [None, None, None]
+                return out
             else:
                 MC_x = self.generate_MC_sample(
                     x,
