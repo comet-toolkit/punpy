@@ -648,7 +648,8 @@ class MeasurementFunction(ABC):
                         u_comp_y, corr_comp_y = self.propagate_specific(
                             comp, *args, return_corr=include_corr, expand=expand
                         )
-                        corr_comp_y = corr_comp_y[None, ...]
+                        if corr_comp_y is not None:
+                            corr_comp_y = corr_comp_y[None, ...]
 
                     else:
                         (
@@ -663,7 +664,7 @@ class MeasurementFunction(ABC):
                         comp, *args, return_corr=include_corr, expand=expand
                     )
 
-            if self.output_vars == 1:
+            if self.output_vars == 1 and u_comp_y is not None:
                 u_comp_y = u_comp_y[None, ...]
 
             for i in range(self.output_vars):
@@ -1059,8 +1060,11 @@ class MeasurementFunction(ABC):
         input_corr = self.utils.get_input_corr(
             form, args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
-        if all([iu is None for iu in input_unc]):
-            return None, None
+        if all([iu is None for iu in input_unc]) or self.prop.MCsteps==0:
+            if self.output_vars == 1:
+                return None, None
+            else:
+                return None, None, None
         else:
             if self.use_err_corr_dict:
                 MC_x = self.prop.generate_MC_sample(

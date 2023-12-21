@@ -410,6 +410,11 @@ class MCPropagation:
                 "starting propagation (%s s since creation of prop object)"
                 % (time.time() - self.starttime)
             )
+
+        #check if mcsteps is 0, if so don't propagate uncertainties and just return None
+        if self.MCsteps==0:
+            return self.return_no_unc(return_corr,return_samples)
+
         (
             yshapes,
             x,
@@ -549,14 +554,7 @@ class MCPropagation:
             if samples is not None:
                 MC_x = samples
             elif all([not np.any(u_xi) for u_xi in u_x]):
-                out = None
-                if return_corr:
-                    out = [None, None]
-                    if return_samples:
-                        out = [None, None, None, None]
-                elif return_samples:
-                    out = [None, None, None]
-                return out
+                return self.return_no_unc(return_corr,return_samples)
             else:
                 MC_x = self.generate_MC_sample(
                     x,
@@ -1759,3 +1757,23 @@ class MCPropagation:
                     return u_func, corr_ys, corr_out, MC_y, MC_x
                 else:
                     return u_func, corr_ys, corr_out
+
+
+    def return_no_unc(self,return_corr,return_samples):
+        """
+        function to generate outputs in right format when there are no valid uncertainties
+
+        :param return_corr: set to True to return correlation matrix of measurand
+        :type return_corr: bool
+        :param return_samples: set to True to return generated samples
+        :type return_samples: bool
+        :return: outputs (None) in right format
+        """
+        out = None
+        if return_corr:
+            out = [None, None]
+            if return_samples:
+                out = [None, None, None, None]
+        elif return_samples:
+            out = [None, None, None]
+        return out

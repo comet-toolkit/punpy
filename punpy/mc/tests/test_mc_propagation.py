@@ -117,10 +117,16 @@ class TestMCPropagation(unittest.TestCase):
     """
 
     def test_propagate_random_1D(self):
+        prop = MCPropagation(0, parallel_cores=0)
+        uf, ucorr = prop.propagate_random(function, xs, xerrs, return_corr=True)
+        assert (uf is None)
+        assert (ucorr is None)
+
         prop = MCPropagation(40000, parallel_cores=0)
         uf, ucorr = prop.propagate_random(function, xs, xerrs, return_corr=True)
         npt.assert_allclose(ucorr, np.eye(len(ucorr)), atol=0.06)
         npt.assert_allclose(uf, yerr_uncorr, rtol=0.06)
+
         ucov = cm.convert_corr_to_cov(ucorr, uf)
         ucorr2 = cm.convert_cov_to_corr(ucov, uf)
         npt.assert_allclose(ucorr, ucorr2, atol=0.01)
