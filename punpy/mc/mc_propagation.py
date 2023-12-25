@@ -1348,7 +1348,7 @@ class MCPropagation:
             u_func = np.array(outs[0])
         if len(repeat_dims) == 1:
             if output_vars == 1:
-                u_func = np.squeeze(np.moveaxis(u_func, 0, repeat_dims[0]))
+                u_func = np.moveaxis(u_func, 0, repeat_dims[0])
             else:
                 u_funcb = u_func[:]
                 u_func = np.empty(output_vars, dtype=object)
