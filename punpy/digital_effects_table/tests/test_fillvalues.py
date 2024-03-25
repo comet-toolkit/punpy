@@ -1,6 +1,7 @@
 """
 Tests for mc propagation class
 """
+
 import os.path
 import unittest
 
@@ -19,24 +20,19 @@ __email__ = "pieter.de.vis@npl.co.uk"
 __status__ = "Development"
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
-ds_gaslaw = xr.open_dataset(os.path.join(dir_path, "digital_effects_table_gaslaw_example.nc"))
+ds_gaslaw = xr.open_dataset(
+    os.path.join(dir_path, "digital_effects_table_gaslaw_example.nc")
+)
 
 # define dim_size_dict to specify size of arrays
-dim_sizes = {
-    "x": 20,
-    "y": 30,
-    "time": 6
-}
+dim_sizes = {"x": 20, "y": 30, "time": 6}
 
 # define ds variables
 template = {
     "temperature": {
         "dtype": np.float32,
         "dim": ["x", "y", "time"],
-        "attributes": {
-            "units": "K",
-            "unc_comps": ["u_ran_temperature"]
-        },
+        "attributes": {"units": "K", "unc_comps": ["u_ran_temperature"]},
     },
     "u_ran_temperature": {
         "dtype": np.float32,
@@ -44,36 +40,19 @@ template = {
         "attributes": {
             "units": "K",
             "err_corr": [
-              {
-                  "dim": "x",
-                  "form": "random",
-                  "params": [],
-                  "units": []
-              },
-              {
-                  "dim": "y",
-                  "form": "random",
-                  "params": [],
-                  "units": []
-              },
-              {
-                  "dim": "time",
-                  "form": "random",
-                  "params": [],
-                  "units": []
-              }
-          ]
+                {"dim": "x", "form": "random", "params": [], "units": []},
+                {"dim": "y", "form": "random", "params": [], "units": []},
+                {"dim": "time", "form": "random", "params": [], "units": []},
+            ],
         },
-    }}
+    },
+}
 
 template_encoding = {
     "temperature": {
         "dtype": np.float32,
         "dim": ["x", "y", "time"],
-        "attributes": {
-            "units": "K",
-            "unc_comps": ["u_ran_temperature"]
-        },
+        "attributes": {"units": "K", "unc_comps": ["u_ran_temperature"]},
         "encoding": {"dtype": np.uint16, "scale_factor": 0.01},
     },
     "u_ran_temperature": {
@@ -82,27 +61,14 @@ template_encoding = {
         "attributes": {
             "units": "K",
             "err_corr": [
-              {
-                  "dim": "x",
-                  "form": "random",
-                  "params": [],
-                  "units": []
-              },
-              {
-                  "dim": "y",
-                  "form": "random",
-                  "params": [],
-                  "units": []
-              },
-              {
-                  "dim": "time",
-                  "form": "random",
-                  "params": [],
-                  "units": []
-              }
-          ]
+                {"dim": "x", "form": "random", "params": [], "units": []},
+                {"dim": "y", "form": "random", "params": [], "units": []},
+                {"dim": "time", "form": "random", "params": [], "units": []},
+            ],
         },
-    }}
+    },
+}
+
 
 class TestFillValue(unittest.TestCase):
     """
@@ -121,8 +87,8 @@ class TestFillValue(unittest.TestCase):
         ds.to_netcdf(path)
 
         ds_load = xr.open_dataset(path)
-        assert (np.isnan(ds_load.temperature.values[0, 0, 0]))
-        assert (ds_load.temperature.values[0, 0, 1] == 0)
+        assert np.isnan(ds_load.temperature.values[0, 0, 0])
+        assert ds_load.temperature.values[0, 0, 1] == 0
         # os.remove(path)
 
     def test_to_netcdf_encoding_popencoding(self):
@@ -137,9 +103,15 @@ class TestFillValue(unittest.TestCase):
         ds.to_netcdf(path)
 
         ds_load = xr.open_dataset(path)
-        print(ds_load.temperature.values[0, 0], ds_load.temperature.dtype, ds_load.temperature.attrs)
-        assert (ds_load.temperature.values[0, 0, 0] == 0)  # here nans are replaces by 0, which is wrong fillvalue (i.e. encoding fillvalue should not be removed)
-        assert (ds_load.temperature.values[0, 0, 1] == 0)
+        print(
+            ds_load.temperature.values[0, 0],
+            ds_load.temperature.dtype,
+            ds_load.temperature.attrs,
+        )
+        assert (
+            ds_load.temperature.values[0, 0, 0] == 0
+        )  # here nans are replaces by 0, which is wrong fillvalue (i.e. encoding fillvalue should not be removed)
+        assert ds_load.temperature.values[0, 0, 1] == 0
         # os.remove(path)
 
     def test_to_netcdf_popattr(self):
@@ -155,8 +127,8 @@ class TestFillValue(unittest.TestCase):
         ds.to_netcdf(path)
 
         ds_load = xr.open_dataset(path)
-        assert (np.isnan(ds_load.temperature.values[0, 0, 0]))
-        assert (ds_load.temperature.values[0, 0, 1] == 0)
+        assert np.isnan(ds_load.temperature.values[0, 0, 0])
+        assert ds_load.temperature.values[0, 0, 1] == 0
         # os.remove(path)
 
     def test_to_netcdf(self):
@@ -171,8 +143,8 @@ class TestFillValue(unittest.TestCase):
         ds.to_netcdf(path)
 
         ds_load = xr.open_dataset(path)
-        assert (np.isnan(ds_load.temperature.values[0, 0, 0]))
-        assert (ds_load.temperature.values[0, 0, 1] == 0)
+        assert np.isnan(ds_load.temperature.values[0, 0, 0])
+        assert ds_load.temperature.values[0, 0, 1] == 0
         # os.remove(path)
 
 

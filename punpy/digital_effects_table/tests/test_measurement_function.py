@@ -1,6 +1,7 @@
 """
 Tests for mc propagation class
 """
+
 import os.path
 import unittest
 

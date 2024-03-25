@@ -171,7 +171,9 @@ class MeasurementFunction(ABC):
         self.param_fixed = param_fixed
 
         if use_err_corr_dict and repeat_dims is not None:
-            warnings.warn("It is currently not possible to set repeat_dims while use_err_corr_dict is set to True (this is set to True by default). Punpy is setting use_err_corr_dict to False instead.")
+            warnings.warn(
+                "It is currently not possible to set repeat_dims while use_err_corr_dict is set to True (this is set to True by default). Punpy is setting use_err_corr_dict to False instead."
+            )
             self.use_err_corr_dict = False
         else:
             self.use_err_corr_dict = use_err_corr_dict
@@ -1067,7 +1069,7 @@ class MeasurementFunction(ABC):
         input_corr = self.utils.get_input_corr(
             form, args, expand=expand, sizes_dict=self.sizes_dict, ydims=self.ydims
         )
-        if all([iu is None for iu in input_unc]) or self.prop.MCsteps==0:
+        if all([iu is None for iu in input_unc]) or self.prop.MCsteps == 0:
             if self.output_vars == 1:
                 return None, None
             else:
@@ -1129,8 +1131,11 @@ class MeasurementFunction(ABC):
             elif len(self.str_corr_dims[i]) == 1:
                 try:
                     ds_out[
-                        err_corr_string + self.yvariable[i] + "_" + self.str_corr_dims[i][0]
-                        ].values = corr_y[i]
+                        err_corr_string
+                        + self.yvariable[i]
+                        + "_"
+                        + self.str_corr_dims[i][0]
+                    ].values = corr_y[i]
                 except:
                     ds_out[err_corr_string + self.yvariable[i]].values = corr_y[i]
             else:
@@ -1156,9 +1161,9 @@ class MeasurementFunction(ABC):
         except:
             if use_ds_out_pre_unmodified:
                 valid_keys = [
-                key
-                for key in ds_out.variables
-                if ((err_corr_string in key) and (self.yvariable[i] in key))
+                    key
+                    for key in ds_out.variables
+                    if ((err_corr_string in key) and (self.yvariable[i] in key))
                 ]
                 if len(valid_keys) == 1:
                     ds_out[valid_keys[0]].values = corr_y[i]
@@ -1363,7 +1368,9 @@ class MeasurementFunction(ABC):
         :return:
         """
         self.corr_dims = np.empty(self.output_vars, dtype=object)
-        if separate_corr_dims and (isinstance(corr_dims,int) or len(corr_dims) != self.output_vars):
+        if separate_corr_dims and (
+            isinstance(corr_dims, int) or len(corr_dims) != self.output_vars
+        ):
             raise ValueError(
                 "The provided corr_dims was not a list with the corr_dims for each output variable. This needs to be the case when setting separate_corr_dims to True"
             )
@@ -1375,11 +1382,8 @@ class MeasurementFunction(ABC):
                 corr_dim_i = corr_dims
 
             if corr_dim_i is None:
-                self.corr_dims[i]= [-99]
-            elif (
-                isinstance(corr_dim_i, str)
-                or isinstance(corr_dim_i, int)
-            ):
+                self.corr_dims[i] = [-99]
+            elif isinstance(corr_dim_i, str) or isinstance(corr_dim_i, int):
                 self.corr_dims[i] = copy.copy([corr_dim_i])
             else:
                 self.corr_dims[i] = copy.copy(corr_dim_i)

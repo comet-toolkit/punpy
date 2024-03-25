@@ -64,6 +64,7 @@ def select_repeated_x(x, u_x, param_fixed, i, repeat_dims, repeat_shape):
 
     return xb, u_xb
 
+
 def convert_corr_to_cov(corr: np.ndarray, u: np.ndarray) -> np.ndarray:
     """
     Convert correlation matrix to covariance matrix (uses comet_maths.convert_corr_to_cov())
@@ -72,7 +73,8 @@ def convert_corr_to_cov(corr: np.ndarray, u: np.ndarray) -> np.ndarray:
     :param u: uncertainties
     :return: covariance matrix
     """
-    cm.convert_corr_to_cov(corr,u)
+    cm.convert_corr_to_cov(corr, u)
+
 
 def convert_cov_to_corr(cov: np.ndarray, u: np.ndarray) -> np.ndarray:
     """
@@ -82,4 +84,4 @@ def convert_cov_to_corr(cov: np.ndarray, u: np.ndarray) -> np.ndarray:
     :param u: uncertainties
     :return: correlation matrix
     """
-    cm.convert_cov_to_corr(cov,u)
+    cm.convert_cov_to_corr(cov, u)

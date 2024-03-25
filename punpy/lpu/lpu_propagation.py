@@ -599,14 +599,12 @@ class LPUPropagation:
         xshapes = [xi.shape for xi in x]
         if (xshapes.count(xshapes[0]) == len(xshapes)) and repeat_dims == -99:
             if output_vars == 1:
-                fun = (
-                    lambda c: func(*c)
-                    if len(c) == len(xshapes)
-                    else func(*c.reshape(len(x), -1))
+                fun = lambda c: (
+                    func(*c) if len(c) == len(xshapes) else func(*c.reshape(len(x), -1))
                 )
             else:
-                fun = (
-                    lambda c: np.concatenate(func(*c))
+                fun = lambda c: (
+                    np.concatenate(func(*c))
                     if len(c) == len(xshapes)
                     else np.concatenate(func(*c.reshape(len(x), -1)))
                 )

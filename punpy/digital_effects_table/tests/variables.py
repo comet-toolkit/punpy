@@ -1,6 +1,7 @@
 """
 Variable definitions for Hypernets land a water network data products
 """
+
 from copy import deepcopy
 from typing import Any
 

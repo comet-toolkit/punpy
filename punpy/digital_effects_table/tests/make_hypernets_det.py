@@ -6,16 +6,20 @@ import numpy as np
 ds_in = xr.open_dataset("test_l0.nc")  # read digital effects table
 ds_cal = xr.open_dataset("test_cal.nc")  # read digital effects table
 
-#relative uncertainties should be in percent
+# relative uncertainties should be in percent
 for var in ds_in.variables:
     if "u_rel_" in var:
-        ds_in[var].values=ds_in[var].values*100
-        #ds_in[var].attrs["units"]=="%"
+        ds_in[var].values = ds_in[var].values * 100
+        # ds_in[var].attrs["units"]=="%"
 
 for var in ds_cal.variables:
-    if "u_rel_" in var and "units" in ds_cal[var].attrs and ds_cal[var].attrs["units"]=="-":
-        ds_cal[var].values=ds_cal[var].values*100
-        ds_cal[var].attrs["units"]=="%"
+    if (
+        "u_rel_" in var
+        and "units" in ds_cal[var].attrs
+        and ds_cal[var].attrs["units"] == "-"
+    ):
+        ds_cal[var].values = ds_cal[var].values * 100
+        ds_cal[var].attrs["units"] == "%"
 
 # define dim_size_dict to specify size of arrays
 dim_sizes = {

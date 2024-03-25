@@ -411,9 +411,9 @@ class MCPropagation:
                 % (time.time() - self.starttime)
             )
 
-        #check if mcsteps is 0, if so don't propagate uncertainties and just return None
-        if self.MCsteps==0:
-            return self.return_no_unc(return_corr,return_samples)
+        # check if mcsteps is 0, if so don't propagate uncertainties and just return None
+        if self.MCsteps == 0:
+            return self.return_no_unc(return_corr, return_samples)
 
         (
             yshapes,
@@ -554,7 +554,7 @@ class MCPropagation:
             if samples is not None:
                 MC_x = samples
             elif all([not np.any(u_xi) for u_xi in u_x]):
-                return self.return_no_unc(return_corr,return_samples)
+                return self.return_no_unc(return_corr, return_samples)
             else:
                 MC_x = self.generate_MC_sample(
                     x,
@@ -1758,8 +1758,7 @@ class MCPropagation:
                 else:
                     return u_func, corr_ys, corr_out
 
-
-    def return_no_unc(self,return_corr,return_samples):
+    def return_no_unc(self, return_corr, return_samples):
         """
         function to generate outputs in right format when there are no valid uncertainties
 

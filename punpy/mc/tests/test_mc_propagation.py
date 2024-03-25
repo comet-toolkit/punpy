@@ -119,8 +119,8 @@ class TestMCPropagation(unittest.TestCase):
     def test_propagate_random_1D(self):
         prop = MCPropagation(0, parallel_cores=0)
         uf, ucorr = prop.propagate_random(function, xs, xerrs, return_corr=True)
-        assert (uf is None)
-        assert (ucorr is None)
+        assert uf is None
+        assert ucorr is None
 
         prop = MCPropagation(40000, parallel_cores=0)
         uf, ucorr = prop.propagate_random(function, xs, xerrs, return_corr=True)
