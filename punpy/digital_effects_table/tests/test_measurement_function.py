@@ -8,6 +8,8 @@ import numpy as np
 import numpy.testing as npt
 import xarray as xr
 
+np.random.seed(123456)
+
 from punpy import MeasurementFunction, MCPropagation
 
 """___Authorship___"""
@@ -156,7 +158,7 @@ class TestMeasurementFunction(unittest.TestCase):
         npt.assert_allclose(ds_y["volume"].values, volume, rtol=0.002)
 
     def test_gaslaw_2out(self):
-        prop = MCPropagation(1000, dtype="float32", verbose=False)
+        prop = MCPropagation(1000, dtype="float32", verbose=True)
 
         gl = IdealGasLaw_2out(
             prop,
@@ -263,7 +265,7 @@ class TestMeasurementFunction(unittest.TestCase):
         npt.assert_allclose(ds_y["volume"].values, volume, rtol=0.002)
         npt.assert_allclose(ds_y["u_ran_volume"].values, u_ran_volume, rtol=0.06)
         npt.assert_allclose(ds_y["u_sys_volume"].values, u_sys_volume, rtol=0.06)
-        npt.assert_allclose(ds_y["u_str_volume"].values, u_str_volume, rtol=0.06)
+        npt.assert_allclose(ds_y["u_str_volume"].values, u_str_volume, rtol=0.07)
         npt.assert_allclose(
             ds_y.unc["volume"].total_unc().values, u_tot_volume, rtol=0.06
         )

@@ -270,7 +270,7 @@ L0_RAD_VARIABLES = {
         "attributes": {
             "standard_name": "random relative uncertainty on digital number",
             "long_name": "random relative uncertainty on digital number",
-            "units": "-",
+            "units": "%",
             "err_corr": [
                 {"dim": SCAN_DIM, "form": "random", "params": [], "units": []},
                 {"dim": WL_DIM, "form": "random", "params": [], "units": []},
@@ -336,7 +336,7 @@ CAL_VARIABLES = {
         "attributes": {
             "standard_name": "independent systematic relative uncertainty on gains",
             "long_name": "the systematic relative uncertainty component on gains (calibration coefficients) that is not correlated between radiance and irradiance, divided by the gains",
-            "units": "-",
+            "units": "%",
             "err_corr": [
                 {
                     "dim": WL_DIM,
@@ -354,7 +354,7 @@ CAL_VARIABLES = {
         "attributes": {
             "standard_name": "systematic relative uncertainty on gains (correlated radiance and irradiance)",
             "long_name": "the systematic relative uncertainty component on gains (calibration coefficients) that is correlated between radiance and irradiance",
-            "units": "-",
+            "units": "%",
             "err_corr": [
                 {
                     "dim": WL_DIM,

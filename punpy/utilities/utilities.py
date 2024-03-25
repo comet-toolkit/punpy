@@ -1,6 +1,7 @@
 """Use Monte Carlo to propagate uncertainties"""
 
 import numpy as np
+import comet_maths as cm
 
 """___Authorship___"""
 __author__ = "Pieter De Vis"
@@ -62,3 +63,23 @@ def select_repeated_x(x, u_x, param_fixed, i, repeat_dims, repeat_shape):
                         pass
 
     return xb, u_xb
+
+def convert_corr_to_cov(corr: np.ndarray, u: np.ndarray) -> np.ndarray:
+    """
+    Convert correlation matrix to covariance matrix (uses comet_maths.convert_corr_to_cov())
+
+    :param corr: correlation matrix
+    :param u: uncertainties
+    :return: covariance matrix
+    """
+    cm.convert_corr_to_cov(corr,u)
+
+def convert_cov_to_corr(cov: np.ndarray, u: np.ndarray) -> np.ndarray:
+    """
+    Convert covariance matrix to correlation matrix (uses comet_maths.convert_cov_to_corr())
+
+    :param corr: covariance matrix
+    :param u: uncertainties
+    :return: correlation matrix
+    """
+    cm.convert_cov_to_corr(cov,u)

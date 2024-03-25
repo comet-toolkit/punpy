@@ -35,8 +35,8 @@ class MeasurementFunction(ABC):
         yunit="",
         corr_between=None,
         param_fixed=None,
-        repeat_dims=-99,
-        corr_dims=-99,
+        repeat_dims=None,
+        corr_dims=None,
         separate_corr_dims=False,
         allow_some_nans=True,
         ydims=None,
@@ -153,7 +153,9 @@ class MeasurementFunction(ABC):
         else:
             self.refxvar = refxvar
 
-        if isinstance(repeat_dims, int) or isinstance(repeat_dims, str):
+        if repeat_dims is None:
+            repeat_dims = [-99]
+        elif isinstance(repeat_dims, int) or isinstance(repeat_dims, str):
             repeat_dims = [repeat_dims]
 
         self.repeat_dims = np.array(repeat_dims)
@@ -168,6 +170,12 @@ class MeasurementFunction(ABC):
 
         self.param_fixed = param_fixed
 
+        if use_err_corr_dict and repeat_dims is not None:
+            warnings.warn("It is currently not possible to set repeat_dims while use_err_corr_dict is set to True (this is set to True by default). Punpy is setting use_err_corr_dict to False instead.")
+            self.use_err_corr_dict = False
+        else:
+            self.use_err_corr_dict = use_err_corr_dict
+
         self.utils = MeasurementFunctionUtils(
             self.xvariables,
             self.uncxvariables,
@@ -176,12 +184,11 @@ class MeasurementFunction(ABC):
             self.str_repeat_noncorr_dims,
             self.prop.verbose,
             self.templ,
-            use_err_corr_dict,
+            self.use_err_corr_dict,
             broadcast_correlation,
             param_fixed,
         )
 
-        self.use_err_corr_dict = use_err_corr_dict
         self.allow_some_nans = allow_some_nans
 
     @abstractmethod
@@ -1115,7 +1122,9 @@ class MeasurementFunction(ABC):
         :return:
         """
         try:
-            if len(self.str_corr_dims[i]) == 0:
+            if corr_y[i] is None or corr_y[i][0] is None:
+                return ds_out
+            elif len(self.str_corr_dims[i]) == 0:
                 ds_out[err_corr_string + self.yvariable[i]].values = corr_y[i]
             elif len(self.str_corr_dims[i]) == 1:
                 try:
@@ -1354,7 +1363,7 @@ class MeasurementFunction(ABC):
         :return:
         """
         self.corr_dims = np.empty(self.output_vars, dtype=object)
-        if separate_corr_dims and len(corr_dims) != self.output_vars:
+        if separate_corr_dims and (isinstance(corr_dims,int) or len(corr_dims) != self.output_vars):
             raise ValueError(
                 "The provided corr_dims was not a list with the corr_dims for each output variable. This needs to be the case when setting separate_corr_dims to True"
             )
@@ -1365,10 +1374,11 @@ class MeasurementFunction(ABC):
             else:
                 corr_dim_i = corr_dims
 
-            if (
+            if corr_dim_i is None:
+                self.corr_dims[i]= [-99]
+            elif (
                 isinstance(corr_dim_i, str)
                 or isinstance(corr_dim_i, int)
-                or corr_dim_i is None
             ):
                 self.corr_dims[i] = copy.copy([corr_dim_i])
             else:
