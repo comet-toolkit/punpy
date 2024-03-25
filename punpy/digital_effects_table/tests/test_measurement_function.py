@@ -9,7 +9,7 @@ import numpy as np
 import numpy.testing as npt
 import xarray as xr
 
-np.random.seed(123456)
+np.random.seed(2222)
 
 from punpy import MeasurementFunction, MCPropagation
 
