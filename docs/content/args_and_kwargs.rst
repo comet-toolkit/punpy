@@ -14,7 +14,7 @@ Punpy as a standalone package
 We here list the arguments (args) and keyword arguments (kwargs) that can be provided when creating a MCPropagation and LPUPropagation object.
 
 .. list-table:: arguments_MCPropagation
-   :widths: 25 25 50
+   :widths: 25 25 25 50
    :header-rows: 1
 
    * - argument

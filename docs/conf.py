@@ -175,7 +175,7 @@ texinfo_documents = [
         "punpy Documentation",
         author,
         "punpy",
-        "Extension to xarray for handling uncertainty quantified observation data",
+        "Tool for “Propagation of UNcertainties in Python” through any python function. ",
         "Miscellaneous",
     ),
 ]
