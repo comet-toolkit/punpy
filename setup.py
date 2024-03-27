@@ -34,7 +34,7 @@ setup(
     description="Propagating UNcertainties in PYthon",
     long_description=read("README.md"),
     packages=find_packages(exclude=("tests",)),
-    install_requires=["comet_maths>=0.20.1", "obsarray", "numpy", "scipy", "netcdf4"],
+    install_requires=["comet_maths>=0.20.1", "obsarray>=0.2.6", "numpy", "scipy", "netcdf4"],
     extras_require={
         "dev": [
             "pre-commit",
