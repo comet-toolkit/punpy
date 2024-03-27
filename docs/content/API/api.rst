@@ -32,6 +32,6 @@ Digital Effects Tables
 .. autosummary::
    :toctree: generated/
 
-   digital_effects_tables.measurement_function
-   digital_effects_tables.measurement_function_utils
-   digital_effects_tables.digital_effects_table_templates
+   digital_effects_table.measurement_function
+   digital_effects_table.measurement_function_utils
+   digital_effects_table.digital_effects_table_templates

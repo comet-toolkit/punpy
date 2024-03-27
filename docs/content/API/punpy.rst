@@ -15,12 +15,3 @@ Subpackages
    punpy.mc
    punpy.lpu
    punpy.digital_effects_table
-
-Submodules
-----------
-
-.. toctree::
-   :maxdepth: 4
-
-   punpy.main
-   punpy.version
