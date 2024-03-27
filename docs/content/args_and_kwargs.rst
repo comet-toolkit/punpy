@@ -67,5 +67,5 @@ We here list the arguments (args) and keyword arguments (kwargs) that can be pro
      - bool to set if logging info should be printed
 
 For details on the args and kwargs for the different functions in the MCPropagation and LPUPropagation classes, we refer to
-the :ref:`API_MC` and :ref:`API_LPU` Sections.
+the :ref:`api`.
 

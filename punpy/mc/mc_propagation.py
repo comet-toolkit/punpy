@@ -1594,6 +1594,13 @@ class MCPropagation:
         return MC_y_out
 
     def combine_samples(self, MC_samples):
+        """
+        Function to combine MC samples from individual runs
+
+        :param MC_samples: list of samples to be concatenated
+        :type MC_samples: List(np.array)
+        :return: concatenated MC sample
+        """
         return np.concatenate(MC_samples, axis=0)
 
     def process_samples(

@@ -12,30 +12,55 @@ The **punpy** module is a Python software package to propagate random, structure
 Alternatively, **punpy** can also be used in combination with digital effects tables created with **obsarray**.
 This documentation provides general information on how to use the module (with some examples), as well as a detailed API of the included classes and function.
 
-~~~~~~~~~~~~~~
+.. grid:: 2
+    :gutter: 2
+
+    .. grid-item-card::  Quickstart Guide
+        :link: content/getting_started
+        :link-type: doc
+
+        New to *punpy*? Check out the quickstart guide for an introduction.
+
+    .. grid-item-card::  User Guide
+        :link: content/user_guide
+        :link-type: doc
+
+        The user guide provides a documentation and examples how to use **punpy** either standalone or in combination with *obsarray* digital effects tables.
+
+    .. grid-item-card::  API Reference
+        :link: content/API/api
+        :link-type: doc
+
+        The API Reference contains a description the **punpy** API.
+
+    .. grid-item-card::  ATBD
+        :link: content/atbd
+        :link-type: doc
+
+        ATBD mathematical description of **punpy** (under development).
+
+
+Acknowledgements
+----------------
+
+**punpy** has been developed by `Pieter De Vis <https://github.com/pdevis>`_.
+
+The development has been funded by:
+
+* The UK's Department for Business, Energy and Industrial Strategy's (BEIS) National Measurement System (NMS) programme
+* The IDEAS-QA4EO project funded by the European Space Agency.
+
+Project status
+--------------
+
+**punpy** is under active development. It is beta software.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
+   :hidden:
+   :caption: For users
 
-   content/getting_started
-   content/punpy_standalone
-   content/punpy_digital_effects_table
-   content/punpy_memory_and_speed
-   content/examples
-   content/atbd
-
-
-API Documentation
-~~~~~~~~~~~~~~~~~
-
-.. toctree::
-   :maxdepth: 4
-
-   content/API/punpy.mc
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   Quickstart <content/getting_started>
+   User Guide <content/user_guide>
+   API Reference <content/API/api>
+   ATBD <content/atbd>
