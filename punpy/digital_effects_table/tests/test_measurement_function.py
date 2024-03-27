@@ -65,6 +65,11 @@ class IdealGasLaw(MeasurementFunction):
     def meas_function(pres, temp, n):
         return (n * temp * 8.134) / pres
 
+# Define your measurement function inside a subclass of MeasurementFunction
+class IdealGasLaw_R(MeasurementFunction):
+    @staticmethod
+    def meas_function(pres, temp, n, R):
+        return (n * temp * R) / pres
 
 # Define your measurement function inside a subclass of MeasurementFunction
 class IdealGasLaw_2out(MeasurementFunction):
@@ -157,6 +162,18 @@ class TestMeasurementFunction(unittest.TestCase):
         ds_y = gl.propagate_ds(ds)
 
         npt.assert_allclose(ds_y["volume"].values, volume, rtol=0.002)
+
+    def test_gaslaw_scalar(self):
+        prop = MCPropagation(100, dtype="float32", verbose=True, parallel_cores=1)
+
+        gl = IdealGasLaw_R(
+            prop,
+            ["pressure", "temperature", "n_moles", "R"],
+            yvariable="volume",
+            yunit="m^3",
+        )
+        ds_y_tot = gl.propagate_ds_total(ds)
+        npt.assert_allclose(ds_y_tot["volume"].values, volume, rtol=0.03)
 
     def test_gaslaw_2out(self):
         prop = MCPropagation(1000, dtype="float32", verbose=True)

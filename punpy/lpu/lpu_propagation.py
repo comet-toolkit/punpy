@@ -25,6 +25,10 @@ class LPUPropagation:
         :type parallel_cores: int
         :param Jx_diag: Bool to indicate whether the Jacobian matrix can be described with semi-diagonal elements. With this we mean that the measurand has the same shape as each of the input quantities and the square jacobain between the measurand and each of the input quantities individually, only has diagonal elements. Defaults to False
         :rtype Jx_diag: bool, optional
+        :param step: Defines the spacing used when calculating the Jacobian with numdifftools
+        :type step: float
+        :param verbose: bool to set if logging info should be printed
+        :type verbose: bool
         """
 
         self.parallel_cores = parallel_cores

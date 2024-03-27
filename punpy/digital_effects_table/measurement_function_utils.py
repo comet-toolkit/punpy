@@ -568,7 +568,7 @@ class MeasurementFunctionUtils:
                                     var,
                                     expand=expand,
                                     sizes_dict=sizes_dict,
-                                    ydims=ydims,
+                                    ydims=ydims[0],
                                 )
                             else:
                                 inputs_corr[iv] = self.calculate_corr(

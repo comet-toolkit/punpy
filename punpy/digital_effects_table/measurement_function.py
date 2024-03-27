@@ -1295,7 +1295,7 @@ class MeasurementFunction(ABC):
             self.sizes_dict[key[1::]] = val
 
         # try to automatically detect if param_fixed should be set (when using repeat dims)
-        if (not expand) and (self.param_fixed is None):
+        if (not expand) and (self.param_fixed is None) and self.repeat_dims[0]>=0:
             self.param_fixed = [False] * len(self.xvariables)
             for iv, var in enumerate(self.xvariables):
                 found = False

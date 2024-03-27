@@ -1,3 +1,5 @@
+.. _API_MC:
+
 punpy.mc.mc\_propagation module
 ===============================
 

@@ -73,7 +73,7 @@ def convert_corr_to_cov(corr: np.ndarray, u: np.ndarray) -> np.ndarray:
     :param u: uncertainties
     :return: covariance matrix
     """
-    cm.convert_corr_to_cov(corr, u)
+    return cm.convert_corr_to_cov(corr, u)
 
 
 def convert_cov_to_corr(cov: np.ndarray, u: np.ndarray) -> np.ndarray:
@@ -84,4 +84,24 @@ def convert_cov_to_corr(cov: np.ndarray, u: np.ndarray) -> np.ndarray:
     :param u: uncertainties
     :return: correlation matrix
     """
-    cm.convert_cov_to_corr(cov, u)
+    return cm.convert_cov_to_corr(cov, u)
+
+
+def correlation_from_covariance(covariance: np.ndarray) -> np.ndarray:
+    """
+    Convert covariance matrix to correlation matrix (uses comet_maths.correlation_from_covariance())
+
+    :param covariance: Covariance matrix
+    :return: Correlation matrix
+    """
+    return cm.correlation_from_covariance(covariance)
+
+
+def uncertainty_from_covariance(covariance: np.ndarray) -> np.ndarray:
+    """
+    Convert covariance matrix to uncertainty (uses comet_maths.uncertainty_from_covariance())
+
+    :param covariance: Covariance matrix
+    :return: uncertainties
+    """
+    return cm.uncertainty_from_covariance(covariance)

@@ -80,6 +80,24 @@ template = {
             ],
         },
     },
+    "R": {
+        "full_name": "molar gas constant (defined as the Avogadro constant multiplied by the Boltzmann constant)",
+        "dtype": np.float32,
+        "dim": [],
+        "attributes": {
+            "units": "J K^-1 mol^-1",
+            "unc_comps": ["u_R"]
+        },
+    },
+    "u_R": {
+        "full_name": "molar gas constant (defined as the Avogadro constant multiplied by the Boltzmann constant)",
+        "dtype": np.float32,
+        "dim": [],
+        "attributes": {
+            "units": "%",
+            "err_corr": [],
+        },
+    }
 }
 
 # define dim_size_dict to specify size of arrays
@@ -97,6 +115,8 @@ ds["u_str_pressure"].values = 10 * np.ones((20, 30, 6))
 ds["err_corr_str_pressure_y"].values = 0.5 * np.ones((30, 30)) + 0.5 * np.eye(30)
 ds["n_moles"].values = 40 * np.ones((20, 30, 6))
 ds["u_ran_n_moles"].values = 1 * np.ones((20, 30, 6))
+ds["R"].values = 8.31446261815324
+ds["u_R"].values = 10**-6
 
 # store example file
 dir_path = os.path.dirname(os.path.realpath(__file__))

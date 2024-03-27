@@ -13,6 +13,8 @@ Subpackages
    :maxdepth: 4
 
    punpy.mc
+   punpy.lpu
+   punpy.digital_effects_table
 
 Submodules
 ----------
