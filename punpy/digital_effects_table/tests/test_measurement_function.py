@@ -65,11 +65,13 @@ class IdealGasLaw(MeasurementFunction):
     def meas_function(pres, temp, n):
         return (n * temp * 8.134) / pres
 
+
 # Define your measurement function inside a subclass of MeasurementFunction
 class IdealGasLaw_R(MeasurementFunction):
     @staticmethod
     def meas_function(pres, temp, n, R):
         return (n * temp * R) / pres
+
 
 # Define your measurement function inside a subclass of MeasurementFunction
 class IdealGasLaw_2out(MeasurementFunction):

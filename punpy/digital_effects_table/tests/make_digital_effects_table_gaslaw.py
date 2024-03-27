@@ -84,10 +84,7 @@ template = {
         "full_name": "molar gas constant (defined as the Avogadro constant multiplied by the Boltzmann constant)",
         "dtype": np.float32,
         "dim": [],
-        "attributes": {
-            "units": "J K^-1 mol^-1",
-            "unc_comps": ["u_R"]
-        },
+        "attributes": {"units": "J K^-1 mol^-1", "unc_comps": ["u_R"]},
     },
     "u_R": {
         "full_name": "molar gas constant (defined as the Avogadro constant multiplied by the Boltzmann constant)",
@@ -97,7 +94,7 @@ template = {
             "units": "%",
             "err_corr": [],
         },
-    }
+    },
 }
 
 # define dim_size_dict to specify size of arrays
