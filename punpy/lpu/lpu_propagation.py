@@ -17,20 +17,20 @@ __status__ = "Development"
 
 
 class LPUPropagation:
+    """
+    Class to propagate uncertainties using the Law of Propagation of Uncertainty
+
+    :param parallel_cores: number of CPU to be used in parallel processing
+    :type parallel_cores: int
+    :param Jx_diag: Bool to indicate whether the Jacobian matrix can be described with semi-diagonal elements. With this we mean that the measurand has the same shape as each of the input quantities and the square jacobain between the measurand and each of the input quantities individually, only has diagonal elements. Defaults to False
+    :rtype Jx_diag: bool, optional
+    :param step: Defines the spacing used when calculating the Jacobian with numdifftools
+    :type step: float
+    :param verbose: bool to set if logging info should be printed
+    :type verbose: bool
+    """
+
     def __init__(self, parallel_cores=0, Jx_diag=False, step=None, verbose=False):
-        """
-        Initialise Law of Propagation of Uncertainty Propagator
-
-        :param parallel_cores: number of CPU to be used in parallel processing
-        :type parallel_cores: int
-        :param Jx_diag: Bool to indicate whether the Jacobian matrix can be described with semi-diagonal elements. With this we mean that the measurand has the same shape as each of the input quantities and the square jacobain between the measurand and each of the input quantities individually, only has diagonal elements. Defaults to False
-        :rtype Jx_diag: bool, optional
-        :param step: Defines the spacing used when calculating the Jacobian with numdifftools
-        :type step: float
-        :param verbose: bool to set if logging info should be printed
-        :type verbose: bool
-        """
-
         self.parallel_cores = parallel_cores
         self.Jx_diag = Jx_diag
         self.step = step

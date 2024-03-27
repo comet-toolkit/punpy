@@ -18,24 +18,24 @@ __status__ = "Development"
 
 
 class MCPropagation:
+    """
+    Class to propagate uncertainties using Monte Carlo (MC)
+
+    :param steps: number of MC iterations
+    :type steps: int
+    :param parallel_cores: number of CPU to be used in parallel processing
+    :type parallel_cores: int
+    :param dtype: numpy dtype for output variables
+    :type dtype: numpy dtype
+    :param verbose: bool to set if logging info should be printed
+    :type verbose: bool
+    :param MCdimlast: bool to set whether the MC dimension should be moved to the last dimension when running through the measurment function (when parallel_cores==0). This can be useful for broadcasting within the measurement function. defaults to False
+    :type MCdimlast: bool
+    """
+
     def __init__(
         self, steps, parallel_cores=0, dtype=None, verbose=False, MCdimlast=True
     ):
-        """
-        Initialise MC Propagator
-
-        :param steps: number of MC iterations
-        :type steps: int
-        :param parallel_cores: number of CPU to be used in parallel processing
-        :type parallel_cores: int
-        :param dtype: numpy dtype for output variables
-        :type dtype: numpy dtype
-        :param verbose: bool to set if logging info should be printed
-        :type verbose: bool
-        :param MCdimlast: bool to set whether the MC dimension should be moved to the last dimension when running through the measurment function (when parallel_cores==0). This can be useful for broadcasting within the measurement function. defaults to False
-        :type MCdimlast: bool
-        """
-
         self.MCsteps = steps
         self.parallel_cores = parallel_cores
         self.dtype = dtype

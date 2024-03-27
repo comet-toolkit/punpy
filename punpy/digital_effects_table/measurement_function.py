@@ -26,6 +26,40 @@ __status__ = "Development"
 
 
 class MeasurementFunction(ABC):
+    """
+    MeasurementFunction class which provides all the functionality for propagating uncertainties using obsarray digital effects tables.
+    This class needs to be subclassed, and a meas_function needs to be provided for the measurement function to propagate uncertainties through.
+
+    :param prop: punpy MC propagation or LPU propagation object. Defaults to None, in which case a MC propagation object with 100 MC steps is used.
+    :type prop: punpy.MCPropagation or punpy. LPUPropagation
+    :param xvariables: list of input quantity names, in same order as arguments in measurement function and with same exact names as provided in input datasets. Defaults to None, in which case get_argument_names function is used.
+    :type xvariables: list(str), optional
+    :param uncxvariables: list of input quantity names for which uncertainties should be propagated. Should be a subset of input quantity names. Defaults to None, in which case uncertainties on all input quantities are used.
+    :type uncxvariables: list(str), optional
+    :param yvariable: name of measurand. Defaults to None, in which case get_measurand_name_and_unit function is used.
+    :type yvariable: str, optional
+    :param yunit: unit of measurand. Defaults to "" (unitless).
+    :type yunit: str, optional
+    :param corr_between: Allows to specify the (average) error correlation coefficient between the various input quantities. Defaults to None, in which case no error-correlation is assumed.
+    :type corr_between: numpy.ndarray , optional
+    :param param_fixed: set to true or false to indicate for each input quantity whether it has to remain unmodified either when expand=true or when using repeated measurements, defaults to None (no inputs fixed).
+    :type param_fixed: list of bools, optional
+    :param repeat_dims: Used to select the axis which has repeated measurements. Axis can be specified using the name(s) of the dimension, or their index in the ydims. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
+    :type repeat_dims: str or int or list(str) or list(int), optional
+    :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
+    :type corr_dims: integer, optional
+    :param separate_corr_dims: When set to True and output_vars>1, corr_dims should be a list providing the corr_dims for each output variable, each following the format defined in the corr_dims description. Defaults to False
+    :type separate_corr_dims: bool, optional
+    :param ydims: list of dimensions of the measurand, in correct order. list of list of dimensions when there are multiple measurands. Default to None, in which case it is assumed to be the same as refxvar (see below) input quantity.
+    :type ydims: list(str), optional
+    :param refxvar: name of reference input quantity that has the same shape as measurand. Defaults to None
+    :type refxvar: string, optional
+    :param sizes_dict: Dictionary with sizes of each of the dimensions of the measurand. Defaults to None, in which cases sizes come from input quantites.
+    :type sizes_dict: dict, optional
+    :param use_err_corr_dict: when possible, use dictionaries with separate error-correlation info per dimension in order to save memory
+    :type use_err_corr_dict: bool, optional
+    """
+
     def __init__(
         self,
         prop=None,
@@ -45,38 +79,6 @@ class MeasurementFunction(ABC):
         use_err_corr_dict=False,
         broadcast_correlation="syst",
     ):
-        """
-        Initialise MeasurementFunction
-
-        :param prop: punpy MC propagation or LPU propagation object. Defaults to None, in which case a MC propagation object with 100 MC steps is used.
-        :type prop: punpy.MCPropagation or punpy. LPUPropagation
-        :param xvariables: list of input quantity names, in same order as arguments in measurement function and with same exact names as provided in input datasets. Defaults to None, in which case get_argument_names function is used.
-        :type xvariables: list(str), optional
-        :param uncxvariables: list of input quantity names for which uncertainties should be propagated. Should be a subset of input quantity names. Defaults to None, in which case uncertainties on all input quantities are used.
-        :type uncxvariables: list(str), optional
-        :param yvariable: name of measurand. Defaults to None, in which case get_measurand_name_and_unit function is used.
-        :type yvariable: str, optional
-        :param yunit: unit of measurand. Defaults to "" (unitless).
-        :type yunit: str, optional
-        :param corr_between: Allows to specify the (average) error correlation coefficient between the various input quantities. Defaults to None, in which case no error-correlation is assumed.
-        :type corr_between: numpy.ndarray , optional
-        :param param_fixed: set to true or false to indicate for each input quantity whether it has to remain unmodified either when expand=true or when using repeated measurements, defaults to None (no inputs fixed).
-        :type param_fixed: list of bools, optional
-        :param repeat_dims: Used to select the axis which has repeated measurements. Axis can be specified using the name(s) of the dimension, or their index in the ydims. The calculations will be performed seperately for each of the repeated measurments and then combined, in order to save memory and speed up the process.  Defaults to -99, for which there is no reduction in dimensionality..
-        :type repeat_dims: str or int or list(str) or list(int), optional
-        :param corr_dims: set to positive integer to select the axis used in the correlation matrix. The correlation matrix will then be averaged over other dimensions. Defaults to -99, for which the input array will be flattened and the full correlation matrix calculated.
-        :type corr_dims: integer, optional
-        :param separate_corr_dims: When set to True and output_vars>1, corr_dims should be a list providing the corr_dims for each output variable, each following the format defined in the corr_dims description. Defaults to False
-        :type separate_corr_dims: bool, optional
-        :param ydims: list of dimensions of the measurand, in correct order. list of list of dimensions when there are multiple measurands. Default to None, in which case it is assumed to be the same as refxvar (see below) input quantity.
-        :type ydims: list(str), optional
-        :param refxvar: name of reference input quantity that has the same shape as measurand. Defaults to None
-        :type refxvar: string, optional
-        :param sizes_dict: Dictionary with sizes of each of the dimensions of the measurand. Defaults to None, in which cases sizes come from input quantites.
-        :type sizes_dict: dict, optional
-        :param use_err_corr_dict: when possible, use dictionaries with separate error-correlation info per dimension in order to save memory
-        :type use_err_corr_dict: bool, optional
-        """
         if prop is None:
             self.prop = MCPropagation(100, dtype="float32")
 
@@ -1295,7 +1297,7 @@ class MeasurementFunction(ABC):
             self.sizes_dict[key[1::]] = val
 
         # try to automatically detect if param_fixed should be set (when using repeat dims)
-        if (not expand) and (self.param_fixed is None) and self.repeat_dims[0] >= 0:
+        if (not expand) and (self.param_fixed is None) and (self.num_repeat_dims[0] >= 0):
             self.param_fixed = [False] * len(self.xvariables)
             for iv, var in enumerate(self.xvariables):
                 found = False
