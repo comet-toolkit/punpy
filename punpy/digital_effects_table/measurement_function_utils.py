@@ -12,6 +12,31 @@ __status__ = "Development"
 
 
 class MeasurementFunctionUtils:
+    """
+    Class with utility functions to help in the uncertainty propagation and handling of error correlations
+
+    :param xvariables: list of input quantity names, in same order as arguments in measurement function and with same exact names as provided in input datasets.
+    :type xvariables: list(str)
+    :param uncxvariables: list of input quantity names for which uncertainties should be propagated. Should be a subset of input quantity names. Defaults to None, in which case uncertainties on all input quantities are used.
+    :type uncxvariables: list(str), optional
+    :param ydims: list of dimensions of the measurand, in correct order. list of list of dimensions when there are multiple measurands. Default to None, in which case it is assumed to be the same as refxvar (see below) input quantity.
+    :type ydims: list(str), optional
+    :param str_repeat_dims: Strings used to select the axis which has repeated measurements. Axis can be specified using the name(s) of the dimension.
+    :type str_repeat_dims: list(str)
+    :param str_repeat_noncorr_dims: list of dimension names to be used as repeated dims
+    :type str_repeat_noncorr_dims: list(str)
+    :param verbose: boolean to set verbosity
+    :type verbose: bool
+    :param templ: templater object
+    :type templ: punpy.digital_effects_table_template
+    :param use_err_corr_dict: when possible, use dictionaries with separate error-correlation info per dimension in order to save memory
+    :type use_err_corr_dict: bool, optional
+    :param broadcast_correlation: correlation form ("rand" or "syst" to use when broadcasting
+    :type broadcast_correlation: str
+    :param param_fixed: set to true or false to indicate for each input quantity whether it has to remain unmodified either when expand=true or when using repeated measurements, defaults to None (no inputs fixed).
+    :type param_fixed: list of bools, optional
+    """
+
     def __init__(
         self,
         xvariables,
@@ -25,30 +50,6 @@ class MeasurementFunctionUtils:
         broadcast_correlation,
         param_fixed,
     ):
-        """
-        Initialise MeasurementFunctionUtils
-
-        :param xvariables: list of input quantity names, in same order as arguments in measurement function and with same exact names as provided in input datasets.
-        :type xvariables: list(str)
-        :param uncxvariables: list of input quantity names for which uncertainties should be propagated. Should be a subset of input quantity names. Defaults to None, in which case uncertainties on all input quantities are used.
-        :type uncxvariables: list(str), optional
-        :param ydims: list of dimensions of the measurand, in correct order. list of list of dimensions when there are multiple measurands. Default to None, in which case it is assumed to be the same as refxvar (see below) input quantity.
-        :type ydims: list(str), optional
-        :param str_repeat_dims: Strings used to select the axis which has repeated measurements. Axis can be specified using the name(s) of the dimension.
-        :type str_repeat_dims: list(str)
-        :param str_repeat_noncorr_dims: list of dimension names to be used as repeated dims
-        :type str_repeat_noncorr_dims: list(str)
-        :param verbose: boolean to set verbosity
-        :type verbose: bool
-        :param templ: templater object
-        :type templ: punpy.digital_effects_table_template
-        :param use_err_corr_dict: when possible, use dictionaries with separate error-correlation info per dimension in order to save memory
-        :type use_err_corr_dict: bool, optional
-        :param broadcast_correlation: correlation form ("rand" or "syst" to use when broadcasting
-        :type broadcast_correlation: str
-        :param param_fixed: set to true or false to indicate for each input quantity whether it has to remain unmodified either when expand=true or when using repeated measurements, defaults to None (no inputs fixed).
-        :type param_fixed: list of bools, optional
-        """
         self.xvariables = xvariables
         self.uncxvariables = uncxvariables
         self.verbose = verbose
@@ -120,6 +121,21 @@ class MeasurementFunctionUtils:
     def set_repeat_dims_errcorrs(
         self, comps, dataset, var, repeat_dim, repeat_dims_errcorrs
     ):
+        """
+        Set repeat_dims_errcorr dictionary values with the error correlation information along the repeated dims.
+
+        :param comps: name of uncertainty component
+        :type comps: str
+        :param dataset: dataset being querried
+        :type dataset: xarray.dataset
+        :param var: given variable
+        :type var: str
+        :param repeat_dims: Used to select the axis which has repeated measurements using the name(s) of the dimension.
+        :type repeat_dims: str
+        :param repeat_dims_errcorr: dictionary with errcorr info for repeated dims
+        :type repeat_dims_errcorr: dict
+        :return:
+        """
         for comp in comps:
             for idim in range(len(dataset[var].dims)):
                 if dataset[comp].attrs["err_corr_%s_dim" % (idim + 1)] == repeat_dim:

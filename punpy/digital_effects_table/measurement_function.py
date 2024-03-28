@@ -50,6 +50,8 @@ class MeasurementFunction(ABC):
     :type corr_dims: integer, optional
     :param separate_corr_dims: When set to True and output_vars>1, corr_dims should be a list providing the corr_dims for each output variable, each following the format defined in the corr_dims description. Defaults to False
     :type separate_corr_dims: bool, optional
+    :param allow_some_nans: set to False to ignore any MC sample which has any nan's in the measurand. Defaults to True, in which case only MC samples with only nan's are ignored.
+    :type allow_some_nans: bool, optional
     :param ydims: list of dimensions of the measurand, in correct order. list of list of dimensions when there are multiple measurands. Default to None, in which case it is assumed to be the same as refxvar (see below) input quantity.
     :type ydims: list(str), optional
     :param refxvar: name of reference input quantity that has the same shape as measurand. Defaults to None
@@ -58,6 +60,8 @@ class MeasurementFunction(ABC):
     :type sizes_dict: dict, optional
     :param use_err_corr_dict: when possible, use dictionaries with separate error-correlation info per dimension in order to save memory
     :type use_err_corr_dict: bool, optional
+    :param broadcast_correlation: correlation form ("rand" or "syst" to use when broadcasting
+    :type broadcast_correlation: str
     """
 
     def __init__(
@@ -1123,7 +1127,7 @@ class MeasurementFunction(ABC):
         :param corr_y: correlation matrix
         :param err_corr_string: string to start error correlation variable with
         :param i: index of the measurand
-        :return:
+        :return: output dataset (with error correlation)
         """
         try:
             if corr_y[i] is None or corr_y[i][0] is None:
@@ -1297,7 +1301,11 @@ class MeasurementFunction(ABC):
             self.sizes_dict[key[1::]] = val
 
         # try to automatically detect if param_fixed should be set (when using repeat dims)
-        if (not expand) and (self.param_fixed is None) and (self.num_repeat_dims[0] >= 0):
+        if (
+            (not expand)
+            and (self.param_fixed is None)
+            and (self.num_repeat_dims[0] >= 0)
+        ):
             self.param_fixed = [False] * len(self.xvariables)
             for iv, var in enumerate(self.xvariables):
                 found = False

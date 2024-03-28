@@ -15,15 +15,16 @@ __status__ = "Development"
 
 
 class DigitalEffectsTableTemplates(ABC):
-    def __init__(self, yvariable, yunit, output_vars):
-        """
-        Initialise DigitalEffectsTableTemplates
+    """
+    DigitalEffectsTableTemplates class allows to make templates for digital effects table creation for measurand
 
-        :param yvariable: name of the measurand variable
-        :type yvariable: string
-        :param yunit: unit of the measurand
-        :type yunit: string
-        """
+    :param yvariable: name of the measurand variable
+    :type yvariable: string
+    :param yunit: unit of the measurand
+    :type yunit: string
+    """
+
+    def __init__(self, yvariable, yunit, output_vars):
         if isinstance(yvariable, str):
             self.yvariable = [yvariable]
             self.yunit = [yunit]
@@ -335,6 +336,18 @@ class DigitalEffectsTableTemplates(ABC):
         return template
 
     def make_ucomp_name(self, var, ucomp, store_unc_percent=False):
+        """
+        Return the name of the uncertainty component
+
+        :param var: name of variable
+        :type var: str
+        :param ucomp: name of component
+        :type ucomp: str
+        :param store_unc_percent: boolean to indicate whether uncertainties are stored in percent, defaults to False.
+        :type store_unc_percent: bool, optional
+        :return: name of uncertainty component
+        :rtype: str
+        """
         if store_unc_percent:
             uvarname_start = "u_rel_"
         else:
