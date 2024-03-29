@@ -59,7 +59,7 @@ class DigitalEffectsTableTemplates(ABC):
         template = {}
 
         for i in range(self.output_vars):
-            err_corr, custom_err_corr = self.set_errcorr_shape(
+            err_corr, custom_err_corr = self._set_errcorr_shape(
                 dims[i],
                 dim_sizes,
                 "err_corr_str_" + self.yvariable[i],
@@ -79,17 +79,17 @@ class DigitalEffectsTableTemplates(ABC):
                 "attributes": {
                     "units": self.yunit[i],
                     "unc_comps": [
-                        self.make_ucomp_name(
+                        self._make_ucomp_name(
                             self.yvariable[i],
                             "ran",
                             store_unc_percent=store_unc_percent,
                         ),
-                        self.make_ucomp_name(
+                        self._make_ucomp_name(
                             self.yvariable[i],
                             "sys",
                             store_unc_percent=store_unc_percent,
                         ),
-                        self.make_ucomp_name(
+                        self._make_ucomp_name(
                             self.yvariable[i],
                             "str",
                             store_unc_percent=store_unc_percent,
@@ -98,7 +98,7 @@ class DigitalEffectsTableTemplates(ABC):
                 },
             }
             template[
-                self.make_ucomp_name(
+                self._make_ucomp_name(
                     self.yvariable[i], "ran", store_unc_percent=store_unc_percent
                 )
             ] = {
@@ -113,7 +113,7 @@ class DigitalEffectsTableTemplates(ABC):
                 },
             }
             template[
-                self.make_ucomp_name(
+                self._make_ucomp_name(
                     self.yvariable[i], "sys", store_unc_percent=store_unc_percent
                 )
             ] = {
@@ -128,7 +128,7 @@ class DigitalEffectsTableTemplates(ABC):
                 },
             }
             template[
-                self.make_ucomp_name(
+                self._make_ucomp_name(
                     self.yvariable[i], "str", store_unc_percent=store_unc_percent
                 )
             ] = {
@@ -167,7 +167,7 @@ class DigitalEffectsTableTemplates(ABC):
         template = {}
 
         for i in range(self.output_vars):
-            err_corr, custom_err_corr = self.set_errcorr_shape(
+            err_corr, custom_err_corr = self._set_errcorr_shape(
                 dims[i],
                 dim_sizes,
                 "err_corr_tot_" + self.yvariable[i],
@@ -187,7 +187,7 @@ class DigitalEffectsTableTemplates(ABC):
                 "attributes": {
                     "units": self.yunit[i],
                     "unc_comps": [
-                        self.make_ucomp_name(
+                        self._make_ucomp_name(
                             self.yvariable[i],
                             "tot",
                             store_unc_percent=store_unc_percent,
@@ -196,7 +196,7 @@ class DigitalEffectsTableTemplates(ABC):
                 },
             }
             template[
-                self.make_ucomp_name(
+                self._make_ucomp_name(
                     self.yvariable[i], "tot", store_unc_percent=store_unc_percent
                 )
             ] = {
@@ -256,7 +256,7 @@ class DigitalEffectsTableTemplates(ABC):
                 "attributes": {
                     "units": self.yunit[i],
                     "unc_comps": [
-                        self.make_ucomp_name(
+                        self._make_ucomp_name(
                             self.yvariable[i], comp, store_unc_percent=store_unc_percent
                         )
                         for comp in comp_list
@@ -267,7 +267,7 @@ class DigitalEffectsTableTemplates(ABC):
             for ic, comp in enumerate(comp_list):
                 if comp == "random" and simple_random:
                     template[
-                        self.make_ucomp_name(
+                        self._make_ucomp_name(
                             self.yvariable[i], comp, store_unc_percent=store_unc_percent
                         )
                     ] = {
@@ -289,7 +289,7 @@ class DigitalEffectsTableTemplates(ABC):
 
                 elif comp == "systematic" and simple_systematic:
                     template[
-                        self.make_ucomp_name(
+                        self._make_ucomp_name(
                             self.yvariable[i], comp, store_unc_percent=store_unc_percent
                         )
                     ] = {
@@ -310,7 +310,7 @@ class DigitalEffectsTableTemplates(ABC):
                     }
 
                 else:
-                    err_corr, custom_err_corr = self.set_errcorr_shape(
+                    err_corr, custom_err_corr = self._set_errcorr_shape(
                         dims[i],
                         dim_sizes,
                         "err_corr_" + comp + "_" + self.yvariable[i],
@@ -320,7 +320,7 @@ class DigitalEffectsTableTemplates(ABC):
                     )
 
                     template[
-                        self.make_ucomp_name(
+                        self._make_ucomp_name(
                             self.yvariable[i], comp, store_unc_percent=store_unc_percent
                         )
                     ] = {
@@ -335,7 +335,7 @@ class DigitalEffectsTableTemplates(ABC):
 
         return template
 
-    def make_ucomp_name(self, var, ucomp, store_unc_percent=False):
+    def _make_ucomp_name(self, var, ucomp, store_unc_percent=False):
         """
         Return the name of the uncertainty component
 
@@ -354,7 +354,7 @@ class DigitalEffectsTableTemplates(ABC):
             uvarname_start = "u_"
         return uvarname_start + ucomp + "_" + var
 
-    def set_errcorr_shape(
+    def _set_errcorr_shape(
         self,
         dims,
         dim_sizes,

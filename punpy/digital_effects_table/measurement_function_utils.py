@@ -62,7 +62,7 @@ class MeasurementFunctionUtils:
         self.broadcast_correlation = broadcast_correlation
         self.param_fixed = param_fixed
 
-    def find_repeat_dim_corr(self, form, *args, store_unc_percent=False, ydims=None):
+    def _find_repeat_dim_corr(self, form, *args, store_unc_percent=False, ydims=None):
         """
         Function to make dict with the error correlation information along the repeated dims.
 
@@ -101,7 +101,7 @@ class MeasurementFunctionUtils:
                                     continue
                                 elif repeat_dim in dataset[var].dims:
                                     repeat_dims_errcorrs = (
-                                        self.set_repeat_dims_errcorrs(
+                                        self._set_repeat_dims_errcorrs(
                                             comps,
                                             dataset,
                                             var,
@@ -110,7 +110,7 @@ class MeasurementFunctionUtils:
                                         )
                                     )
                                 else:
-                                    self.check_repeat_err_corr_same(
+                                    self._check_repeat_err_corr_same(
                                         repeat_dims_errcorrs[repeat_dim], "systematic"
                                     )
                                     repeat_dims_errcorrs[repeat_dim][
@@ -118,7 +118,7 @@ class MeasurementFunctionUtils:
                                     ] = "systematic"
         return repeat_dims_errcorrs
 
-    def set_repeat_dims_errcorrs(
+    def _set_repeat_dims_errcorrs(
         self, comps, dataset, var, repeat_dim, repeat_dims_errcorrs
     ):
         """
@@ -139,7 +139,7 @@ class MeasurementFunctionUtils:
         for comp in comps:
             for idim in range(len(dataset[var].dims)):
                 if dataset[comp].attrs["err_corr_%s_dim" % (idim + 1)] == repeat_dim:
-                    self.check_repeat_err_corr_same(
+                    self._check_repeat_err_corr_same(
                         repeat_dims_errcorrs[repeat_dim],
                         dataset[comp],
                         idim,
@@ -156,7 +156,7 @@ class MeasurementFunctionUtils:
 
         return repeat_dims_errcorrs
 
-    def check_repeat_err_corr_same(self, repeat_dims_errcorr, uvar, idim=None):
+    def _check_repeat_err_corr_same(self, repeat_dims_errcorr, uvar, idim=None):
         """
         Function to check whether the err_corr along the repeated dim for specific uncertainty variable is the same as the current errcorr dictionary.
 
@@ -202,7 +202,7 @@ class MeasurementFunctionUtils:
                     % (repeat_dims_errcorr["dim"])
                 )
 
-    def set_repeat_dims_form(self, repeat_dims_errcorrs):
+    def _set_repeat_dims_form(self, repeat_dims_errcorrs):
         """
         Function to set self.repeat_dims_form to the correct form.
 
@@ -297,7 +297,7 @@ class MeasurementFunctionUtils:
                     comps.append(*list(comps_rand.variables.mapping.keys()))
 
         else:
-            compname = self.templ.make_ucomp_name(
+            compname = self.templ._make_ucomp_name(
                 var, form, store_unc_percent=store_unc_percent
             )
             if compname in comps:
@@ -626,7 +626,7 @@ class MeasurementFunctionUtils:
         if form == "tot":
             if self.use_err_corr_dict:
                 return [
-                    self.convert_err_corr_dict_to_num(unc.err_corr_dict(), var_dims)
+                    self._convert_err_corr_dict_to_num(unc.err_corr_dict(), var_dims)
                     for unc in dsu
                 ]
             else:
@@ -634,7 +634,7 @@ class MeasurementFunctionUtils:
         elif form == "stru":
             if self.use_err_corr_dict:
                 return [
-                    self.convert_err_corr_dict_to_num(unc.err_corr_dict(), var_dims)
+                    self._convert_err_corr_dict_to_num(unc.err_corr_dict(), var_dims)
                     for unc in dsu
                     if unc.is_structured
                 ]
@@ -662,7 +662,7 @@ class MeasurementFunctionUtils:
             try:
                 uvar = "%s_%s" % (form, var)
                 if self.use_err_corr_dict:
-                    return self.convert_err_corr_dict_to_num(
+                    return self._convert_err_corr_dict_to_num(
                         dsu[uvar].err_corr_dict(), var_dims
                     )
                 else:
@@ -675,7 +675,7 @@ class MeasurementFunctionUtils:
                 uvar = keys[uvar_ids]
                 if len(uvar) > 0:
                     if self.use_err_corr_dict:
-                        return self.convert_err_corr_dict_to_num(
+                        return self._convert_err_corr_dict_to_num(
                             dsu[uvar[0]].err_corr_dict(), var_dims
                         )
                     else:
@@ -683,7 +683,7 @@ class MeasurementFunctionUtils:
                 else:
                     return None
 
-    def convert_err_corr_dict_to_num(self, err_corr_dict, var_dims):
+    def _convert_err_corr_dict_to_num(self, err_corr_dict, var_dims):
         """
         Function to convert err_corr dictionary with dimension names as key, to dictionary with dimension indices as keys
 

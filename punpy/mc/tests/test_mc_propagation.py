@@ -876,7 +876,7 @@ class TestMCPropagation(unittest.TestCase):
         npt.assert_allclose(ucorrb, np.eye(len(ucorrb)), atol=0.06)
         npt.assert_allclose(ufb, yerr_uncorrb, rtol=0.06)
 
-    def test_perform_checks(self):
+    def test__perform_checks(self):
         prop = MCPropagation(20000)
         corrc = [
             np.ones((len(xerrc[0].ravel()), len(xerrc[0].ravel()))) for xerrc in xerrsc
@@ -885,7 +885,7 @@ class TestMCPropagation(unittest.TestCase):
             np.ones((len(xerrd[0].ravel()), len(xerrd[0].ravel()))) for xerrd in xerrsd
         ]
 
-        out = prop.perform_checks(
+        out = prop._perform_checks(
             functionc,
             xsc,
             xerrsc,
@@ -899,7 +899,7 @@ class TestMCPropagation(unittest.TestCase):
             refyvar=0,
         )
 
-        out = prop.perform_checks(
+        out = prop._perform_checks(
             functiond,
             xsd,
             xerrsd,
@@ -913,7 +913,7 @@ class TestMCPropagation(unittest.TestCase):
             refyvar=0,
         )
         try:
-            out = prop.perform_checks(
+            out = prop._perform_checks(
                 functionc,
                 xsc,
                 xerrsc,
@@ -926,7 +926,7 @@ class TestMCPropagation(unittest.TestCase):
                 param_fixed=None,
                 refyvar=0,
             )
-            out = prop.perform_checks(
+            out = prop._perform_checks(
                 functiond,
                 xsd,
                 xerrsd,

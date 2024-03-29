@@ -321,11 +321,11 @@ class MeasurementFunction(ABC):
                     "punpy.MeasurementFunction: ds_out_pre needs to be provided when use_ds_out_pre_unmodified is set to True."
                 )
         else:
-            repeat_dim_err_corrs = self.utils.find_repeat_dim_corr(
+            repeat_dim_err_corrs = self.utils._find_repeat_dim_corr(
                 "str", *args, store_unc_percent=store_unc_percent, ydims=self.ydims
             )
 
-            self.utils.set_repeat_dims_form(repeat_dim_err_corrs)
+            self.utils._set_repeat_dims_form(repeat_dim_err_corrs)
             template = self.templ.make_template_main(
                 self.ydims,
                 self.sizes_dict,
@@ -483,11 +483,11 @@ class MeasurementFunction(ABC):
                     "punpy.MeasurementFunction: ds_out_pre needs to be provided when use_ds_out_pre_unmodified is set to True."
                 )
         else:
-            repeat_dim_err_corrs = self.utils.find_repeat_dim_corr(
+            repeat_dim_err_corrs = self.utils._find_repeat_dim_corr(
                 "tot", *args, store_unc_percent=store_unc_percent, ydims=self.ydims
             )
 
-            self.utils.set_repeat_dims_form(repeat_dim_err_corrs)
+            self.utils._set_repeat_dims_form(repeat_dim_err_corrs)
 
             template = self.templ.make_template_tot(
                 self.ydims,
@@ -623,13 +623,13 @@ class MeasurementFunction(ABC):
                 )
         else:
             repeat_dim_err_corrs = [
-                self.utils.find_repeat_dim_corr(
+                self.utils._find_repeat_dim_corr(
                     form, *args, store_unc_percent=store_unc_percent, ydims=self.ydims
                 )
                 for form in comp_list
             ]
 
-            self.utils.set_repeat_dims_form(repeat_dim_err_corrs)
+            self.utils._set_repeat_dims_form(repeat_dim_err_corrs)
 
             template = self.templ.make_template_specific(
                 comp_list_out,

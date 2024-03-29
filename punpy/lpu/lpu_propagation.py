@@ -330,7 +330,7 @@ class LPUPropagation:
             corr_dims,
             fixed_corr,
             Jx_diag,
-        ) = self.perform_checks(
+        ) = self._perform_checks(
             func,
             x,
             u_x,
@@ -380,7 +380,7 @@ class LPUPropagation:
                 for i in range(n_repeats):
                     outs[i] = self.propagate_standard(*inputs[i])
 
-            return self.combine_repeated_outs(
+            return self._combine_repeated_outs(
                 outs,
                 yshape,
                 n_repeats,
@@ -483,7 +483,7 @@ class LPUPropagation:
             corr_dims,
             fixed_corr,
             Jx_diag,
-        ) = self.perform_checks(
+        ) = self._perform_checks(
             func,
             x,
             None,
@@ -562,7 +562,7 @@ class LPUPropagation:
                 else:
                     return u_func, corr_ys, corr_out, J
 
-    def perform_checks(
+    def _perform_checks(
         self,
         func,
         x,
@@ -757,7 +757,7 @@ class LPUPropagation:
             Jx_diag,
         )
 
-    def combine_repeated_outs(
+    def _combine_repeated_outs(
         self,
         outs,
         yshape,

@@ -413,7 +413,7 @@ class MCPropagation:
 
         # check if mcsteps is 0, if so don't propagate uncertainties and just return None
         if self.MCsteps == 0:
-            return self.return_no_unc(return_corr, return_samples)
+            return self._return_no_unc(return_corr, return_samples)
 
         (
             yshapes,
@@ -425,7 +425,7 @@ class MCPropagation:
             repeat_dims,
             corr_dims,
             fixed_corr,
-        ) = self.perform_checks(
+        ) = self._perform_checks(
             func,
             x,
             u_x,
@@ -463,7 +463,7 @@ class MCPropagation:
                 pdf_params=pdf_params,
             )
 
-            outs = self.make_new_outs(
+            outs = self._make_new_outs(
                 out_0,
                 yshapes,
                 len(x),
@@ -476,7 +476,7 @@ class MCPropagation:
                 refyvar,
             )
 
-            outs = self.add_repeated_outs(
+            outs = self._add_repeated_outs(
                 outs,
                 0,
                 out_0,
@@ -515,7 +515,7 @@ class MCPropagation:
                     pdf_params=pdf_params,
                 )
 
-                outs = self.add_repeated_outs(
+                outs = self._add_repeated_outs(
                     outs,
                     i,
                     out_i,
@@ -535,7 +535,7 @@ class MCPropagation:
                         % (i, n_repeats, time.time() - self.starttime)
                     )
 
-            outs = self.finish_repeated_outs(
+            outs = self._finish_repeated_outs(
                 outs,
                 yshapes,
                 len(x),
@@ -554,7 +554,7 @@ class MCPropagation:
             if samples is not None:
                 MC_x = samples
             elif all([not np.any(u_xi) for u_xi in u_x]):
-                return self.return_no_unc(return_corr, return_samples)
+                return self._return_no_unc(return_corr, return_samples)
             else:
                 MC_x = self.generate_MC_sample(
                     x,
@@ -756,7 +756,7 @@ class MCPropagation:
             repeat_dims,
             corr_dims,
             fixed_corr,
-        ) = self.perform_checks(
+        ) = self._perform_checks(
             func,
             x,
             cov_x,
@@ -791,7 +791,7 @@ class MCPropagation:
                 pdf_params=pdf_params,
             )
 
-            outs = self.make_new_outs(
+            outs = self._make_new_outs(
                 out_0,
                 yshapes,
                 len(x),
@@ -804,7 +804,7 @@ class MCPropagation:
                 refyvar,
             )
 
-            outs = self.add_repeated_outs(
+            outs = self._add_repeated_outs(
                 outs,
                 0,
                 out_0,
@@ -841,7 +841,7 @@ class MCPropagation:
                     pdf_params=pdf_params,
                 )
 
-                outs = self.add_repeated_outs(
+                outs = self._add_repeated_outs(
                     outs,
                     i,
                     out_i,
@@ -856,7 +856,7 @@ class MCPropagation:
                     refyvar,
                 )
 
-            outs = self.finish_repeated_outs(
+            outs = self._finish_repeated_outs(
                 outs,
                 yshapes,
                 len(x),
@@ -896,7 +896,7 @@ class MCPropagation:
             output_vars,
         )
 
-    def perform_checks(
+    def _perform_checks(
         self,
         func,
         x,
@@ -1088,7 +1088,7 @@ class MCPropagation:
             fixed_corr,
         )
 
-    def make_new_outs(
+    def _make_new_outs(
         self,
         out_0,
         yshapes,
@@ -1186,7 +1186,7 @@ class MCPropagation:
                 outs[2 + extra_index] = np.empty(lenx, dtype=object)
         return outs
 
-    def add_repeated_outs(
+    def _add_repeated_outs(
         self,
         outs,
         i,
@@ -1304,7 +1304,7 @@ class MCPropagation:
 
         return outs
 
-    def finish_repeated_outs(
+    def _finish_repeated_outs(
         self,
         outs,
         yshapes,
@@ -1765,7 +1765,7 @@ class MCPropagation:
                 else:
                     return u_func, corr_ys, corr_out
 
-    def return_no_unc(self, return_corr, return_samples):
+    def _return_no_unc(self, return_corr, return_samples):
         """
         function to generate outputs in right format when there are no valid uncertainties
 

@@ -568,7 +568,7 @@ class TestLPUPropagation(unittest.TestCase):
         )
         npt.assert_allclose(ucorrd[1], np.ones_like(ucorrd[1]), atol=0.01)
 
-    def test_perform_checks(self):
+    def test__perform_checks(self):
         prop = LPUPropagation()
         corrc = [
             np.ones((len(xerrc[0].ravel()), len(xerrc[0].ravel()))) for xerrc in xerrsc
@@ -578,7 +578,7 @@ class TestLPUPropagation(unittest.TestCase):
             for xerrd in xerrsd
         ]
 
-        out = prop.perform_checks(
+        out = prop._perform_checks(
             functionc,
             xsc,
             xerrsc,
@@ -591,7 +591,7 @@ class TestLPUPropagation(unittest.TestCase):
             param_fixed=None,
         )
 
-        out = prop.perform_checks(
+        out = prop._perform_checks(
             functiond,
             xsd,
             xerrsd,
@@ -604,7 +604,7 @@ class TestLPUPropagation(unittest.TestCase):
             param_fixed=[True, False, False],
         )
         try:
-            out = prop.perform_checks(
+            out = prop._perform_checks(
                 functionc,
                 xsc,
                 xerrsc,
@@ -616,7 +616,7 @@ class TestLPUPropagation(unittest.TestCase):
                 Jx_diag=None,
                 param_fixed=None,
             )
-            out = prop.perform_checks(
+            out = prop._perform_checks(
                 functiond,
                 xsd,
                 xerrsd,
