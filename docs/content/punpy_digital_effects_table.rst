@@ -104,7 +104,7 @@ Once this kind of measurement function class is defined, we can initialise an ob
 In principle there are no required arguments when creating an object of this class (all arguments have a default).
 However, in practise we will almost always provide at least some arguments.
 The first argument `prop` allows to pass a MCPropagation or LPUpropagaion object. It thus specifies whether the Monte Carlo (MC) method (see Section :ref:`Monte Carlo Method`)
-or Law of Propagation of Uncertainties (LPU) method (see Section :ref:`LPU Method`) should be used. These prop objects can be created with any of their options (such as parallel_cores)::
+or Law of Propagation of Uncertainties (LPU) method (see Section :ref:`LPUMethod`) should be used. These prop objects can be created with any of their options (such as parallel_cores)::
 
    prop = MCPropagation(1000, dtype="float32", verbose=False, parallel_cores=4)
 
@@ -205,7 +205,9 @@ This behaviour could also be obtained by removing the unc_comps in the temperatu
 n_moles variables in their respective datasets, but the solution shown above is easier.
 If no uncxvariables are provided, the uncertainties on all input quantities are propagated.
 
+
 .. _MeasurementFunctionOptions:
+
 Options when creating MeasurementFunction object
 ##################################################
 A number of additional options are available when creating the MeasurementFunction object, and when running one of the propagate_ds functions.

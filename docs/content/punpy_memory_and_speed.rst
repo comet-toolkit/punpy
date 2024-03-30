@@ -32,7 +32,7 @@ be correlated, this error correlation w.r.t x does not change for different valu
 In that case, the error correlation for x can be separated and stored as a matrix of shape (x,x).
 
 One way to reduce the memory load is by separately storing the error-correlation matrices in the output dataset.
-In the :ref:`_punpy_standalone` section, we showed that the `corr_dims` keyword can be used to output the error correlation matrix for a single dimension rather than the full error correlation matrix.
+In the :ref:`punpy_standalone` section, we showed that the `corr_dims` keyword can be used to output the error correlation matrix for a single dimension rather than the full error correlation matrix.
 This can also be used to separately store the error correlation for each dimension by passing a list of all dimension indices for `corr_dims`::
 
    ur_y, corr_y = prop.propagate_random(measurement_function,

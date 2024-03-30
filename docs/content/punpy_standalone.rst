@@ -285,7 +285,7 @@ This is done by setting the `separate_corr_dims` keyword to True, and passing a 
                             [x1, x2, x3], [us_x1, us_x2, us_x3],
                             return_corr=True, corr_dims=[0,1],separate_corr_dims=True, output_vars=2)
 
-It is also possible to set one of the separate `corr_dims' to None if you do not want the error correlation to be calculated for that measurand. In that case None will be returned (as corr_y[1] in below example)::
+It is also possible to set one of the separate `corr_dims` to None if you do not want the error correlation to be calculated for that measurand. In that case None will be returned (as corr_y[1] in below example)::
 
    us_y, corr_y, corr_out = prop.propagate_systematic(measurement_function,
                             [x1, x2, x3], [us_x1, us_x2, us_x3],

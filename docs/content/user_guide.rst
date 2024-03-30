@@ -8,6 +8,5 @@ In this user guide, you will find detailed descriptions and examples that descri
    :maxdepth: 2
 
    punpy_standalone
-   punpy_difital_effects_table
+   punpy_digital_effects_table
    punpy_memory_and_speed
-   args_and_kwargs
