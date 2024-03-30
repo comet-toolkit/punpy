@@ -11,7 +11,7 @@ and examples, refer to the relevant chapters in the main part of the
 documentation.
 
 MCPropagation
-====================
+===================
 
 .. autosummary::
    :toctree: generated/
