@@ -62,5 +62,5 @@ Project status
 
    Quickstart <content/getting_started>
    User Guide <content/user_guide>
-   API Reference <content/API/api>
    ATBD <content/atbd>
+   API Reference <content/API/api>
