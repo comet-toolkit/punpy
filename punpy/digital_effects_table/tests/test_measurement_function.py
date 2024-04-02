@@ -375,8 +375,8 @@ class TestMeasurementFunction(unittest.TestCase):
         npt.assert_allclose(
             ds_tot["u_rel_tot_irradiance"][mask],
             u_y_tot[mask] / y[mask] * 100,
-            rtol=0.05,
-            atol=0.05,
+            rtol=0.07,
+            atol=0.07,
         )
 
     def test_hypernets_expand(self):

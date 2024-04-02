@@ -35,8 +35,8 @@ setup(
     long_description=read("README.md"),
     packages=find_packages(exclude=("tests",)),
     install_requires=[
-        "comet_maths>=0.20.1",
-        "obsarray>=0.2.6",
+        "comet_maths>=0.22.0",
+        "obsarray>=1.0.0",
         "numpy",
         "scipy",
         "netcdf4",
