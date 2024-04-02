@@ -130,6 +130,17 @@ class TestMeasurementFunction(unittest.TestCase):
 
         npt.assert_allclose(ds_y_tot["u_tot_volume"].values, u_tot_volume, rtol=0.1)
 
+        prop = MCPropagation(1000, dtype="float32", verbose=False, parallel_cores=1)
+
+        gl = IdealGasLaw(
+            prop,
+            ["pressure", "temperature", "n_moles"],
+            yvariable="volume",
+            yunit="m^3",
+            use_err_corr_dict=True,
+        )
+        ds_y_tot = gl.propagate_ds_total(ds)
+
         prop = MCPropagation(3000, dtype="float32", verbose=False)
         gl = IdealGasLaw(
             prop,

@@ -29,7 +29,7 @@ Some correlation forms, such as e.g. "random" and "systematic" do not require an
 Others, such as "triangle_relative", require a parameter that e.g. sets the number of pixels/scanlines being averaged.
 
 
-.. image:: images/Digital_effects_tables.jpg
+.. image:: ../figs/Digital_effects_tables.jpg
 
 *Figure 1 - left: FIDUCEO effects table template. right: obsarray digital effects table for one uncertainty component.*
 

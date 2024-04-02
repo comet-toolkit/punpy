@@ -30,10 +30,9 @@ Generally, the "reference quantity" is considered to be the "true value"
 of the measurand and is therefore unknown. Figure 1 illustrates these
 concepts.
 
-.. image:: images/image1.png
+.. image:: ../figs/image1.png
 
 *Figure 1 - Diagram illustrating the different concepts of measured value and true value, uncertainty and error.*
- 
 
 In a series of measurements (for example each pixel in a remote sensing
 Level 1 (L1) data product) it is vital to consider how the errors
@@ -123,7 +122,7 @@ where:
 The error covariances matrices define the uncertainties (from the diagonal elements) as well as 
 the correlation between the different quantities (off-diagonal elements).
 
-.. image:: images/image2.png
+.. image:: ../figs/image2.png
 
 *Figure 2 - Conceptual process of uncertainty propagation.*
 
