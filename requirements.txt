@@ -4,7 +4,7 @@ matplotlib >= 3.1.0
 xarray
 scipy
 obsarray >= 1.0.0
-comet_maths >= 0.22.0
+comet_maths >= 0.22.3
 
 # for docs
 sphinx

@@ -176,7 +176,7 @@ class MeasurementFunction(ABC):
 
         self.param_fixed = param_fixed
 
-        if use_err_corr_dict and repeat_dims is not None:
+        if use_err_corr_dict and (repeat_dims[0] > -99):
             warnings.warn(
                 "It is currently not possible to set repeat_dims (%s) while use_err_corr_dict is set to True (this is set to True by default). Punpy is setting use_err_corr_dict to False instead."
                 % repeat_dims
