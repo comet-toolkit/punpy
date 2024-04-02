@@ -32,7 +32,7 @@ This documentation provides general information on how to use the module (with s
         :link: content/api
         :link-type: doc
 
-        The API Reference contains a description the **punpy** API.
+        The API Reference contains a description of each of the **punpy** classes and functions.
 
 
 Acknowledgements
