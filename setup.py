@@ -35,11 +35,8 @@ setup(
     long_description=read("README.md"),
     packages=find_packages(exclude=("tests",)),
     install_requires=[
-        "comet_maths>=1.0.0",
-        "obsarray>=1.0.0",
-        "numpy",
-        "scipy",
-        "netcdf4",
+        "comet_maths>=1.0.1",
+        "obsarray>=1.0.1",
     ],
     extras_require={
         "dev": [
@@ -51,8 +48,8 @@ setup(
             "ipython",
             "sphinx_autosummary_accessors",
         ],
-        ':python_version >= "3.9"': "xarray>=2023.6.0",
-        ':python_version < "3.9"': "xarray==0.19.0",
+        # ':python_version >= "3.9"': "xarray>=2023.6.0",
+        # ':python_version < "3.9"': "xarray==0.19.0",
     },
     # ext_modules=cythonize(extensions),
 )
