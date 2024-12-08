@@ -424,7 +424,7 @@ class LPUPropagation:
                 return_Jacobian,
             )
 
-    def propagate_flattened_cov(
+    def propagate_cov_flattened(
         self,
         func,
         x,

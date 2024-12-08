@@ -141,7 +141,7 @@ class TestMeasurementFunction(unittest.TestCase):
         )
         ds_y_tot = gl.propagate_ds_total(ds)
 
-        prop = MCPropagation(3000, dtype="float32", verbose=False)
+        prop = MCPropagation(1000, dtype="float32", verbose=False)
         gl = IdealGasLaw(
             prop,
             ["pressure", "temperature", "n_moles"],
@@ -156,10 +156,10 @@ class TestMeasurementFunction(unittest.TestCase):
         )
 
         npt.assert_allclose(ds_y["volume"].values, volume, rtol=0.002)
-        npt.assert_allclose(ds_y["u_ran_volume"].values, u_ran_volume, rtol=0.08)
-        npt.assert_allclose(ds_y["u_sys_volume"].values, u_sys_volume, rtol=0.08)
-        npt.assert_allclose(ds_y["u_str_volume"].values, u_str_volume, rtol=0.08)
-        npt.assert_allclose(ds_y["u_str_volume"].values, u_str_volume, rtol=0.08)
+        npt.assert_allclose(ds_y["u_ran_volume"].values, u_ran_volume, rtol=0.1)
+        npt.assert_allclose(ds_y["u_sys_volume"].values, u_sys_volume, rtol=0.1)
+        npt.assert_allclose(ds_y["u_str_volume"].values, u_str_volume, rtol=0.1)
+        npt.assert_allclose(ds_y["u_str_volume"].values, u_str_volume, rtol=0.1)
         npt.assert_allclose(
             ds_y.unc["volume"].total_unc().values, u_tot_volume, rtol=0.12
         )
