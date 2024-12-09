@@ -1,5 +1,5 @@
 # Default image, if not specified
-image: "python:3.8"
+image: "python:3.11"
 
 stages:
   - Static Analysis
