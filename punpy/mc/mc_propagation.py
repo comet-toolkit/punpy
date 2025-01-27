@@ -1519,6 +1519,10 @@ class MCPropagation:
                                 [
                                     np.any(np.isfinite(MC_y[i][ivar]))
                                     for ivar in range(output_vars)
+                                    if (
+                                        hasattr(MC_y[i][ivar], "__len__")
+                                        and (len(MC_y[i][ivar]) > 0)
+                                    )
                                 ]
                             )
                         ],
@@ -1533,6 +1537,10 @@ class MCPropagation:
                                 [
                                     np.any(np.isfinite(MC_y[i][ivar]))
                                     for ivar in range(output_vars)
+                                    if (
+                                        hasattr(MC_y[i][ivar], "__len__")
+                                        and (len(MC_y[i][ivar]) > 0)
+                                    )
                                 ]
                             )
                         ],
@@ -1549,6 +1557,10 @@ class MCPropagation:
                                 [
                                     np.all(np.isfinite(MC_y[i][ivar]))
                                     for ivar in range(output_vars)
+                                    if (
+                                        hasattr(MC_y[i][ivar], "__len__")
+                                        and (len(MC_y[i][ivar]) > 0)
+                                    )
                                 ]
                             )
                         ],
@@ -1563,6 +1575,10 @@ class MCPropagation:
                                 [
                                     np.all(np.isfinite(MC_y[i][ivar]))
                                     for ivar in range(output_vars)
+                                    if (
+                                        hasattr(MC_y[i][ivar], "__len__")
+                                        and (len(MC_y[i][ivar]) > 0)
+                                    )
                                 ]
                             )
                         ],
@@ -1667,14 +1683,18 @@ class MCPropagation:
                 complex_shapes = False
 
             if complex_shapes:
-                MC_y2 = np.empty(output_vars, dtype=object)
                 u_func = np.empty(output_vars, dtype=object)
 
                 for i in range(output_vars):
-                    MC_y2[i] = np.empty((self.MCsteps,) + yshapes[i])
-                    for j in range(self.MCsteps):
-                        MC_y2[i][j] = MC_y[j, i]
-                    u_func[i] = np.std(np.array(MC_y2[i]), axis=0, dtype=self.dtype)
+                    u_func[i] = np.std(
+                        np.array(list(MC_y[:, i])), axis=0, dtype=self.dtype
+                    )
+
+                # for i in range(output_vars):
+                #     MC_y2[i] = np.empty((self.MCsteps,) + yshapes[i])
+                #     for j in range(self.MCsteps):
+                #         MC_y2[i][j] = MC_y[j, i]
+                #     u_func[i] = np.std(np.array(MC_y2[i]), axis=0, dtype=self.dtype)
 
             else:
                 u_func = np.std(MC_y, axis=0, dtype=self.dtype)
@@ -1728,7 +1748,10 @@ class MCPropagation:
                     if fixed_corr is None:
                         if complex_shapes:
                             corr_ys[i] = cm.calculate_corr(
-                                MC_y2[i], corrdims, PD_corr, self.dtype
+                                np.array(list(MC_y[:, i])),
+                                corrdims,
+                                PD_corr,
+                                self.dtype,
                             )
                         else:
                             corr_ys[i] = cm.calculate_corr(
