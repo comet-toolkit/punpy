@@ -337,18 +337,24 @@ class MeasurementFunction(ABC):
                 repeat_dim_err_corrs=repeat_dim_err_corrs,
             )
 
+            if not include_corr:
+                ds_vars = deepcopy(list(template.keys()))
+                for key in ds_vars:
+                    if key[:8] == "err_corr":
+                        template.pop(key)
+
             # create dataset template
             ds_out = obsarray.create_ds(template, self.sizes_dict)
 
         # add trivial first dimension to so we can loop over output_vars later
         if self.output_vars == 1:
-            if u_rand_y is not None:
+            if isinstance(u_rand_y, np.ndarray):
                 u_rand_y = u_rand_y[None, ...]
-            if u_syst_y is not None:
+            if isinstance(u_syst_y, np.ndarray):
                 u_syst_y = u_syst_y[None, ...]
-            if u_stru_y is not None:
+            if isinstance(u_stru_y, np.ndarray):
                 u_stru_y = u_stru_y[None, ...]
-            if corr_stru_y is not None:
+            if isinstance(corr_stru_y, np.ndarray):
                 corr_stru_y = corr_stru_y[None, ...]
 
         # loop through measurands
@@ -364,7 +370,7 @@ class MeasurementFunction(ABC):
                 ucomp_sys = "u_sys_" + self.yvariable[i]
                 ucomp_str = "u_str_" + self.yvariable[i]
 
-            if u_rand_y is None:
+            if not isinstance(u_rand_y, np.ndarray):
                 ds_out = self.templ.remove_unc_component(
                     ds_out, self.yvariable[i], ucomp_ran
                 )
@@ -374,7 +380,7 @@ class MeasurementFunction(ABC):
                 else:
                     ds_out[ucomp_ran].values = u_rand_y[i]
 
-            if u_syst_y is None:
+            if not isinstance(u_syst_y, np.ndarray):
                 ds_out = self.templ.remove_unc_component(
                     ds_out, self.yvariable[i], ucomp_sys
                 )
@@ -384,7 +390,7 @@ class MeasurementFunction(ABC):
                 else:
                     ds_out[ucomp_sys].values = u_syst_y[i]
 
-            if u_stru_y is None:
+            if not isinstance(u_stru_y, np.ndarray):
                 ds_out = self.templ.remove_unc_component(
                     ds_out,
                     self.yvariable[i],
@@ -405,10 +411,6 @@ class MeasurementFunction(ABC):
                         i,
                         use_ds_out_pre_unmodified,
                     )
-                else:
-                    ds_out.drop("err_corr_str_" + self.yvariable[i])
-
-                    # ds_out.drop("err_corr_str_between")
 
             if (ds_out_pre is not None) and not use_ds_out_pre_unmodified:
                 self.templ.join_with_preexisting_ds(
@@ -500,6 +502,12 @@ class MeasurementFunction(ABC):
                 repeat_dim_err_corrs=repeat_dim_err_corrs,
             )
 
+            if not include_corr:
+                ds_vars = deepcopy(list(template.keys()))
+                for key in ds_vars:
+                    if key[:8] == "err_corr":
+                        template.pop(key)
+
             # create dataset template
             ds_out = obsarray.create_ds(template, self.sizes_dict)
 
@@ -536,18 +544,6 @@ class MeasurementFunction(ABC):
                         i,
                         use_ds_out_pre_unmodified,
                     )
-
-                else:
-                    if len(self.str_corr_dims) == 1:
-                        ds_out.drop("err_corr_tot_" + self.yvariable[i])
-                    else:
-                        for ii in range(len(self.str_corr_dims)):
-                            ds_out.drop(
-                                "err_corr_tot_"
-                                + self.yvariable[i]
-                                + "_"
-                                + self.str_corr_dims[ii]
-                            )
 
             if (ds_out_pre is not None) and not use_ds_out_pre_unmodified:
                 self.templ.join_with_preexisting_ds(
@@ -644,6 +640,12 @@ class MeasurementFunction(ABC):
                 simple_random=simple_random,
                 simple_systematic=simple_systematic,
             )
+
+            if not include_corr:
+                ds_vars = deepcopy(list(template.keys()))
+                for key in ds_vars:
+                    if key[:8] == "err_corr":
+                        template.pop(key)
 
             # create dataset template
             ds_out = obsarray.create_ds(template, self.sizes_dict)

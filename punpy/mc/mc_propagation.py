@@ -999,7 +999,7 @@ class MCPropagation:
         count = 0
         for i in range(len(x)):
             if u_x[i] is None:
-                if hasattr(x[i], "__len__"):
+                if hasattr(x[i], "__shape__"):
                     u_x[i] = np.zeros(x[i].shape)
                 else:
                     u_x[i] = 0.0

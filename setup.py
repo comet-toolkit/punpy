@@ -35,8 +35,8 @@ setup(
     long_description=read("README.md"),
     packages=find_packages(exclude=("tests",)),
     install_requires=[
-        "comet_maths>=1.0.3",
-        "obsarray>=1.0.1",
+        "comet_maths>=1.0.5",
+        "obsarray>=1.0.2",
     ],
     extras_require={
         "dev": [
