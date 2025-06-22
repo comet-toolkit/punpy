@@ -338,7 +338,7 @@ class MeasurementFunction(ABC):
             )
 
             if not include_corr:
-                ds_vars = deepcopy(list(template.keys()))
+                ds_vars = copy.deepcopy(list(template.keys()))
                 for key in ds_vars:
                     if key[:8] == "err_corr":
                         template.pop(key)
@@ -503,7 +503,7 @@ class MeasurementFunction(ABC):
             )
 
             if not include_corr:
-                ds_vars = deepcopy(list(template.keys()))
+                ds_vars = copy.deepcopy(list(template.keys()))
                 for key in ds_vars:
                     if key[:8] == "err_corr":
                         template.pop(key)
@@ -642,7 +642,7 @@ class MeasurementFunction(ABC):
             )
 
             if not include_corr:
-                ds_vars = deepcopy(list(template.keys()))
+                ds_vars = copy.deepcopy(list(template.keys()))
                 for key in ds_vars:
                     if key[:8] == "err_corr":
                         template.pop(key)
