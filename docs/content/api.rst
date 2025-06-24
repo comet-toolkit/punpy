@@ -39,7 +39,7 @@ LPUPropagation
    lpu.lpu_propagation.LPUPropagation.propagate_random
    lpu.lpu_propagation.LPUPropagation.propagate_systematic
    lpu.lpu_propagation.LPUPropagation.propagate_cov
-   lpu.lpu_propagation.LPUPropagation.propagate_flattened_cov
+   lpu.lpu_propagation.LPUPropagation.propagate_cov_flattened
    lpu.lpu_propagation.LPUPropagation.process_jacobian
 
 Digital Effects Tables
