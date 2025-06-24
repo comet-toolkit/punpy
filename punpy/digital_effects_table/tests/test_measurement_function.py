@@ -349,7 +349,7 @@ class TestMeasurementFunction(unittest.TestCase):
         )
 
         hmf.setup(0.1)
-        y = hmf.run(calib_data, L0data.variables, L0data)
+        y = hmf.run_meas_function(calib_data, L0data.variables, L0data)
         u_y_rand = hmf.propagate_random(L0data, calib_data)
         print(u_y_rand)
         # print(u_y_rand,L0data)
@@ -427,7 +427,7 @@ class TestMeasurementFunction(unittest.TestCase):
             corr_dims=-99,
         )
         hmf.setup(0.1)
-        y = hmf.run(calib_data, L0data)
+        y = hmf.run_meas_function(calib_data, L0data)
         u_y_rand = hmf.propagate_random(L0data, calib_data)
         # print(list(L1data.variables))
         mask = np.where(
