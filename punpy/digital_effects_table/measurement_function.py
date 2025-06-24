@@ -807,7 +807,7 @@ class MeasurementFunction(ABC):
             include_corr=include_corr,
         )
 
-    def run(self, *args, expand=False):
+    def run_meas_function(self, *args, expand=False):
         """
         Function to calculate the measurand by running input quantities through measurement function.
 
@@ -1221,7 +1221,7 @@ class MeasurementFunction(ABC):
                     "punpy.MeasurementFunction: When using a measurement function with multiple measurands with different shapes, you cannot set parallel_cores to 0 (the default) when creating the prop object."
                 )
 
-        # define dictionary with dimension sizes (needs to be done before self.run() when expand==True)
+        # define dictionary with dimension sizes (needs to be done before self.run_meas_function() when expand==True)
         if self.sizes_dict is None and expand:
             self.sizes_dict = {}
             for i in range(self.output_vars):
@@ -1241,7 +1241,7 @@ class MeasurementFunction(ABC):
                             continue
 
         # run the measurement function
-        y = self.run(*args, expand=expand)
+        y = self.run_meas_function(*args, expand=expand)
 
         if self.output_vars == 1:
             y = y[None, ...]
