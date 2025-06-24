@@ -29,26 +29,6 @@ jobs:
       run: |
         pre-commit run -a
 
-  test_code_python3p8:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.8"]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install .[dev]
-    - name: Test code
-      run: |
-        mkdir test_report
-        tox
-
 
   test_code_and_coverage_report_python3p11:
     runs-on: ubuntu-latest
