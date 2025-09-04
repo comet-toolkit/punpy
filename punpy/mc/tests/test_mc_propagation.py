@@ -763,6 +763,9 @@ class TestMCPropagation(unittest.TestCase):
         MC_x = prop.generate_MC_sample(xsd, xerrsd, corrd)
         MC_y1 = prop.run_samples(functiond, MC_x, output_vars=2, start=0, end=10000)
         MC_y2 = prop.run_samples(functiond, MC_x, output_vars=2, start=10000, end=20000)
+        MC_y3 = prop.run_samples(functiond, MC_x, output_vars=2, start=0, end=10000, return_objects=True)
+        assert isinstance(MC_y3,object)
+        
         MC_y = prop.combine_samples([MC_y1, MC_y2])
 
         ufd, ucorrd, corr_out = prop.process_samples(
