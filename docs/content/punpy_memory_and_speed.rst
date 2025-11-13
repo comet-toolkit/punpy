@@ -137,10 +137,30 @@ In some cases, when there are multiple measurands with different shapes, it is n
 In such cases, the `refyvar` keyword should be set to the index of the measurand with the most dimensions and the repeat_dims indexes should correspond to this measurand.
 
 
+Processing the MC samples simultaneously
+########################################
+For simple measurement functions (e.g. that just do arithmic operations such as +,-,*,/) with numpy arrays, the most computationally efficient way to propagate uncertainties is to 
+pass all the MC samples simultaneously to the measurement function. The measurement thus takes as arguments numpy arrays consisting of all MC steps for a given
+input quantity, and will return a numpy array with all the MC samples of the measurand. In order to use this method, set the optional `parallel_cores` keyword to 0.
+By using this method we can then benefit from the optimised array operations within numpy 
+(which use all available CPUS, and rely on C code instead of Python), which is significantly faster than any available alternative. 
+This method is recommended for any measurement function that allows it (i.e. if the measurment function can deal with the additional dimension in the input quantities and through numpy operations the measurand will simply end up with the same additional dimension.)
+
+When parallel_cores is set to 0, all iterations will be processed simultaneously and there will be an additional dimension for the MC iterations.
+Generally within punpy, the MC dimension in the samples is the first one (i.e. internally as well as when MC samples are returned).
+However, when processing all iterations simultaniously, in most cases it is more practical to have the MC dimension as the last dimension.
+This is because we use numpy arrays and these are compatible when the last dimensions match following the `numpy broadcasting rules <https://numpy.org/doc/stable/user/basics.broadcasting.html#general-broadcasting-rules>`_.
+So as default, the shape of the input quantities when using parallel_cores=0 will have the MC iterations as its last dimension.
+However, in some cases it is more helpful to have the MC iterations as the first dimension.
+If this is the case, the MC iteration dimension can be made the first dimension by setting the `MClastdim` keyword to False::
+
+      prop = punpy.MCPropagation(1000,parallel_cores=0,MCdimlast=False)
+
+
 Processing the MC samples in parallel
 ######################################
-At the start of this section we already saw that the optional `parallel_cores` keyword can be used to running the MC
-samples one-by-one through the measurement function rather than all at once as in the standard case. It is also possible
+In the previous section we already saw that the optional `parallel_cores` keyword can be used to running the MC
+samples all at once through the measurement function rather than one-by-one as in the standard case. It is also possible
 to use the same keyword to use parallel processing. Here, only the processing of the input quantities through the measurement
 function is done in parallel. Generating the samples and calculating the covariance matrix etc is still done as normal.
 Punpy uses the multiprocessing module which comes standard with your python distribution.

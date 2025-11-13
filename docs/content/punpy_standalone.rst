@@ -62,9 +62,9 @@ first create a prop object (object of punpy MCPropagation of LPUPropagation clas
    prop=punpy.MCPropagation(10000) # Here the number is how 
    # many MC samples will be generated
 
-   # Or if you have a measurement function that does not accept 
+   # Or if you have a measurement function that accepts 
    # higher dimensional arrays as argument:
-   prop=punpy.MCPropagation(10000,parallel_cores=1)
+   prop=punpy.MCPropagation(10000,parallel_cores=0)
 
    # Alternatively it is possible to use LPU methods to 
    # propagate uncertainties
@@ -82,15 +82,18 @@ GUM (Guide to the Expression of Uncertainty in Measurement) by calculating the J
 For the MC method, the number of MC samples that is used is set as the first argument when creating the MCPropagation object (see example above).
 Two approaches can be followed to propagate the MC samples of the input quantities to the measurand, depending on whether the measurement function can be applied to numpy arrays of arbitrary size.
 
-The most computationally efficient way is to pass an array consisting of all MC steps of an
-input quantity instead of the input quantity themselves. Each of the input quantities will thus get an additional dimension in the MC sample.
+By default, MC samples are processed one-by-one. This is equivalent to setting the optional
+`parallel_cores` keyword to 1. However, some measurement functions allow to process all the MC samples simultaneously. 
+When this is possible, it is the most computationally efficient way to propagate MC uncertainties.
+In this case, a numpy array consisting of all MC steps of an input quantity is passed to the measurement function 
+instead of the input quantity themselves. Each of the input quantities will thus get an additional MC dimension and these higher 
+dimension input quantities are used as arguments to the measurement function, which will in turn return a measurand with this additional MC dimension.
 If the measurement function can deal with these higher dimensional arrays by just performing numpy operations, this gives the most computationally efficient MC propagation.
-This method is the default in punpy (which corresponds to setting the optional `parallel_cores` keyword to 0).
+In order to use this method, the optional `parallel_cores` keyword is to 0.
 
-However, this is not the case for every measurement function. If the inputs to the measurement
-function are less flexible, and don't support additional dimensions, it is possible to instead run the MC samples one by one.
-In order to pass each MC sample individually to the measurement function, it is possible to set the optional
-`parallel_cores` keyword to 1. In :ref:`punpy_memory_and_speed`, we will show how the same keyword can be used to do parallel processing for such measurement functions.
+If the inputs to the measurement function are less flexible, and don't support additional dimensions, 
+one can either use the default option (`parallel_cores=1`; run the MC samples one by one) or use parallel processing (`parallel_cores>1`). 
+In :ref:`punpy_memory_and_speed`, we provide some more detail on processing the MC samples simultaniously or in parallel.
 
 
 For the LPU methods, the numdifftools package (used within comet_maths) is used to calculate the Jacobian. This package automatically determines the stepsize in the numerical
@@ -341,15 +344,3 @@ However, it is also possible to ignore all MC samples where any of the values ar
 This can be done by setting the `allow_some_nans` keyword to False.
 
 
-Shape of input quanties within the measurement function
-##########################################################
-When setting parallel_cores to 1 or more, the shape of the input quantities used for each iteration in the measurement function matches the shape of the input quantities themselves.
-However, when parallel_cores is set to 0, all iterations will be processed simultaneously and there will be an additional dimension for the MC iterations.
-Generally within punpy, the MC dimension in the samples is the first one (i.e. internally as well as when MC samples are returned).
-However, when processing all iterations simultaniously, in most cases it is more practical to have the MC dimension as the last dimension.
-This is because we use numpy arrays and these are compatible when the last dimensions match following the `numpy broadcasting rules <https://numpy.org/doc/stable/user/basics.broadcasting.html#general-broadcasting-rules>`_.
-So as default, the shape of the input quantities when using parallel_cores will have the MC iterations as its last dimension.
-However, in some cases it is more helpful to have the MC iterations as the first dimension.
-If this is the case, the MC iteration dimension can be made the first dimension by setting the `MClastdim` keyword to False::
-
-      prop = punpy.MCPropagation(1000,MCdimlast=False)

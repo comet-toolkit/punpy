@@ -110,7 +110,7 @@ or Law of Propagation of Uncertainties (LPU) method (see Section :ref:`LPUMethod
 
    gl = IdealGasLaw(prop=prop)
 
-If no argument is provided for prop, a MCPropagation(100,parallel_cores=0) object is used.
+If no argument is provided for prop, a MCPropagation(100,parallel_cores=1) object is used.
 The next arguments are for providing the input quantity names and the measurand name and measurand unit respectively::
 
    gl = IdealGasLaw(prop=prop, xvariables=["pressure", "temperature", "n_moles"], yvariable="volume", yunit="m^3")

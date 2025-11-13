@@ -34,7 +34,7 @@ class MCPropagation:
     """
 
     def __init__(
-        self, steps, parallel_cores=0, dtype=None, verbose=False, MCdimlast=True
+        self, steps, parallel_cores=1, dtype=None, verbose=False, MCdimlast=True
     ):
         self.MCsteps = steps
         self.parallel_cores = parallel_cores
@@ -1493,10 +1493,7 @@ class MCPropagation:
         if output_vars == 1:
             if return_objects:
                 MC_y_out = np.array(
-                    [
-                        MC_y[i]
-                        for i in range(len(indices))
-                    ],
+                    [MC_y[i] for i in range(len(indices))],
                     dtype=object,
                 )
             else:
@@ -1517,14 +1514,11 @@ class MCPropagation:
                             if np.all(np.isfinite(MC_y[i]))
                         ],
                         dtype=self.dtype,
-                    )                
+                    )
         else:
             if return_objects:
                 MC_y_out = np.array(
-                    [
-                        MC_y[i]
-                        for i in range(len(indices))
-                    ],
+                    [MC_y[i] for i in range(len(indices))],
                     dtype=object,
                 )
             else:
@@ -1602,8 +1596,8 @@ class MCPropagation:
                                 )
                             ],
                             dtype=object,
-                        )                
-                
+                        )
+
         if len(MC_y_out) < len(indices):
             if allow_some_nans:
                 print(
