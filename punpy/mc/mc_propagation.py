@@ -34,7 +34,7 @@ class MCPropagation:
     """
 
     def __init__(
-        self, steps, parallel_cores=0, dtype=None, verbose=False, MCdimlast=True
+        self, steps, parallel_cores=1, dtype=None, verbose=False, MCdimlast=True
     ):
         self.MCsteps = steps
         self.parallel_cores = parallel_cores
@@ -1443,6 +1443,7 @@ class MCPropagation:
         start=None,
         end=None,
         sli=None,
+        return_objects=False,
         allow_some_nans=True,
     ):
         """
@@ -1490,100 +1491,112 @@ class MCPropagation:
             MC_y = self.pool.starmap(func, MC_x2)
 
         if output_vars == 1:
-            if allow_some_nans:
+            if return_objects:
                 MC_y_out = np.array(
-                    [
-                        MC_y[i]
-                        for i in range(len(indices))
-                        if np.any(np.isfinite(MC_y[i]))
-                    ],
-                    dtype=self.dtype,
+                    [MC_y[i] for i in range(len(indices))],
+                    dtype=object,
                 )
             else:
-                MC_y_out = np.array(
-                    [
-                        MC_y[i]
-                        for i in range(len(indices))
-                        if np.all(np.isfinite(MC_y[i]))
-                    ],
-                    dtype=self.dtype,
-                )
+                if allow_some_nans:
+                    MC_y_out = np.array(
+                        [
+                            MC_y[i]
+                            for i in range(len(indices))
+                            if np.any(np.isfinite(MC_y[i]))
+                        ],
+                        dtype=self.dtype,
+                    )
+                else:
+                    MC_y_out = np.array(
+                        [
+                            MC_y[i]
+                            for i in range(len(indices))
+                            if np.all(np.isfinite(MC_y[i]))
+                        ],
+                        dtype=self.dtype,
+                    )
         else:
-            if allow_some_nans:
-                try:
-                    MC_y_out = np.array(
-                        [
-                            MC_y[i]
-                            for i in range(len(indices))
-                            if np.all(
-                                [
-                                    np.any(np.isfinite(MC_y[i][ivar]))
-                                    for ivar in range(output_vars)
-                                    if (
-                                        hasattr(MC_y[i][ivar], "__len__")
-                                        and (len(MC_y[i][ivar]) > 0)
-                                    )
-                                ]
-                            )
-                        ],
-                        dtype=self.dtype,
-                    )
-                except:
-                    MC_y_out = np.array(
-                        [
-                            MC_y[i]
-                            for i in range(len(indices))
-                            if np.all(
-                                [
-                                    np.any(np.isfinite(MC_y[i][ivar]))
-                                    for ivar in range(output_vars)
-                                    if (
-                                        hasattr(MC_y[i][ivar], "__len__")
-                                        and (len(MC_y[i][ivar]) > 0)
-                                    )
-                                ]
-                            )
-                        ],
-                        dtype=object,
-                    )
-
+            if return_objects:
+                MC_y_out = np.array(
+                    [MC_y[i] for i in range(len(indices))],
+                    dtype=object,
+                )
             else:
-                try:
-                    MC_y_out = np.array(
-                        [
-                            MC_y[i]
-                            for i in range(len(indices))
-                            if np.all(
-                                [
-                                    np.all(np.isfinite(MC_y[i][ivar]))
-                                    for ivar in range(output_vars)
-                                    if (
-                                        hasattr(MC_y[i][ivar], "__len__")
-                                        and (len(MC_y[i][ivar]) > 0)
-                                    )
-                                ]
-                            )
-                        ],
-                        dtype=self.dtype,
-                    )
-                except:
-                    MC_y_out = np.array(
-                        [
-                            MC_y[i]
-                            for i in range(len(indices))
-                            if np.all(
-                                [
-                                    np.all(np.isfinite(MC_y[i][ivar]))
-                                    for ivar in range(output_vars)
-                                    if (
-                                        hasattr(MC_y[i][ivar], "__len__")
-                                        and (len(MC_y[i][ivar]) > 0)
-                                    )
-                                ]
-                            )
-                        ],
-                        dtype=object,
-                    )
+                if allow_some_nans:
+                    try:
+                        MC_y_out = np.array(
+                            [
+                                MC_y[i]
+                                for i in range(len(indices))
+                                if np.all(
+                                    [
+                                        np.any(np.isfinite(MC_y[i][ivar]))
+                                        for ivar in range(output_vars)
+                                        if (
+                                            hasattr(MC_y[i][ivar], "__len__")
+                                            and (len(MC_y[i][ivar]) > 0)
+                                        )
+                                    ]
+                                )
+                            ],
+                            dtype=self.dtype,
+                        )
+                    except:
+                        MC_y_out = np.array(
+                            [
+                                MC_y[i]
+                                for i in range(len(indices))
+                                if np.all(
+                                    [
+                                        np.any(np.isfinite(MC_y[i][ivar]))
+                                        for ivar in range(output_vars)
+                                        if (
+                                            hasattr(MC_y[i][ivar], "__len__")
+                                            and (len(MC_y[i][ivar]) > 0)
+                                        )
+                                    ]
+                                )
+                            ],
+                            dtype=object,
+                        )
+
+                else:
+                    try:
+                        MC_y_out = np.array(
+                            [
+                                MC_y[i]
+                                for i in range(len(indices))
+                                if np.all(
+                                    [
+                                        np.all(np.isfinite(MC_y[i][ivar]))
+                                        for ivar in range(output_vars)
+                                        if (
+                                            hasattr(MC_y[i][ivar], "__len__")
+                                            and (len(MC_y[i][ivar]) > 0)
+                                        )
+                                    ]
+                                )
+                            ],
+                            dtype=self.dtype,
+                        )
+                    except:
+                        MC_y_out = np.array(
+                            [
+                                MC_y[i]
+                                for i in range(len(indices))
+                                if np.all(
+                                    [
+                                        np.all(np.isfinite(MC_y[i][ivar]))
+                                        for ivar in range(output_vars)
+                                        if (
+                                            hasattr(MC_y[i][ivar], "__len__")
+                                            and (len(MC_y[i][ivar]) > 0)
+                                        )
+                                    ]
+                                )
+                            ],
+                            dtype=object,
+                        )
 
         if len(MC_y_out) < len(indices):
             if allow_some_nans:

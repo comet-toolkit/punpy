@@ -30,7 +30,7 @@ class LPUPropagation:
     :type verbose: bool
     """
 
-    def __init__(self, parallel_cores=0, Jx_diag=False, step=None, verbose=False):
+    def __init__(self, parallel_cores=1, Jx_diag=False, step=None, verbose=False):
         self.parallel_cores = parallel_cores
         self.Jx_diag = Jx_diag
         self.step = step
